@@ -65,11 +65,6 @@ namespace TracProg.Calculation
             throw new NotImplementedException();
         }
 
-        public void Create()
-        { 
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Возвращает сетку трассировки
         /// </summary>
