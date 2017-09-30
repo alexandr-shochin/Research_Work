@@ -38,9 +38,21 @@ namespace TracProg.Calculation
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Конструктор.
+        /// </summary>
+        /// <param name="grid">Сетка трассировки</param>
+        /// <param name="components">Компоненты печатной платы</param>
+        /// <param name="nets">Сети печатной платы</param>
         public Configuration(Grid grid, IElement[] components, Net[] nets)
-        { 
-            throw new NotImplementedException();
+        {
+            _config.Grid = grid;
+
+            _config.Components = new IElement[components.Length];
+            Array.Copy(components, 0, _config.Components, 0, components.Length);
+
+            _config.Nets = new Net[nets.Length];
+            Array.Copy(nets, 0, _config.Nets, 0, nets.Length);
         }
 
         public ErrorCode Serialize(string path)
