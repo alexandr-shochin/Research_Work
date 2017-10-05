@@ -19,7 +19,7 @@ namespace TracProg.Calculation
             /// <summary>
             /// Компоненты печатной платы
             /// </summary>
-            public IElement[] Components { get; set; }
+            public IElement[] Elements { get; set; }
             /// <summary>
             /// Сети печатной платы
             /// </summary>
@@ -48,8 +48,8 @@ namespace TracProg.Calculation
         {
             _config.Grid = grid;
 
-            _config.Components = new IElement[components.Length];
-            Array.Copy(components, 0, _config.Components, 0, components.Length);
+            _config.Elements = new IElement[components.Length];
+            Array.Copy(components, 0, _config.Elements, 0, components.Length);
 
             _config.Nets = new Net[nets.Length];
             Array.Copy(nets, 0, _config.Nets, 0, nets.Length);
@@ -78,9 +78,9 @@ namespace TracProg.Calculation
         /// <exception cref="OverflowException">Индекс находился вне границ массива.</exception>
         public IElement GetComponent(int index)
         {
-            if (_config.Components == null || index < 0 || index >= _config.Components.Length)
+            if (_config.Elements == null || index < 0 || index >= _config.Elements.Length)
                     throw new OverflowException("Индекс находился вне границ массива.");
-            return _config.Components[index];    
+            return _config.Elements[index];    
         }
 
         /// <summary>
