@@ -46,13 +46,20 @@ namespace TracProg.Calculation
         /// <param name="nets">Сети печатной платы</param>
         public Configuration(Grid grid, IElement[] components, Net[] nets)
         {
-            _config.Grid = grid;
+            if (grid.Count == components.Length)
+            {
+                _config.Grid = grid;
 
-            _config.Elements = new IElement[components.Length];
-            Array.Copy(components, 0, _config.Elements, 0, components.Length);
+                _config.Elements = new IElement[components.Length];
+                Array.Copy(components, 0, _config.Elements, 0, components.Length);
 
-            _config.Nets = new Net[nets.Length];
-            Array.Copy(nets, 0, _config.Nets, 0, nets.Length);
+                _config.Nets = new Net[nets.Length];
+                Array.Copy(nets, 0, _config.Nets, 0, nets.Length);
+            }
+            else
+            { 
+                //TODO
+            }
         }
 
         public ErrorCode Serialize(string path)

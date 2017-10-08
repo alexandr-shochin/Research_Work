@@ -24,4 +24,11 @@ namespace TracProg.Calculation
         PIN_WAS_DELETED = 10,                // Pin был удалён
         PIN_WAS_NOT_DELETED = 11             // Pin не был удалён
     }
+
+    public enum GridValue
+    { 
+        METAL = 0,
+        PIN = 1,
+        PROHIBITION_ZONE = 2
+    }
 }
