@@ -27,9 +27,20 @@ namespace TracProg.Calculation
         /// <param name="i">Номер строки</param>
         /// <param name="j">Номер столбца</param>
         /// <returns></returns>
-        public byte GetElement(int i, int j)
+        public byte this[int i, int j]
         {
-            return _grid[i + j * Width];
+            get
+            {
+                if (i < 0 || i >= Width)
+                {
+                    throw new OverflowException("Индекс i находился вне границ сетки.");
+                }
+                if (j < 0 || j >= Height)
+                {
+                    throw new OverflowException("Индекс j находился вне границ сетки.");
+                }
+                return _grid[i + j * Width];
+            }
         }
 
         /// <summary>
@@ -37,9 +48,16 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public byte GetElement(int num)
+        public byte this[int num]
         {
-            return _grid[num];
+            get
+            {
+                if (num < 0 || num >= _grid.Length)
+                {
+                    throw new OverflowException("Номер ячейки находился вне границ.");
+                }
+                return _grid[num];
+            }
         }
 
         /// <summary>
@@ -49,6 +67,11 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public Point GetCoords(int num)
         {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
             int i = num % Width;
             int j = (num - i) / Width;
 
@@ -63,14 +86,47 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public int GetNum(int i, int j)
         {
+            if (i < 0 || i >= Width)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= Height)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+
             return i + j * Width;
         }
 
+        /// <summary>
+        /// Установить значение флага одного из параметров
+        /// </summary>
+        /// <param name="num">Номер ячейки</param>
+        /// <param name="value">Параметр</param>
         public void SetValue(int num, GridValue value)
         {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
             SetBit(ref _grid[num], (int)value, true);
         }
 
+        /// <summary>
+        /// Снять значение флага одного из параметров
+        /// </summary>
+        /// <param name="num">Номер ячейки</param>
+        /// <param name="value">Параметр</param>
+        public void UnsetValue(int num, GridValue value)
+        {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
+            SetBit(ref _grid[num], (int)value, false);
+        }
 
         /// <summary>
         /// Проверка, что данная ячейка является металом
@@ -79,6 +135,11 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public bool IsMetal(int num)
         {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
             return GetBit(_grid[num], 0);
         }
 
@@ -89,6 +150,11 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public bool IsPin(int num)
         {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
             return GetBit(_grid[num], 1);
         }
 
@@ -99,6 +165,11 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public bool IsProhibitionZone(int num)
         {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
             return GetBit(_grid[num], 2);
         }
 
@@ -170,7 +241,7 @@ namespace TracProg.Calculation
         {
             get 
             {
-                if (_grid == null || _grid.Length == 0)
+                if (_grid.Length == 0)
                 {
                     return 0;
                 }

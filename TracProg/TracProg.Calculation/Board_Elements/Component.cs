@@ -49,6 +49,11 @@ namespace TracProg.Calculation
 
         #region Public methods
 
+        /// <summary>
+        /// Добавить Pin в компоненту
+        /// </summary>
+        /// <param name="pin">Добавляемый pin</param>
+        /// <returns>Код ошибки</returns>
         public ErrorCode Add(IElement pin)
         {
             if (pin.X >= X &&  pin.X <= Right && pin.Y <= Y && pin.Y >= Bottom) // если не выходит за границы компоненты 
@@ -72,11 +77,21 @@ namespace TracProg.Calculation
             }
         }
 
+        /// <summary>
+        /// Удаляет Pin из компоненты
+        /// </summary>
+        /// <param name="pin">Удаляемый pin</param>
+        /// <returns>Код ошибки</returns>
         public ErrorCode Remove(IElement pin)
         {
             return _pins.Remove(pin) == true ? ErrorCode.PIN_WAS_DELETED : ErrorCode.PIN_WAS_NOT_DELETED;
         }
 
+        /// <summary>
+        /// Возвращает значение, указывающее, содержит ли компонента Pin переданный в качестве параметра.
+        /// </summary>
+        /// <param name="pin">Pin для поиска</param>
+        /// <returns></returns>
         public ErrorCode Contains(IElement pin)
         {
             return _pins.Contains(pin) == true ? ErrorCode.PIN_WAS_FOUND : ErrorCode.PIN_WAS_NOT_FOUND;
