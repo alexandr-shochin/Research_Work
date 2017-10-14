@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using TracProg.Calculation;
 
 namespace TracProg.GUI
 {
@@ -29,13 +30,14 @@ namespace TracProg.GUI
         private void Button_Click(object sender, RoutedEventArgs e)
         {
            
-            Bitmap bmp = new Bitmap((int)_image.Width, (int)_image.Height);
+            Bitmap bmp = new Bitmap(100, 100);
 
             Graphics g = Graphics.FromImage(bmp);
 
-            System.Drawing.Color c = System.Drawing.Color.FromArgb(255, 255, 0, 0);
+            Configuration config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
+            config.Grid.Draw(ref g);
 
-            g.DrawLines(new System.Drawing.Pen(c), new System.Drawing.Point[] { new System.Drawing.Point(0, 0), new System.Drawing.Point(50, 50) });
+            bmp.Save("test.bmp");
 
             System.Windows.Media.Imaging.BitmapSource b =
                 System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(

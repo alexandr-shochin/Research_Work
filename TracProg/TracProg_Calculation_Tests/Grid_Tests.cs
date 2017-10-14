@@ -12,7 +12,8 @@ namespace TracProg_Calculation_Tests
         [TestInitialize]
         public void Init()
         {
-            _grid = new Grid(4, 4);
+            int step = 5;
+            _grid = new Grid(-5 * step, 5 * step, 10 * step, 10 * step, 5);
         }
 
         [TestMethod]
@@ -164,7 +165,7 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_Count_Grid_count_0_return_0()
         {
-            Grid grid = new Grid(0, 0);
+            Grid grid = new Grid(0, 0, 0, 0, 1);
 
             int expected = 0;
             int actual = grid.Count;
@@ -175,7 +176,7 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_Count_Grid_return()
         {
-            int expected = 16;
+            int expected = 100;
             int actual = _grid.Count;
 
             Assert.AreEqual(expected, actual);
@@ -211,34 +212,34 @@ namespace TracProg_Calculation_Tests
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_GetCoords_invalid_num_one_retun_exception()
         {
-            Point p =  _grid.GetCoords(-1);
+            Tuple<int, int> p =  _grid.GetIndexes(-1);
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_GetCoords_invalid_num_two_retun_exception()
         {
-            Point p = _grid.GetCoords(_grid.Count);
+            Tuple<int, int> p = _grid.GetIndexes(_grid.Count);
         }
 
         [TestMethod]
-        public void TestMethod_GetCoords_num_9_retun_1_2()
+        public void TestMethod_GetCoords_num_9_retun_9_0()
         {
-            Point p = _grid.GetCoords(9);
+            Tuple<int, int> p = _grid.GetIndexes(9);
 
             bool expected = true;
-            bool actual = p.x == 1 && p.y == 2;
+            bool actual = p.Item1 == 9 && p.Item2 == 0;
 
             Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]
-        public void TestMethod_GetCoords_num_14_retun_2_3()
+        public void TestMethod_GetCoords_num_14_retun_4_1()
         {
-            Point p = _grid.GetCoords(14);
+            Tuple<int, int> p = _grid.GetIndexes(14);
 
             bool expected = true;
-            bool actual = p.x == 2 && p.y == 3;
+            bool actual = p.Item1 == 4 && p.Item2 == 1;
 
             Assert.AreEqual(expected, actual);
         }
@@ -272,19 +273,19 @@ namespace TracProg_Calculation_Tests
         }
 
         [TestMethod]
-        public void TestMethod_GetNum_i_1_j_2_retun_9()
+        public void TestMethod_GetNum_i_9_j_0_retun_9()
         {
             int expected = 9;
-            int actual = _grid.GetNum(1, 2);
+            int actual = _grid.GetNum(9, 0);
 
             Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]
-        public void TestMethod_GetNum_i_2_j_3_retun_14()
+        public void TestMethod_GetNum_i_4_j_1_retun_14()
         {
             int expected = 14;
-            int actual = _grid.GetNum(2, 3);
+            int actual = _grid.GetNum(4, 1);
 
             Assert.AreEqual(expected, actual);
         }

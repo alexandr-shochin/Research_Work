@@ -44,6 +44,7 @@
     <Compile Include="Board_Elements\Grid.cs" />
     <Compile Include="Board_Elements\IElement.cs" />
     <Compile Include="Board_Elements\Net.cs" />
+    <Compile Include="Board_Elements\ProhibitionZone.cs" />
     <Compile Include="Configuration\Configuration.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Board_Elements\Pin.cs" />
