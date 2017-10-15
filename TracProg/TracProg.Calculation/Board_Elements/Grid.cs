@@ -154,7 +154,7 @@ namespace TracProg.Calculation
                 graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
-            for (int i = 0; i < _elements.Count; ++i)
+            for (int i = _elements.Count - 1; i >= 0; --i)
             {
                 _elements[i].Draw(ref graphics);
             }
@@ -391,45 +391,16 @@ namespace TracProg.Calculation
             int[] xs = new int[((width / Koeff) + 1)];
             int[] ys = new int[((height / Koeff) + 1)];
 
-            if (x < 0 && y > 0)
-            { 
-            
-            }
-            else if (x > 0 && y > 0)
-            { 
-            
-            }
-            else if (x < 0 && y < 0)
-            { 
-            
-            }
-            else if (x > 0 && y < 0)
-            { 
-                
-            }
-
-            if (y > 0)
-            {
-                y = y - height;
-                for (int i = ys.Length - 1; i >= 0; --i)
-                {
-                    ys[i] = y;
-                    y += koeff;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ys.Length; ++i)
-                {
-                    ys[i] = -y;
-                    y += koeff;
-                }
-            }
-
             for (int i = 0; i < xs.Length; ++i)
             {
                 xs[i] = x;
                 x += koeff;
+            }
+
+            for (int i = 0; i < ys.Length; ++i)
+            {
+                ys[i] = y;
+                y -= koeff;
             }
 
             int index = 0;

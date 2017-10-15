@@ -100,7 +100,7 @@ namespace TracProg.Calculation
 
         public void Draw(ref Graphics graphics)
         {
-            graphics.FillRectangle(new SolidBrush(_Color), X, Y, Width, Height);
+            graphics.FillRectangle(new SolidBrush(_Color), X + 1, Y + 1, Width - 1, Height - 1);
         }
 
         public override string ToString()
@@ -159,7 +159,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области
         /// </summary>
-        public Color _Color { get { return Color.FromArgb(255, 255, 255); } }
+        public Color _Color { get { return Color.Red; } }
 
         #endregion  
     }
