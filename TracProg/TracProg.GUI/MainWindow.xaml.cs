@@ -32,7 +32,7 @@ namespace TracProg.GUI
 
             Configuration config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
 
-            Bitmap bmp = new Bitmap(150, 150);
+            Bitmap bmp = new Bitmap(1000, 1000);
 
             Graphics g = Graphics.FromImage(bmp);
 

@@ -159,7 +159,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области
         /// </summary>
-        public Color _Color { get { return Color.Red; } }
+        public Color _Color { get { return Color.Black; } }
 
         #endregion  
     }

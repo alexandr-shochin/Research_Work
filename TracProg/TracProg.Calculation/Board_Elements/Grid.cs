@@ -400,13 +400,13 @@ namespace TracProg.Calculation
             for (int i = 0; i < ys.Length; ++i)
             {
                 ys[i] = y;
-                y -= koeff;
+                y += koeff;
             }
 
             int index = 0;
-            for (int j = 0; j < ys.Length; ++j)
+            for (int i = 0; i < xs.Length; ++i)
             {
-                for (int i = 0; i < xs.Length; ++i)
+                for (int j = 0; j < ys.Length; ++j)
                 {
                     _nodes[index] = new Point(xs[i], ys[j]);
                     index++;
@@ -440,7 +440,7 @@ namespace TracProg.Calculation
                 int tmpY = Y;
                 while (tmpY != y)
                 {
-                    tmpY -= Koeff;
+                    tmpY += Koeff;
                     j++;
                 }
 
