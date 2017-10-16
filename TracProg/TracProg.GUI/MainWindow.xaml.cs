@@ -13,7 +13,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using TracProg.Calculation;
 
 namespace TracProg.GUI
 {
@@ -29,23 +28,27 @@ namespace TracProg.GUI
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-
-            Bitmap bmp = new Bitmap(100, 100);
+           
+            Bitmap bmp = new Bitmap((int)_image.Width, (int)_image.Height);
 
             Graphics g = Graphics.FromImage(bmp);
 
-            Configuration config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
-            config.Grid.Draw(ref g);
+            System.Drawing.Color c = System.Drawing.Color.FromArgb(255, 255, 0, 0);
 
-            bmp.Save("test.bmp");
+            g.DrawLines(new System.Drawing.Pen(c), new System.Drawing.Point[] { new System.Drawing.Point(0, 0), new System.Drawing.Point(50, 50) });
 
-            //System.Windows.Media.Imaging.BitmapSource b =
-            //    System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-            //           bmp.GetHbitmap(),
-            //           IntPtr.Zero,
-            //           Int32Rect.Empty,
-            //           BitmapSizeOptions.FromEmptyOptions());
-            //_image.Source = b;
+            System.Windows.Media.Imaging.BitmapSource b =
+                System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                       bmp.GetHbitmap(),
+                       IntPtr.Zero,
+                       Int32Rect.Empty,
+                       BitmapSizeOptions.FromEmptyOptions());
+            _image.Source = b;
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            _image.Source = null;
         }
     }
 }
