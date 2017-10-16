@@ -7,11 +7,7 @@ using System.Threading.Tasks;
 
 namespace TracProg.Calculation
 {
-    /// <summary>
-    /// Pin элемент компонены печатной платы
-    /// </summary>
-    [Serializable]
-    public class Pin : IElement
+    public class ProhibitionZone : IElement
     {
         private Rectangle _rect;
 
@@ -23,7 +19,7 @@ namespace TracProg.Calculation
         /// <param name="location">Объект Point, представляющий левый верхний угол прямоугольной области.</param>
         /// <param name="w">Ширина прямоугольной области</param>
         /// <param name="h">Высота прямоугольной области</param>
-        public Pin(Point location, int width, int height)
+        public ProhibitionZone(Point location, int width, int height)
         {
             _rect = new Rectangle(location.x, location.y, width, height);
         }
@@ -35,7 +31,7 @@ namespace TracProg.Calculation
         /// <param name="y">Координата по оси Y левого верхнего угла прямоугольной области</param>
         /// <param name="w">Ширина прямоугольной области</param>
         /// <param name="h">Высота прямоугольной области</param>
-        public Pin(int x, int y, int width, int height)
+        public ProhibitionZone(int x, int y, int width, int height)
         {
             _rect = new Rectangle(x, y, width, height);
         }
@@ -93,19 +89,18 @@ namespace TracProg.Calculation
         }
 
         /// <summary>
-        /// Определяет, пересекается ли данный Pin с Pin'ом pin.
+        /// Определяет, пересекается ли данная зона запрета с зоной запрета pin.
         /// </summary>
-        /// <param name="pin">Pin для проверки</param>
+        /// <param name="prohibitionZone">ProhibitionZone для проверки</param>
         /// <returns>При наличии пересечения этот метод возвращает значение true, в противном случае возвращается значение false.</returns>
-        public bool IntersectsWith(IElement pin)
+        public bool IntersectsWith(IElement prohibitionZone)
         {
-            return this._rect.IntersectsWith(new Rectangle(pin.X, pin.Y, pin.Width, pin.Height));
+            return this._rect.IntersectsWith(new Rectangle(prohibitionZone.X, prohibitionZone.Y, prohibitionZone.Width, prohibitionZone.Height));
         }
 
         public void Draw(ref Graphics graphics)
         {
-            graphics.FillRectangle(new SolidBrush(Color.FromArgb(211, 211, 211)), X + 1, Y + 1, Width - 1, Height - 1);
-            graphics.FillRectangle(new SolidBrush(_Color), X + 3, Y + 3, Width - 5.5f, Height - 5.5f);
+            graphics.FillRectangle(new SolidBrush(_Color), X + 1, Y + 1, Width - 1, Height - 1);
         }
 
         public override string ToString()
@@ -164,8 +159,8 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области
         /// </summary>
-        public Color _Color { get { return Color.Green; } }
+        public Color _Color { get { return Color.Red; } }
 
-        #endregion        
+        #endregion  
     }
 }

@@ -11,7 +11,6 @@ namespace TracProg.Calculation
     /// <summary>
     /// Элемент печатной платы
     /// </summary>
-    [Serializable]
     public interface IElement : IComparer<IElement>, IComparable<IElement>
     {
         #region Public methods
