@@ -29,7 +29,7 @@ namespace TracProg.GUI
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-           
+
             Bitmap bmp = new Bitmap(100, 100);
 
             Graphics g = Graphics.FromImage(bmp);
@@ -39,18 +39,13 @@ namespace TracProg.GUI
 
             bmp.Save("test.bmp");
 
-            System.Windows.Media.Imaging.BitmapSource b =
-                System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                       bmp.GetHbitmap(),
-                       IntPtr.Zero,
-                       Int32Rect.Empty,
-                       BitmapSizeOptions.FromEmptyOptions());
-            _image.Source = b;
-        }
-
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-            _image.Source = null;
+            //System.Windows.Media.Imaging.BitmapSource b =
+            //    System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+            //           bmp.GetHbitmap(),
+            //           IntPtr.Zero,
+            //           Int32Rect.Empty,
+            //           BitmapSizeOptions.FromEmptyOptions());
+            //_image.Source = b;
         }
     }
 }
