@@ -11,7 +11,7 @@ namespace TracProg.Calculation
     public class Grid : IElement
     {
         private Point[] _nodes;
-        public List<IElement> _elements;
+        private List<IElement> _elements;
         private byte[] _grid;
 
         /// <summary>
