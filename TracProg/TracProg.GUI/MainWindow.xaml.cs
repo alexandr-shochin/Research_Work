@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TracProg.Calculation;
+using TracProg.Calculation.Algoriths;
 
 namespace TracProg.GUI
 {
@@ -31,6 +32,9 @@ namespace TracProg.GUI
         {
 
             Configuration config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
+
+            Li li = new Li(config.Grid, config.Net);
+            li.FindPath();
 
             Bitmap bmp = new Bitmap(1000, 1000);
 

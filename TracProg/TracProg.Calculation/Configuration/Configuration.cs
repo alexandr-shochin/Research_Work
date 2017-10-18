@@ -17,10 +17,7 @@ namespace TracProg.Calculation
             /// Сетка трассировки
             /// </summary>
             public Grid Grid { get; set; }
-            /// <summary>
-            /// Компоненты печатной платы
-            /// </summary>
-            
+
             /// <summary>
             /// Сети печатной платы
             /// </summary>
@@ -46,6 +43,7 @@ namespace TracProg.Calculation
                     int x, y, w, h;
                     List<IElement> list = new List<IElement>();
                     int index;
+                    List<Net> nets = new List<Net>();
 
                     using (StreamReader sr = new StreamReader(pathConfigFile, System.Text.Encoding.UTF8))
                     {
@@ -133,10 +131,38 @@ namespace TracProg.Calculation
                                             }
                                             break;
                                         }
-                                        catch (Exception)
+                                        catch (Exception ex)
                                         {
 
-                                            throw;
+                                            throw ex;
+                                        }
+                                    }
+                                case "NETS":
+                                    {
+                                        try
+                                        {
+                                            int countNets = int.Parse(lineSplit[1]);
+                                            _config.Nets = new Net[countNets];
+
+                                            index = 0;
+                                            while ((line = sr.ReadLine()) != null && index < countNets)
+                                            {
+                                                lineSplit = line.Split();
+                                                int[] net = new int[lineSplit.Length - 1];
+                                                for (int i = 0; i < net.Length; ++i)
+                                                { 
+                                                    net[i] = int.Parse(lineSplit[i + 1]);
+                                                }
+                                                    nets.Add(new Net(net));
+
+                                                index++;
+                                            }
+                                            break;
+                                        }
+                                        catch (Exception ex)
+                                        {
+
+                                            throw ex;
                                         }
                                     }
                             }
@@ -147,6 +173,8 @@ namespace TracProg.Calculation
                     {
                         _config.Grid.Add(list[i]);
                     }
+
+                    _config.Nets = nets.ToArray();
                 }
                 else
                 {
@@ -175,17 +203,10 @@ namespace TracProg.Calculation
         public Grid Grid { get { return _config.Grid; } }
 
         /// <summary>
-        /// Доступ к отдельным сетям
+        /// Возвращает трассы
         /// </summary>
-        /// <param name="index">Индекс (начиная 0)</param>
-        /// <returns>Экземпляр Net</returns>
-        /// <exception cref="OverflowException">Индекс находился вне границ массива.</exception>
-        public Net GetNet(int index)
-        {
-            if (_config.Nets == null || index < 0 || index >= _config.Nets.Length)
-                throw new OverflowException("Индекс находился вне границ массива.");
-            return _config.Nets[index];
-        }
+        public Net[] Net { get { return _config.Nets; } }
+
 
         public string LastErr { get; private set; }
     }

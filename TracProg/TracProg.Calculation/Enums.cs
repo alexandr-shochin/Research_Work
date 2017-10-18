@@ -30,8 +30,10 @@ namespace TracProg.Calculation
 
     public enum GridValue
     { 
-        METAL = 0,
-        PIN = 1,
-        PROHIBITION_ZONE = 2
+        FREE = 0,
+        METAL = 1,
+        PIN = 2,
+        PROHIBITION_ZONE = 3,
+        LEVEL = 4
     }
 }

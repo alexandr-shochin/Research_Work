@@ -180,15 +180,15 @@ namespace TracProg.Calculation
         {
             get
             {
-                if (i < 0 || i >= Width)
+                if (i < 0 || i >= CountRows)
                 {
                     throw new OverflowException("Индекс i находился вне границ сетки.");
                 }
-                if (j < 0 || j >= Height)
+                if (j < 0 || j >= CountColumn)
                 {
                     throw new OverflowException("Индекс j находился вне границ сетки.");
                 }
-                return _grid[i + j * Width];
+                return _grid[i + j * CountRows];
             }
         }
 
@@ -214,17 +214,17 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public Tuple<int, int> GetIndexes(int num)
+        public void GetIndexes(int num, out int i, out int j)
         {
+            i = -1;
+            j = -1;
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            int i = num % (Width / Koeff);
-            int j = (num - i) / (Width / Koeff);
-
-            return Tuple.Create(i, j);
+            i = num % CountRows;
+            j = (num - i) / CountRows;
         }
 
         /// <summary>
@@ -235,16 +235,16 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public int GetNum(int i, int j)
         {
-            if (i < 0 || i >= Width / Koeff)
+            if (i < 0 || i >= CountRows)
             {
                 throw new OverflowException("Индекс i находился вне границ сетки.");
             }
-            if (j < 0 || j >= Height / Koeff)
+            if (j < 0 || j >= CountColumn)
             {
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            return i + j * (Width / Koeff);
+            return i + j * CountRows;
         }
 
         /// <summary>
@@ -260,6 +260,12 @@ namespace TracProg.Calculation
             }
 
             SetBit(ref _grid[num], (int)value, true);
+
+            if (value == GridValue.METAL)
+            { 
+                Point p = GetCoordCell(num);
+                Add(new Metal(p, 1 * Koeff, 1 * Koeff));
+            }
         }
 
         /// <summary>
@@ -311,7 +317,12 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], 0);
+            return GetBit(_grid[num], (int)GridValue.METAL);
+        }
+
+        public bool IsMetal(int i, int j)
+        {
+            return IsMetal(GetNum(i, j));
         }
 
         /// <summary>
@@ -326,7 +337,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], 1);
+            return GetBit(_grid[num], (int)GridValue.PIN);
         }
 
         /// <summary>
@@ -352,7 +363,37 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], 2);
+            return GetBit(_grid[num], (int)GridValue.PROHIBITION_ZONE);
+        }
+
+        public bool IsProhibitionZone(int i, int j)
+        { 
+            return IsProhibitionZone(GetNum(i, j));
+        }
+
+        public bool IsFree(int num)
+        {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
+            return !GetBit(_grid[num], (int)GridValue.FREE);
+        }
+
+        public bool IsFree(int i, int j)
+        {
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+
+            int num = GetNum(i, j);
+            return IsFree(num) && !IsMetal(num);
         }
 
         /// <summary>
@@ -363,8 +404,30 @@ namespace TracProg.Calculation
         /// <returns>Возвращает координаты ячейки</returns>
         public Point GetCoordCell(int i, int j)
         {
-            return new Point(X + (Width * i), Y - (Height * j));
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+
+            return new Point(X + ((Width / Koeff) * i), Y + ((Height / Koeff) * j));
         }
+
+        public Point GetCoordCell(int num)
+        {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
+            int i, j;
+            GetIndexes(num, out i, out j);
+            return GetCoordCell(i, j);
+        }
+
 
         public override string ToString()
         {
@@ -413,7 +476,9 @@ namespace TracProg.Calculation
                 }
             }
 
-                _grid = new byte[(width / Koeff) * (height / Koeff)];
+            CountColumn = (height / Koeff);
+            CountRows = (width / Koeff);
+            _grid = new byte[(width / Koeff) * (height / Koeff)];
         }
 
         /// <summary>
@@ -563,6 +628,16 @@ namespace TracProg.Calculation
                 }
             }
         }
+
+        /// <summary>
+        /// Количество столбцов в сетке
+        /// </summary>
+        public int CountColumn { get; private set; }
+
+        /// <summary>
+        /// Количество строк в сетке
+        /// </summary>
+        public int CountRows { get; private set; }
 
         #endregion
     }
