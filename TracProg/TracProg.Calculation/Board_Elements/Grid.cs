@@ -62,6 +62,10 @@ namespace TracProg.Calculation
                     {
                         SetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
                     }
+                    else if (el is Metal)
+                    {
+                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
+                    }
                     return ErrorCode.NO_ERROR;
                 }
                 catch (Exception)
@@ -94,6 +98,10 @@ namespace TracProg.Calculation
                     else if (el is ProhibitionZone)
                     {
                         UnsetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
+                    }
+                    else if (el is Metal)
+                    {
+                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
                     }
                     return ErrorCode.NO_ERROR;
                 }
@@ -157,6 +165,43 @@ namespace TracProg.Calculation
             for (int i = _elements.Count - 1; i >= 0; --i)
             {
                 _elements[i].Draw(ref graphics);
+            }
+        }
+
+        public void MetallizeTrack(List<int> track)
+        { 
+            UnsetValue(track[0], GridValue.OWN_METAL);
+            for(int i = 1; i < track.Count; ++i)
+            {
+                // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
+                Point _from = GetCoordCell(track[i - 1]);
+                Point _in = GetCoordCell(track[i]);
+
+                if (_from.y == _in.y)
+                {
+                    if (_from.x > _in.x) // справо-налево
+                    {
+                        Add(new Metal(_from.x, _from.y, _from.x - _in.x, 1 * Koeff));
+                    }
+                    else if (_from.x < _in.x) // слева-направо
+                    {
+                        Add(new Metal(_from.x, _from.y, _in.x - _from.x, 1 * Koeff));
+                    }
+                }
+                else if (_from.x == _in.x)
+                {
+                    if (_from.y > _in.y) // сверху-вниз
+                    {
+                        Add(new Metal(_from.x, _from.y, 1 * Koeff, _from.y - _in.y));
+                    }
+                    else if (_from.y < _in.y) // cнизу-вверх
+                    {
+                        Add(new Metal(_from.x, _from.y, 1 * Koeff, _in.y - _from.y));
+                    }
+                }
+
+                // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
+                UnsetValue(track[i], GridValue.OWN_METAL);
             }
         }
 
@@ -260,12 +305,6 @@ namespace TracProg.Calculation
             }
 
             SetBit(ref _grid[num], (int)value, true);
-
-            if (value == GridValue.METAL)
-            { 
-                Point p = GetCoordCell(num);
-                Add(new Metal(p, 1 * Koeff, 1 * Koeff));
-            }
         }
 
         /// <summary>
@@ -310,19 +349,19 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public bool IsMetal(int num)
+        public bool IsOwnMetal(int num)
         {
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], (int)GridValue.METAL);
+            return GetBit(_grid[num], (int)GridValue.OWN_METAL);
         }
 
-        public bool IsMetal(int i, int j)
+        public bool IsOwnMetal(int i, int j)
         {
-            return IsMetal(GetNum(i, j));
+            return IsOwnMetal(GetNum(i, j));
         }
 
         /// <summary>
@@ -367,21 +406,6 @@ namespace TracProg.Calculation
         }
 
         public bool IsProhibitionZone(int i, int j)
-        { 
-            return IsProhibitionZone(GetNum(i, j));
-        }
-
-        public bool IsFree(int num)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            return !GetBit(_grid[num], (int)GridValue.FREE);
-        }
-
-        public bool IsFree(int i, int j)
         {
             if (i < 0 || i >= CountRows)
             {
@@ -392,8 +416,30 @@ namespace TracProg.Calculation
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            int num = GetNum(i, j);
-            return IsFree(num) && !IsMetal(num);
+            return IsProhibitionZone(GetNum(i, j));
+        }
+
+        public bool IsForeignMetal(int num)
+        {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
+            return GetBit(_grid[num], (int)GridValue.FOREIGN_METAL);
+        }
+
+        public bool IsForeignMetal(int i, int j)
+        {
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+            return IsForeignMetal(GetNum(i, j));
         }
 
         /// <summary>

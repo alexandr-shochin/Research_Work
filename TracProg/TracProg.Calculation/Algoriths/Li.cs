@@ -117,21 +117,21 @@ namespace TracProg.Calculation.Algoriths
         public bool FindPath()
         {
             List<int> path = new List<int>();
-            //for (int numNet = 0; numNet < _net.Length; ++numNet)
+            for (int numNet = 0; numNet < _net.Length; ++numNet)
             {
-                for (int numEl = 1; numEl < _net[2].Count; numEl++)
+                for (int numEl = 1; numEl < _net[numNet].Count; numEl++)
                 {
-                    int finish = _net[2][numEl];
-                    int start = _net[2][numEl - 1];
+                    int start = _net[numNet][numEl];
+                    int finish = _net[numNet][numEl - 1];
 
                     if (WavePropagation(start, finish) == true)
                     {
                         RestorationPath(ref path);
                     }
-
-                    path.Clear();
                     _set.Clear();
                 }
+                _grid.MetallizeTrack(path);
+                path.Clear();
             }
             return true;
         }
@@ -167,50 +167,34 @@ namespace TracProg.Calculation.Algoriths
                     {
                         if (i - 1 >= 0) // left
                         {
-                            if (!_grid.IsProhibitionZone(i - 1, j) && _grid.IsFree(i - 1, j))
+                            if (CheckCell(i - 1, j, numLevel, finish, ref countAdded))
                             {
-                                if (_set.Add(_grid.GetNum(i - 1, j), numLevel))
-                                {
-                                    countAdded++;
-                                    isFoundFinish = _set.ContainsNumCell(finish);
-                                    if (isFoundFinish) break;
-                                }
+                                isFoundFinish = true;
+                                break;
                             }
                         }
                         if (i + 1 < _grid.CountRows) // right
                         {
-                            if (!_grid.IsProhibitionZone(i + 1, j) && _grid.IsFree(i + 1, j))
+                            if(CheckCell(i + 1, j, numLevel, finish, ref countAdded))
                             {
-                                if (_set.Add(_grid.GetNum(i + 1, j), numLevel))
-                                {
-                                    countAdded++;
-                                    isFoundFinish = _set.ContainsNumCell(finish);
-                                    if (isFoundFinish) break;
-                                }
+                                isFoundFinish = true;
+                                break;
                             }
                         }
                         if (j - 1 >= 0) // up
                         {
-                            if (!_grid.IsProhibitionZone(i, j - 1) && _grid.IsFree(i, j - 1))
+                            if(CheckCell(i, j - 1, numLevel, finish, ref countAdded))
                             {
-                                if (_set.Add(_grid.GetNum(i, j - 1), numLevel))
-                                {
-                                    countAdded++;
-                                    isFoundFinish = _set.ContainsNumCell(finish);
-                                    if (isFoundFinish) break;
-                                }
+                                isFoundFinish = true;
+                                break;
                             }
                         }
                         if (j + 1 < _grid.CountColumn) // down
                         {
-                            if (!_grid.IsProhibitionZone(i, j + 1) && _grid.IsFree(i, j + 1))
+                            if(CheckCell(i, j + 1, numLevel, finish, ref countAdded))
                             {
-                                if (_set.Add(_grid.GetNum(i, j + 1), numLevel))
-                                {
-                                    countAdded++;
-                                    isFoundFinish = _set.ContainsNumCell(finish);
-                                    if (isFoundFinish) break;
-                                }
+                                isFoundFinish = true;
+                                break;
                             }
                         }
                     }
@@ -223,6 +207,49 @@ namespace TracProg.Calculation.Algoriths
             }
 
             return isFoundFinish;
+        }
+
+        private bool CheckCell(int i, int j, int numLevel, int finish, ref int countAdded)
+        {
+            if (!(_grid.IsProhibitionZone(i, j) || _grid.IsForeignMetal(i, j)))
+            {
+                if (_grid.IsPin(i, j)) // если это пин
+                {
+                    if (_grid.GetNum(i, j) == finish) // финишный Pin
+                    {
+                        if (_set.Add(_grid.GetNum(i, j), numLevel))
+                        {
+                            countAdded++;
+                            return true;
+                        }
+                    }
+                    else if (_grid.IsOwnMetal(i, j)) // если и Pin и свой метал
+                    {
+                        if (_set.Add(_grid.GetNum(i, j), numLevel))
+                        {
+                            countAdded++;
+                            return true;
+                        }
+                    }
+                }
+                else if (_grid.IsOwnMetal(i, j)) // если свой метал
+                {
+                    if (_set.Add(_grid.GetNum(i, j), numLevel))
+                    {
+                        countAdded++;
+                        return true;
+                    }
+                }
+                else // если не Pin
+                {
+                    if (_set.Add(_grid.GetNum(i, j), numLevel))
+                    {
+                        countAdded++;
+                        return false;
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -250,7 +277,7 @@ namespace TracProg.Calculation.Algoriths
 
             int numCell;
 
-            _grid.SetValue(currentNumCell, GridValue.METAL); // металлизируем
+            _grid.SetValue(currentNumCell, GridValue.OWN_METAL); // металлизируем
             path.Add(currentNumCell); // добавляем в путь
             while (currentLevel > 0)
             {   
@@ -263,7 +290,7 @@ namespace TracProg.Calculation.Algoriths
 
                     if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
                     {
-                        _grid.SetValue(numCell, GridValue.METAL); // металлизируем
+                        _grid.SetValue(numCell, GridValue.OWN_METAL); // металлизируем
                         path.Add(numCell); // добавляем в путь
                         currentNumCell = numCell;
                         continue;
@@ -274,7 +301,7 @@ namespace TracProg.Calculation.Algoriths
                     numCell = _grid.GetNum(i + 1, j);
                     if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
                     {
-                        _grid.SetValue(numCell, GridValue.METAL);
+                        _grid.SetValue(numCell, GridValue.OWN_METAL);
                         path.Add(numCell);
                         currentNumCell = numCell;
                         continue;
@@ -285,7 +312,7 @@ namespace TracProg.Calculation.Algoriths
                     numCell = _grid.GetNum(i, j - 1);
                     if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
                     {
-                        _grid.SetValue(numCell, GridValue.METAL);
+                        _grid.SetValue(numCell, GridValue.OWN_METAL);
                         path.Add(numCell);
                         currentNumCell = numCell;
                         continue;
@@ -296,7 +323,7 @@ namespace TracProg.Calculation.Algoriths
                     numCell = _grid.GetNum(i, j + 1);
                     if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
                     {
-                        _grid.SetValue(numCell, GridValue.METAL);
+                        _grid.SetValue(numCell, GridValue.OWN_METAL);
                         path.Add(numCell);
                         currentNumCell = numCell;
                         continue;

@@ -19,10 +19,10 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_SetValueMetal_return_True()
         {
-            _grid.SetValue(0, GridValue.METAL);
+            _grid.SetValue(0, GridValue.OWN_METAL);
 
             bool expected = true;
-            bool actual = _grid.IsMetal(0);
+            bool actual = _grid.IsOwnMetal(0);
 
             Assert.AreEqual(expected, actual);
         }
@@ -30,7 +30,7 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_SetValueMetal_return_False()
         {
-            _grid.SetValue(0, GridValue.METAL);
+            _grid.SetValue(0, GridValue.OWN_METAL);
 
             bool expected = false;
             bool actual = _grid.IsPin(0);
@@ -77,7 +77,7 @@ namespace TracProg_Calculation_Tests
             _grid.SetValue(0, GridValue.PROHIBITION_ZONE);
 
             bool expected = false;
-            bool actual = _grid.IsMetal(0);
+            bool actual = _grid.IsOwnMetal(0);
 
             Assert.AreEqual(expected, actual);
         }
@@ -85,11 +85,11 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_SetValueMetal_And_Pin_return_True()
         {
-            _grid.SetValue(0, GridValue.METAL);
+            _grid.SetValue(0, GridValue.OWN_METAL);
             _grid.SetValue(0, GridValue.PIN);
 
             bool expected = true;
-            bool actual = _grid.IsMetal(0) && _grid.IsPin(0);
+            bool actual = _grid.IsOwnMetal(0) && _grid.IsPin(0);
 
             Assert.AreEqual(expected, actual);
         }
@@ -97,11 +97,11 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_SetValueMetal_And_Pin_return_False()
         {
-            _grid.SetValue(0, GridValue.METAL);
+            _grid.SetValue(0, GridValue.OWN_METAL);
             _grid.SetValue(0, GridValue.PIN);
 
             bool expected = false;
-            bool actual = _grid.IsMetal(0) && _grid.IsProhibitionZone(0);
+            bool actual = _grid.IsOwnMetal(0) && _grid.IsProhibitionZone(0);
 
             Assert.AreEqual(expected, actual);
         }
@@ -110,28 +110,28 @@ namespace TracProg_Calculation_Tests
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_SetValue_invalid_num_one_return_exception()
         {
-            _grid.SetValue(-1, GridValue.METAL);
+            _grid.SetValue(-1, GridValue.OWN_METAL);
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_SetValue_invalid_num_two_return_exception()
         {
-            _grid.SetValue(_grid.Count, GridValue.METAL);
+            _grid.SetValue(_grid.Count, GridValue.OWN_METAL);
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_IsMetal_invalid_num_one_return_exception()
         {
-            _grid.IsMetal(-1);
+            _grid.IsOwnMetal(-1);
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_IsMetal_invalid_num_two_return_exception()
         {
-            _grid.IsMetal(_grid.Count);
+            _grid.IsOwnMetal(_grid.Count);
         }
 
         [TestMethod]
@@ -186,24 +186,24 @@ namespace TracProg_Calculation_Tests
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethos_UnsetValue_invalid_num_one_return_exception()
         {
-            _grid.UnsetValue(-1, GridValue.METAL);
+            _grid.UnsetValue(-1, GridValue.OWN_METAL);
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethos_UnsetValue_invalid_num_two_return_exception()
         {
-            _grid.UnsetValue(_grid.Count, GridValue.METAL);
+            _grid.UnsetValue(_grid.Count, GridValue.OWN_METAL);
         }
 
         [TestMethod]
         public void TestMethos_UnsetValue_return_true()
         {
-            _grid.SetValue(0, GridValue.METAL);
-            _grid.UnsetValue(0, GridValue.METAL);
+            _grid.SetValue(0, GridValue.OWN_METAL);
+            _grid.UnsetValue(0, GridValue.OWN_METAL);
 
             bool expected = false;
-            bool actual = _grid.IsMetal(0);
+            bool actual = _grid.IsOwnMetal(0);
 
             Assert.AreEqual(expected, actual);
         }
@@ -293,7 +293,7 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_GetItem_int_int_return_byte()
         {
-            _grid.SetValue(_grid.GetNum(0, 0), GridValue.METAL);
+            _grid.SetValue(_grid.GetNum(0, 0), GridValue.OWN_METAL);
 
             byte expected = 1;
             byte actual = _grid[0, 0];
@@ -332,7 +332,7 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_GetItem_int_return_byte()
         {
-            _grid.SetValue(0, GridValue.METAL);
+            _grid.SetValue(0, GridValue.OWN_METAL);
 
             byte expected = 1;
             byte actual = _grid[0];
