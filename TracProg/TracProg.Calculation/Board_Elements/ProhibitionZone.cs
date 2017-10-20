@@ -22,6 +22,7 @@ namespace TracProg.Calculation
         public ProhibitionZone(Point location, int width, int height)
         {
             _rect = new Rectangle(location.x, location.y, width, height);
+            _Color = Color.Black;
         }
 
         /// <summary>
@@ -34,6 +35,7 @@ namespace TracProg.Calculation
         public ProhibitionZone(int x, int y, int width, int height)
         {
             _rect = new Rectangle(x, y, width, height);
+            _Color = Color.Black;
         }
 
         #endregion
@@ -159,7 +161,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области
         /// </summary>
-        public Color _Color { get { return Color.Black; } }
+        public Color _Color { get; set; }
 
         #endregion  
     }

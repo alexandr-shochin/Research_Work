@@ -128,7 +128,30 @@ namespace TracProg.Calculation.Algoriths
                     {
                         RestorationPath(ref path);
                     }
+                    else //если какие-то подтрассы нашли и какую-то не смогли реализовать
+                    {
+                        path.Clear();
+                        path.Add(-1); // индикатор того, что трасса не реализована
+                        for (int i = 0; i < _net[numNet].Count; ++i)
+                        {
+                            path.Add(_net[numNet][i]);
+                        }
+                        break;
+                    }
                     _set.Clear();
+                    if (path.Count != 0)
+                    {
+                        path.Add(-1); // добавляем -1, чтобы разделить трассы
+                    }
+                    else // если не можем реализовать трассу
+                    {
+                        path.Add(-1); // индикатор того, что трасса не реализована
+                        for (int i = 0; i < _net[numNet].Count; ++i)
+                        {
+                            path.Add(_net[numNet][i]);
+                        }
+                        break;
+                    }
                 }
                 _grid.MetallizeTrack(path);
                 path.Clear();
@@ -204,6 +227,8 @@ namespace TracProg.Calculation.Algoriths
                     index += prevCountAdded;
                     numLevel++;
                 }
+                if (countAdded == 0) // условие, что нельзя реализовать трассу
+                    return false;
             }
 
             return isFoundFinish;

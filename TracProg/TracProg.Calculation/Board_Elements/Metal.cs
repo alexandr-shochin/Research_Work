@@ -22,6 +22,7 @@ namespace TracProg.Calculation
         public Metal(Point location, int width, int height)
         {
             _rect = new Rectangle(location.x, location.y, width, height);
+            _Color = Color.FromArgb(70, 130, 180);
         }
 
         /// <summary>
@@ -34,6 +35,7 @@ namespace TracProg.Calculation
         public Metal(int x, int y, int width, int height)
         {
             _rect = new Rectangle(x, y, width, height);
+            _Color = Color.FromArgb(70, 130, 180);
         }
 
         #endregion
@@ -100,7 +102,7 @@ namespace TracProg.Calculation
 
         public void Draw(ref Graphics graphics)
         {
-            graphics.FillRectangle(new SolidBrush(_Color), X + 3, Y + 3, Width, Height);
+            graphics.FillRectangle(new SolidBrush(_Color), X + 3, Y + 3, Width + 4, Height + 4);
         }
 
         public override string ToString()
@@ -159,7 +161,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области
         /// </summary>
-        public Color _Color { get { return Color.Blue; } }
+        public Color _Color { get; set; }
 
         #endregion    
     }

@@ -29,6 +29,8 @@ namespace TracProg.Calculation
             _rect = new Rectangle(location.x, location.y, width, height);
 
             _pins = new List<IElement>();
+
+            _Color = Color.FromArgb(255, 0, 0);
         }
 
         /// <summary>
@@ -43,6 +45,8 @@ namespace TracProg.Calculation
             _rect = new Rectangle(x, y, width, height);
 
             _pins = new List<IElement>();
+
+            _Color = Color.FromArgb(255, 0, 0);
         }
 
         #endregion
@@ -199,7 +203,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области
         /// </summary>
-        public Color _Color { get { return Color.FromArgb(255, 0, 0); } }
+        public Color _Color { get; set; }
 
         /// <summary>
         /// Доступ к отдельным элементам компоненты

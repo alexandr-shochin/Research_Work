@@ -24,6 +24,7 @@ namespace TracProg.Calculation
         public Grid(Point location, int width, int height, int koeff)
         {
             GenerateCoord(location.x, location.y, width, height, koeff);
+            _Color = Color.Black;
         }
 
         /// <summary>
@@ -37,6 +38,7 @@ namespace TracProg.Calculation
         public Grid(int x, int y, int width, int height, int koeff)
         {
             GenerateCoord(x, y, width, height, koeff);
+            _Color = Color.Black;
         }
 
         #region Public methods
@@ -169,39 +171,56 @@ namespace TracProg.Calculation
         }
 
         public void MetallizeTrack(List<int> track)
-        { 
-            UnsetValue(track[0], GridValue.OWN_METAL);
-            for(int i = 1; i < track.Count; ++i)
+        {
+            if (track[0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
-                // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
-                Point _from = GetCoordCell(track[i - 1]);
-                Point _in = GetCoordCell(track[i]);
-
-                if (_from.y == _in.y)
+                UnsetValue(track[0], GridValue.OWN_METAL);
+                for (int i = 1; i < track.Count; ++i)
                 {
-                    if (_from.x > _in.x) // справо-налево
+                    if (track[i] == -1)
                     {
-                        Add(new Metal(_from.x, _from.y, _from.x - _in.x, 1 * Koeff));
+                        i++;
+                        continue;
                     }
-                    else if (_from.x < _in.x) // слева-направо
-                    {
-                        Add(new Metal(_from.x, _from.y, _in.x - _from.x, 1 * Koeff));
-                    }
-                }
-                else if (_from.x == _in.x)
-                {
-                    if (_from.y > _in.y) // сверху-вниз
-                    {
-                        Add(new Metal(_from.x, _from.y, 1 * Koeff, _from.y - _in.y));
-                    }
-                    else if (_from.y < _in.y) // cнизу-вверх
-                    {
-                        Add(new Metal(_from.x, _from.y, 1 * Koeff, _in.y - _from.y));
-                    }
-                }
 
-                // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
-                UnsetValue(track[i], GridValue.OWN_METAL);
+                    // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
+                    Point _from = GetCoordCell(track[i - 1]);
+                    Point _in = GetCoordCell(track[i]);
+
+                    if (_from.y == _in.y)
+                    {
+                        if (_from.x > _in.x) // справо-налево
+                        {
+                            Add(new Metal(_in.x, _in.y, _from.x - _in.x, 1));
+                        }
+                        else if (_from.x < _in.x) // слева-направо
+                        {
+                            Add(new Metal(_from.x, _from.y, _in.x - _from.x, 1));
+                        }
+                    }
+                    else if (_from.x == _in.x)
+                    {
+                        if (_from.y > _in.y) // cнизу-вверх
+                        {
+                            Add(new Metal(_in.x, _in.y, 1, (_from.y - _in.y) + 1));
+                        }
+                        else if (_from.y < _in.y) // сверху-вниз 
+                        {
+                            Add(new Metal(_from.x, _from.y, 1, (_in.y - _from.y) + 1));
+                        }
+                    }
+
+                    // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
+                    UnsetValue(track[i], GridValue.OWN_METAL);
+                }
+            }
+            else // трасса не построена
+            {
+                for (int i = 1; i < track.Count; ++i)
+                {
+                    Point p = GetCoordCell(track[i]);
+                    _elements.Find(x => x.X == p.x && x.Y == p.y)._Color = Color.Red;
+                }
             }
         }
 
@@ -655,7 +674,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет для узлов сетки
         /// </summary>
-        public Color _Color { get { return Color.Black; } }
+        public Color _Color { get; set; }
 
         /// <summary>
         /// Количество ячеек в сетке

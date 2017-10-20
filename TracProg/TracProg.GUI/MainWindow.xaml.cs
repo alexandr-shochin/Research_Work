@@ -36,7 +36,7 @@ namespace TracProg.GUI
             Li li = new Li(config.Grid, config.Net);
             li.FindPath();
 
-            Bitmap bmp = new Bitmap(1000, 1000);
+            Bitmap bmp = new Bitmap((int)(_image.Width), (int)(_image.Height));
 
             Graphics g = Graphics.FromImage(bmp);
 
