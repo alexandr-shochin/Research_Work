@@ -1,7 +1,7 @@
 ﻿<Window x:Class="TracProg.GUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="TracProg" Height="600" Width="800" Icon="Resources/icons8-Сахарные Кубики-48.png">
+        Title="TracProg" MaxHeight="600" MaxWidth="800" Icon="Resources/icons8-Сахарные Кубики-48.png">
     <Grid Margin="0">
         <Menu Height="24" VerticalAlignment="Top">
             <MenuItem Header="Файл">
