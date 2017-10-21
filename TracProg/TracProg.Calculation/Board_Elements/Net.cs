@@ -9,34 +9,17 @@ namespace TracProg.Calculation
     [Serializable]
     public class Net
     {
-        public class NetElement
-        {
-            /// <summary>
-            /// Индекс компонены в массиве всех компонент
-            /// </summary>
-            public int IndexComponent { get; set; }
-            /// <summary>
-            /// Индкс Pin'а в массиве всех Pin'ов у Components[IndexComponent]
-            /// </summary>
-            public int IndexPinInComponent { get; set; }
-
-            public override string ToString()
-            {
-                return IndexComponent + ", " + IndexPinInComponent;
-            }
-        }
-
-        private NetElement[] _netElements;
+        private int[] _netElements;
 
         /// <summary>
         /// Конструктор.
         /// </summary>
         /// <param name="countElements">Количество NetElement'ов</param>
         /// <param name="netElements">Массив NetElement'ов</param>
-        public Net(int countElements, NetElement[] netElements)
+        public Net(int[] netElements)
         {
-            _netElements = new NetElement[countElements];
-            Array.Copy(netElements, 0, _netElements, 0, countElements);
+            _netElements = new int[netElements.Length];
+            Array.Copy(netElements, 0, _netElements, 0, netElements.Length);
         }
 
         /// <summary>
@@ -45,7 +28,7 @@ namespace TracProg.Calculation
         /// <param name="index">Индекс (начиная 0)</param>
         /// <returns>Экземпляр NetElement</returns>
         /// <exception cref="OverflowException">Индекс находился вне границ массива.</exception>
-        public NetElement this[int index]
+        public int this[int index]
         {
             get
             {
@@ -58,6 +41,21 @@ namespace TracProg.Calculation
         public override string ToString()
         {
             return "Count = " + _netElements.Length;
+        }
+
+        public int Count
+        {
+            get
+            {
+                if (_netElements.Length == 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return _netElements.Length;
+                }
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TracProg.Calculation
@@ -14,6 +15,9 @@ namespace TracProg.Calculation
         private List<IElement> _elements;
         private byte[] _grid;
 
+        public event Action Metalize;
+        private event Action<int> IsChanged;
+
         /// <summary>
         /// Конструтор
         /// </summary>
@@ -24,6 +28,8 @@ namespace TracProg.Calculation
         public Grid(Point location, int width, int height, int koeff)
         {
             GenerateCoord(location.x, location.y, width, height, koeff);
+            _Color = Color.Black;
+            IsChanged += Grid_IsChanged;
         }
 
         /// <summary>
@@ -37,6 +43,8 @@ namespace TracProg.Calculation
         public Grid(int x, int y, int width, int height, int koeff)
         {
             GenerateCoord(x, y, width, height, koeff);
+            _Color = Color.Black;
+            IsChanged += Grid_IsChanged;
         }
 
         #region Public methods
@@ -61,6 +69,10 @@ namespace TracProg.Calculation
                     else if (el is ProhibitionZone)
                     {
                         SetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
+                    }
+                    else if (el is Metal)
+                    {
+                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
                     }
                     return ErrorCode.NO_ERROR;
                 }
@@ -94,6 +106,10 @@ namespace TracProg.Calculation
                     else if (el is ProhibitionZone)
                     {
                         UnsetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
+                    }
+                    else if (el is Metal)
+                    {
+                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
                     }
                     return ErrorCode.NO_ERROR;
                 }
@@ -160,6 +176,56 @@ namespace TracProg.Calculation
             }
         }
 
+        public void MetallizeTrack(List<int> track)
+        {
+            if (track[0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
+            {
+                UnsetValue(track[0], GridValue.OWN_METAL);
+                Random rand = new Random();
+                Color c = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
+                for (int i = 1; i < track.Count; ++i)
+                {
+                    if (track[i] == -1)
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
+                    Point pFrom = GetCoordCell(track[i - 1]);
+                    Point pIn = GetCoordCell(track[i]);
+                    Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff), 
+                                  new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff)));
+
+                    if (Metalize != null)
+                    {
+                        Metalize.Invoke();
+                        Thread.Sleep(50);
+                    }
+
+                    // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
+                    UnsetValue(track[i], GridValue.OWN_METAL);
+                }
+            }
+            else // трасса не построена
+            {
+                for (int i = 1; i < track.Count; ++i)
+                {
+                    Point p = GetCoordCell(track[i]);
+                    try
+                    {
+                        _elements.Find(x => x.X == p.x && x.Y == p.y)._Color = Color.Red;
+                    }
+                    catch (NullReferenceException) { }   
+                }
+
+                if (Metalize != null)
+                {
+                    Metalize.Invoke();
+                }
+            }
+        }
+
         public int Compare(IElement x, IElement y)
         {
             throw new NotImplementedException();
@@ -180,15 +246,15 @@ namespace TracProg.Calculation
         {
             get
             {
-                if (i < 0 || i >= Width)
+                if (i < 0 || i >= CountRows)
                 {
                     throw new OverflowException("Индекс i находился вне границ сетки.");
                 }
-                if (j < 0 || j >= Height)
+                if (j < 0 || j >= CountColumn)
                 {
                     throw new OverflowException("Индекс j находился вне границ сетки.");
                 }
-                return _grid[i + j * Width];
+                return _grid[i + j * CountRows];
             }
         }
 
@@ -214,17 +280,41 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public Tuple<int, int> GetIndexes(int num)
+        public void GetIndexes(int num, out int i, out int j)
         {
+            i = -1;
+            j = -1;
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            int i = num % (Width / Koeff);
-            int j = (num - i) / (Width / Koeff);
+            i = (int)Math.Floor((double)num % CountRows);
+            j = (num - i) / CountRows;
+        }
 
-            return Tuple.Create(i, j);
+        /// <summary>
+        /// Получить номера строки и столбца элемента в сетке по координатам ячейки
+        /// </summary>
+        /// <param name="x">Координата ячейки по оси x</param>
+        /// <param name="y">Координата ячейки по оси y</param>
+        /// <param name="i"></param>
+        /// <param name="j"></param>
+        public void GetIndexes(int x, int y, out int i, out int j)
+        {
+            i = -1;
+            j = -1;
+            if (x < 0 || x >= Right)
+            {
+                throw new OverflowException("Координата x находилась вне границ сетки.");
+            }
+            if (y < 0 || j >= Bottom)
+            {
+                throw new OverflowException("Координата y находилась вне границ сетки.");
+            }
+
+            i = (x - X) / Koeff;
+            j = (y - Y) / Koeff;
         }
 
         /// <summary>
@@ -235,16 +325,16 @@ namespace TracProg.Calculation
         /// <returns></returns>
         public int GetNum(int i, int j)
         {
-            if (i < 0 || i >= Width / Koeff)
+            if (i < 0 || i >= CountRows)
             {
                 throw new OverflowException("Индекс i находился вне границ сетки.");
             }
-            if (j < 0 || j >= Height / Koeff)
+            if (j < 0 || j >= CountColumn)
             {
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            return i + j * (Width / Koeff);
+            return i + j * CountRows;
         }
 
         /// <summary>
@@ -304,14 +394,19 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public bool IsMetal(int num)
+        public bool IsOwnMetal(int num)
         {
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], 0);
+            return GetBit(_grid[num], (int)GridValue.OWN_METAL);
+        }
+
+        public bool IsOwnMetal(int i, int j)
+        {
+            return IsOwnMetal(GetNum(i, j));
         }
 
         /// <summary>
@@ -326,7 +421,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], 1);
+            return GetBit(_grid[num], (int)GridValue.PIN);
         }
 
         /// <summary>
@@ -352,7 +447,44 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], 2);
+            return GetBit(_grid[num], (int)GridValue.PROHIBITION_ZONE);
+        }
+
+        public bool IsProhibitionZone(int i, int j)
+        {
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+
+            return IsProhibitionZone(GetNum(i, j));
+        }
+
+        public bool IsForeignMetal(int num)
+        {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
+            return GetBit(_grid[num], (int)GridValue.FOREIGN_METAL);
+        }
+
+        public bool IsForeignMetal(int i, int j)
+        {
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+            return IsForeignMetal(GetNum(i, j));
         }
 
         /// <summary>
@@ -363,8 +495,30 @@ namespace TracProg.Calculation
         /// <returns>Возвращает координаты ячейки</returns>
         public Point GetCoordCell(int i, int j)
         {
-            return new Point(X + (Width * i), Y - (Height * j));
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+
+            return new Point(X + (Koeff * i), Y + (Koeff * j));
         }
+
+        public Point GetCoordCell(int num)
+        {
+            if (num < 0 || num >= _grid.Length)
+            {
+                throw new OverflowException("Номер ячейки находился вне границ.");
+            }
+
+            int i, j;
+            GetIndexes(num, out i, out j);
+            return GetCoordCell(i, j);
+        }
+
 
         public override string ToString()
         {
@@ -374,6 +528,11 @@ namespace TracProg.Calculation
         #endregion
 
         #region Private methods
+
+        private void Grid_IsChanged(int numElement)
+        {
+            throw new NotImplementedException();
+        }
 
         private void GenerateCoord(int x, int y, int width, int height, int koeff)
         {
@@ -400,20 +559,22 @@ namespace TracProg.Calculation
             for (int i = 0; i < ys.Length; ++i)
             {
                 ys[i] = y;
-                y -= koeff;
+                y += koeff;
             }
 
             int index = 0;
-            for (int j = 0; j < ys.Length; ++j)
+            for (int i = 0; i < xs.Length; ++i)
             {
-                for (int i = 0; i < xs.Length; ++i)
+                for (int j = 0; j < ys.Length; ++j)
                 {
                     _nodes[index] = new Point(xs[i], ys[j]);
                     index++;
                 }
             }
 
-                _grid = new byte[(width / Koeff) * (height / Koeff)];
+            CountColumn = (height / Koeff);
+            CountRows = (width / Koeff);
+            _grid = new byte[(width / Koeff) * (height / Koeff)];
         }
 
         /// <summary>
@@ -440,7 +601,7 @@ namespace TracProg.Calculation
                 int tmpY = Y;
                 while (tmpY != y)
                 {
-                    tmpY -= Koeff;
+                    tmpY += Koeff;
                     j++;
                 }
 
@@ -544,7 +705,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет для узлов сетки
         /// </summary>
-        public Color _Color { get { return Color.Black; } }
+        public Color _Color { get; set; }
 
         /// <summary>
         /// Количество ячеек в сетке
@@ -563,6 +724,16 @@ namespace TracProg.Calculation
                 }
             }
         }
+
+        /// <summary>
+        /// Количество столбцов в сетке
+        /// </summary>
+        public int CountColumn { get; private set; }
+
+        /// <summary>
+        /// Количество строк в сетке
+        /// </summary>
+        public int CountRows { get; private set; }
 
         #endregion
     }

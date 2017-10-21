@@ -17,10 +17,7 @@ namespace TracProg.Calculation
             /// Сетка трассировки
             /// </summary>
             public Grid Grid { get; set; }
-            /// <summary>
-            /// Компоненты печатной платы
-            /// </summary>
-            
+
             /// <summary>
             /// Сети печатной платы
             /// </summary>
@@ -44,8 +41,9 @@ namespace TracProg.Calculation
                 {
                     string line;
                     int x, y, w, h;
-                    List<IElement> list = new List<IElement>();
+                    Dictionary<string, IElement> gridElements = new Dictionary<string,IElement>();
                     int index;
+                    List<Net> nets = new List<Net>();
 
                     using (StreamReader sr = new StreamReader(pathConfigFile, System.Text.Encoding.UTF8))
                     {
@@ -60,6 +58,10 @@ namespace TracProg.Calculation
                                         try
                                         {
                                             koeff = int.Parse(lineSplit[1]);
+                                            if (koeff < 4)
+                                            {
+                                                throw new Exception("Коэфициент отображения должен быть не меньше 4!");
+                                            }
                                             break;
                                         }
                                         catch (Exception ex)
@@ -96,12 +98,13 @@ namespace TracProg.Calculation
                                             while ((line = sr.ReadLine()) != null && index < countComponents)
                                             {
                                                 lineSplit = line.Split();
+                                                string name = lineSplit[0];
                                                 x = int.Parse(lineSplit[1]);
                                                 y = int.Parse(lineSplit[2]);
                                                 w = int.Parse(lineSplit[3]);
                                                 h = int.Parse(lineSplit[4]);
 
-                                                list.Add(new Pin(x * koeff, y * koeff, w * koeff, h * koeff));
+                                                gridElements.Add(name, new Pin(x * koeff, y * koeff, w * koeff, h * koeff));
 
                                                 index++;
                                             }
@@ -122,31 +125,65 @@ namespace TracProg.Calculation
                                             while ((line = sr.ReadLine()) != null && index < countProhZones)
                                             {
                                                 lineSplit = line.Split();
+                                                string name = lineSplit[0];
                                                 x = int.Parse(lineSplit[1]);
                                                 y = int.Parse(lineSplit[2]);
                                                 w = int.Parse(lineSplit[3]);
                                                 h = int.Parse(lineSplit[4]);
 
-                                                list.Add(new ProhibitionZone(x * koeff, y * koeff, w * koeff, h * koeff));
+                                                gridElements.Add(name, new ProhibitionZone(x * koeff, y * koeff, w * koeff, h * koeff));
 
                                                 index++;
                                             }
                                             break;
                                         }
-                                        catch (Exception)
+                                        catch (Exception ex)
                                         {
 
-                                            throw;
+                                            throw ex;
+                                        }
+                                    }
+                                case "NETS":
+                                    {
+                                        try
+                                        {
+                                            int countNets = int.Parse(lineSplit[1]);
+                                            _config.Nets = new Net[countNets];
+
+                                            index = 0;
+                                            while ((line = sr.ReadLine()) != null && index < countNets)
+                                            {
+                                                lineSplit = line.Split();
+                                                int[] net = new int[lineSplit.Length - 1];
+                                                for (int i = 0; i < net.Length; ++i)
+                                                { 
+                                                    IElement el = gridElements[lineSplit[i + 1]];
+                                                    int j, k;
+                                                    _config.Grid.GetIndexes(el.X, el.Y, out j, out k);
+                                                    net[i] = _config.Grid.GetNum(j, k);
+                                                }
+                                                nets.Add(new Net(net));
+
+                                                index++;
+                                            }
+                                            break;
+                                        }
+                                        catch (Exception ex)
+                                        {
+
+                                            throw ex;
                                         }
                                     }
                             }
                         }
                     }
 
-                    for (int i = 0; i < list.Count; ++i)
+                    for (int i = 0; i < gridElements.Count; ++i)
                     {
-                        _config.Grid.Add(list[i]);
+                        _config.Grid.Add(gridElements.ElementAt(i).Value);
                     }
+
+                    _config.Nets = nets.ToArray();
                 }
                 else
                 {
@@ -175,17 +212,10 @@ namespace TracProg.Calculation
         public Grid Grid { get { return _config.Grid; } }
 
         /// <summary>
-        /// Доступ к отдельным сетям
+        /// Возвращает трассы
         /// </summary>
-        /// <param name="index">Индекс (начиная 0)</param>
-        /// <returns>Экземпляр Net</returns>
-        /// <exception cref="OverflowException">Индекс находился вне границ массива.</exception>
-        public Net GetNet(int index)
-        {
-            if (_config.Nets == null || index < 0 || index >= _config.Nets.Length)
-                throw new OverflowException("Индекс находился вне границ массива.");
-            return _config.Nets[index];
-        }
+        public Net[] Net { get { return _config.Nets; } }
+
 
         public string LastErr { get; private set; }
     }

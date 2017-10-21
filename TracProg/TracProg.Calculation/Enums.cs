@@ -30,8 +30,25 @@ namespace TracProg.Calculation
 
     public enum GridValue
     { 
-        METAL = 0,
-        PIN = 1,
-        PROHIBITION_ZONE = 2
+        /// <summary>
+        /// Свободная ячейка
+        /// </summary>
+        FREE = 0,
+        /// <summary>
+        /// Свой метал
+        /// </summary>
+        OWN_METAL = 1,
+        /// <summary>
+        /// Чужой метал
+        /// </summary>
+        FOREIGN_METAL = 2,
+        /// <summary>
+        /// Pin элемент
+        /// </summary>
+        PIN = 3,
+        /// <summary>
+        /// Элемент зоны запрета
+        /// </summary>
+        PROHIBITION_ZONE = 4
     }
 }
