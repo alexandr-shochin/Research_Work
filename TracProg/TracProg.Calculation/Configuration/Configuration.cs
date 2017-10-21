@@ -58,6 +58,10 @@ namespace TracProg.Calculation
                                         try
                                         {
                                             koeff = int.Parse(lineSplit[1]);
+                                            if (koeff < 4)
+                                            {
+                                                throw new Exception("Коэфициент отображения должен быть не меньше 4!");
+                                            }
                                             break;
                                         }
                                         catch (Exception ex)

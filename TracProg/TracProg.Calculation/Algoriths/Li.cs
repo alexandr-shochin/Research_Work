@@ -101,6 +101,8 @@ namespace TracProg.Calculation.Algoriths
         private Net[] _net;
         private Set _set;
 
+        public event Action CalculateIsComplete;
+
         public Li(Grid grid, Net[] net)
         {
             _grid = grid;
@@ -156,6 +158,10 @@ namespace TracProg.Calculation.Algoriths
                 _grid.MetallizeTrack(path);
                 path.Clear();
             }
+
+            if (CalculateIsComplete != null)
+                CalculateIsComplete.Invoke();
+
             return true;
         }
 

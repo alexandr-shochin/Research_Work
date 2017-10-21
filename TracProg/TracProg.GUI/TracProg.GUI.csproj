@@ -34,6 +34,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>icons8-_-48.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -100,6 +103,27 @@
       <Project>{1efaee88-c75f-4736-9469-dba368e2a0f0}</Project>
       <Name>TracProg.Calculation</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons8-Калькулятор-64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons8-Метла-64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons8-Сахарные Кубики-48.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="icons8-_-48.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons8-Последовательные задачи-48.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons8-Добавить файл-64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons8-Редактирование файла-64.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

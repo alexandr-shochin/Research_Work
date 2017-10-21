@@ -35,6 +35,17 @@ namespace TracProg.GUI
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            Dispatcher.Invoke(delegate
+            {
+                _loadConfiguration.IsEnabled = false;
+
+                _getSolutionButton.IsEnabled = false;
+                _clearSolutionButton.IsEnabled = false;
+
+                _getSolutionItem.IsEnabled = false;
+                _clearSolutionItem.IsEnabled = false;
+            });
+
             config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
             config.Grid.Metalize += Grid_Metalize;
 
@@ -43,6 +54,7 @@ namespace TracProg.GUI
             g = Graphics.FromImage(bmp);
 
             Li li = new Li(config.Grid, config.Net);
+            li.CalculateIsComplete += li_CalculateIsComplete;
 
             Thread thread = new Thread(delegate()
             {
@@ -50,6 +62,20 @@ namespace TracProg.GUI
             });
             thread.IsBackground = true;
             thread.Start();
+        }
+
+        void li_CalculateIsComplete()
+        {
+            Dispatcher.Invoke(delegate
+            {
+                _loadConfiguration.IsEnabled = true;
+
+                _getSolutionButton.IsEnabled = true;
+                _clearSolutionButton.IsEnabled = true;
+
+                _getSolutionItem.IsEnabled = true;
+                _clearSolutionItem.IsEnabled = true;
+            });
         }
 
         void Grid_Metalize()
