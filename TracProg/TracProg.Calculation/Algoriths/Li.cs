@@ -188,37 +188,25 @@ namespace TracProg.Calculation.Algoriths
 
                     if (_set[index].NumLevel == numLevel - 1)
                     {
-                        if (i - 1 >= 0) // left
+                        if (i - 1 >= 0 && CheckCell(i - 1, j, numLevel, finish, ref countAdded)) // left
                         {
-                            if (CheckCell(i - 1, j, numLevel, finish, ref countAdded))
-                            {
-                                isFoundFinish = true;
-                                break;
-                            }
+                            isFoundFinish = true;
+                            break;
                         }
-                        if (i + 1 < _grid.CountRows) // right
+                        if (i + 1 < _grid.CountRows && CheckCell(i + 1, j, numLevel, finish, ref countAdded)) // right
                         {
-                            if(CheckCell(i + 1, j, numLevel, finish, ref countAdded))
-                            {
-                                isFoundFinish = true;
-                                break;
-                            }
+                            isFoundFinish = true;
+                            break;
                         }
-                        if (j - 1 >= 0) // up
+                        if (j - 1 >= 0 && CheckCell(i, j - 1, numLevel, finish, ref countAdded)) // up
                         {
-                            if(CheckCell(i, j - 1, numLevel, finish, ref countAdded))
-                            {
-                                isFoundFinish = true;
-                                break;
-                            }
+                            isFoundFinish = true;
+                            break;
                         }
-                        if (j + 1 < _grid.CountColumn) // down
+                        if (j + 1 < _grid.CountColumn && CheckCell(i, j + 1, numLevel, finish, ref countAdded)) // down
                         {
-                            if(CheckCell(i, j + 1, numLevel, finish, ref countAdded))
-                            {
-                                isFoundFinish = true;
-                                break;
-                            }
+                            isFoundFinish = true;
+                            break;
                         }
                     }
                 }
@@ -240,30 +228,21 @@ namespace TracProg.Calculation.Algoriths
             {
                 if (_grid.IsPin(i, j)) // если это пин
                 {
-                    if (_grid.GetNum(i, j) == finish) // финишный Pin
-                    {
-                        if (_set.Add(_grid.GetNum(i, j), numLevel))
-                        {
-                            countAdded++;
-                            return true;
-                        }
-                    }
-                    else if (_grid.IsOwnMetal(i, j)) // если и Pin и свой метал
-                    {
-                        if (_set.Add(_grid.GetNum(i, j), numLevel))
-                        {
-                            countAdded++;
-                            return true;
-                        }
-                    }
-                }
-                else if (_grid.IsOwnMetal(i, j)) // если свой метал
-                {
-                    if (_set.Add(_grid.GetNum(i, j), numLevel))
+                    if (_grid.GetNum(i, j) == finish && _set.Add(_grid.GetNum(i, j), numLevel)) // финишный Pin
                     {
                         countAdded++;
                         return true;
                     }
+                    else if (_grid.IsOwnMetal(i, j) && _set.Add(_grid.GetNum(i, j), numLevel)) // если и Pin и свой метал
+                    {
+                        countAdded++;
+                        return true;
+                    }
+                }
+                else if (_grid.IsOwnMetal(i, j) && _set.Add(_grid.GetNum(i, j), numLevel)) // если свой метал
+                {
+                    countAdded++;
+                    return true;
                 }
                 else // если не Pin
                 {
@@ -280,8 +259,6 @@ namespace TracProg.Calculation.Algoriths
         /// <summary>
         /// Метод восстановления пути
         /// </summary>
-        /// <param name="start">Стартовая ячейка</param>
-        /// <param name="finish">Финишная ячейка</param>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns></returns>
         private bool RestorationPath(ref List<int> path)
@@ -300,8 +277,6 @@ namespace TracProg.Calculation.Algoriths
             int i = 0;
             int j = 0;
 
-            int numCell;
-
             _grid.SetValue(currentNumCell, GridValue.OWN_METAL); // металлизируем
             path.Add(currentNumCell); // добавляем в путь
             while (currentLevel > 0)
@@ -309,54 +284,37 @@ namespace TracProg.Calculation.Algoriths
                 currentLevel--;
 
                 _grid.GetIndexes(currentNumCell, out i, out j);
-                if (i - 1 >= 0) // left
+                if (i - 1 >= 0 && SetMetalCell(_grid.GetNum(i - 1, j), currentLevel, ref currentNumCell, ref path)) // left
                 {
-                    numCell = _grid.GetNum(i - 1, j);
-
-                    if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
-                    {
-                        _grid.SetValue(numCell, GridValue.OWN_METAL); // металлизируем
-                        path.Add(numCell); // добавляем в путь
-                        currentNumCell = numCell;
-                        continue;
-                    }
+                    continue;
                 }
-                if (i + 1 < _grid.CountRows) // right
+                if (i + 1 < _grid.CountRows && SetMetalCell(_grid.GetNum(i + 1, j), currentLevel, ref currentNumCell, ref path)) // right
                 {
-                    numCell = _grid.GetNum(i + 1, j);
-                    if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
-                    {
-                        _grid.SetValue(numCell, GridValue.OWN_METAL);
-                        path.Add(numCell);
-                        currentNumCell = numCell;
-                        continue;
-                    }
+                    continue;
                 }
-                if (j - 1 >= 0) // up
+                if (j - 1 >= 0 && SetMetalCell(_grid.GetNum(i, j - 1), currentLevel, ref currentNumCell, ref path)) // up
                 {
-                    numCell = _grid.GetNum(i, j - 1);
-                    if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
-                    {
-                        _grid.SetValue(numCell, GridValue.OWN_METAL);
-                        path.Add(numCell);
-                        currentNumCell = numCell;
-                        continue;
-                    }
+                    continue;
                 }
-                if (j + 1 < _grid.CountColumn) // down
+                if (j + 1 < _grid.CountColumn && SetMetalCell(_grid.GetNum(i, j + 1), currentLevel, ref currentNumCell, ref path)) // down
                 {
-                    numCell = _grid.GetNum(i, j + 1);
-                    if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
-                    {
-                        _grid.SetValue(numCell, GridValue.OWN_METAL);
-                        path.Add(numCell);
-                        currentNumCell = numCell;
-                        continue;
-                    }
+                    continue;
                 }
             }
 
             return true;
         }
+        private bool SetMetalCell(int numCell, int currentLevel, ref int currentNumCell, ref List<int> path)
+        {
+            if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
+            {
+                _grid.SetValue(numCell, GridValue.OWN_METAL);
+                path.Add(numCell);
+                currentNumCell = numCell;
+                return true;
+            }
+            return false;
+        }
+
     }
 }

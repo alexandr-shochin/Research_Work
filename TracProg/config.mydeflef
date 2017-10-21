@@ -1,8 +1,8 @@
 KOEFF 10
 
-GRID 0 0 10 10
+GRID 0 0 20 20
 
-COMPONENTS 8
+COMPONENTS 12
 a0 4 2 1 1
 a1 5 6 1 1
 a2 1 7 1 1
@@ -11,15 +11,27 @@ a4 1 9 1 1
 a5 8 1 1 1
 a6 4 9 1 1
 a7 5 0 1 1
+a8 14 14 1 1
+a9 17 15 1 1
+a10 5 17 1 1
+a11 7 15 1 1
 
-PROHIBITION_ZONE 0
+PROHIBITION_ZONE 8
+z0 2 4 1 1
+z1 3 4 1 1
+z2 4 4 1 1
+z3 5 4 1 1
+z4 6 4 1 1
+z5 8 4 1 1
+z6 9 4 1 1
+z7 2 5 1 1
 
-
-NETS 2
-n0 18 24 91
-n1 5 65 71 88 94
-
-
+NETS 5
+n0 a1 a3
+n1 a11 a0
+n2 a7 a6
+n4 a5 a10 a9 a2
+n5 a4 a8
 
 
 

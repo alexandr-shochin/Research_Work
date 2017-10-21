@@ -22,7 +22,7 @@ namespace TracProg.Calculation
         public Metal(Point location, int width, int height)
         {
             _rect = new Rectangle(location.x, location.y, width, height);
-            _Color = Color.FromArgb(70, 130, 180);
+            _Color = Color.FromArgb(211, 211, 211);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace TracProg.Calculation
         public Metal(int x, int y, int width, int height)
         {
             _rect = new Rectangle(x, y, width, height);
-            _Color = Color.FromArgb(70, 130, 180);
+            _Color = Color.FromArgb(211, 211, 211);
         }
 
         #endregion

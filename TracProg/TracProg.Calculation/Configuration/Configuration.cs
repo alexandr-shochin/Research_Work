@@ -41,7 +41,7 @@ namespace TracProg.Calculation
                 {
                     string line;
                     int x, y, w, h;
-                    List<IElement> list = new List<IElement>();
+                    Dictionary<string, IElement> gridElements = new Dictionary<string,IElement>();
                     int index;
                     List<Net> nets = new List<Net>();
 
@@ -94,12 +94,13 @@ namespace TracProg.Calculation
                                             while ((line = sr.ReadLine()) != null && index < countComponents)
                                             {
                                                 lineSplit = line.Split();
+                                                string name = lineSplit[0];
                                                 x = int.Parse(lineSplit[1]);
                                                 y = int.Parse(lineSplit[2]);
                                                 w = int.Parse(lineSplit[3]);
                                                 h = int.Parse(lineSplit[4]);
 
-                                                list.Add(new Pin(x * koeff, y * koeff, w * koeff, h * koeff));
+                                                gridElements.Add(name, new Pin(x * koeff, y * koeff, w * koeff, h * koeff));
 
                                                 index++;
                                             }
@@ -120,12 +121,13 @@ namespace TracProg.Calculation
                                             while ((line = sr.ReadLine()) != null && index < countProhZones)
                                             {
                                                 lineSplit = line.Split();
+                                                string name = lineSplit[0];
                                                 x = int.Parse(lineSplit[1]);
                                                 y = int.Parse(lineSplit[2]);
                                                 w = int.Parse(lineSplit[3]);
                                                 h = int.Parse(lineSplit[4]);
 
-                                                list.Add(new ProhibitionZone(x * koeff, y * koeff, w * koeff, h * koeff));
+                                                gridElements.Add(name, new ProhibitionZone(x * koeff, y * koeff, w * koeff, h * koeff));
 
                                                 index++;
                                             }
@@ -151,9 +153,12 @@ namespace TracProg.Calculation
                                                 int[] net = new int[lineSplit.Length - 1];
                                                 for (int i = 0; i < net.Length; ++i)
                                                 { 
-                                                    net[i] = int.Parse(lineSplit[i + 1]);
+                                                    IElement el = gridElements[lineSplit[i + 1]];
+                                                    int j, k;
+                                                    _config.Grid.GetIndexes(el.X, el.Y, out j, out k);
+                                                    net[i] = _config.Grid.GetNum(j, k);
                                                 }
-                                                    nets.Add(new Net(net));
+                                                nets.Add(new Net(net));
 
                                                 index++;
                                             }
@@ -169,9 +174,9 @@ namespace TracProg.Calculation
                         }
                     }
 
-                    for (int i = 0; i < list.Count; ++i)
+                    for (int i = 0; i < gridElements.Count; ++i)
                     {
-                        _config.Grid.Add(list[i]);
+                        _config.Grid.Add(gridElements.ElementAt(i).Value);
                     }
 
                     _config.Nets = nets.ToArray();
