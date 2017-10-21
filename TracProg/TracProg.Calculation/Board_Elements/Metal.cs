@@ -7,34 +7,17 @@ using System.Threading.Tasks;
 
 namespace TracProg.Calculation
 {
-    public class Metal : IElement
+    public class Metal : IElement // TODO передалать все поля и метод draw
     {
-        private Rectangle _rect;
+        private Rectangle _rectFrom;
+        private Rectangle _rectIn;
 
         #region Construcors
 
-        /// <summary>
-        /// Конструтор
-        /// </summary>
-        /// <param name="location">Объект Point, представляющий левый верхний угол прямоугольной области.</param>
-        /// <param name="w">Ширина прямоугольной области</param>
-        /// <param name="h">Высота прямоугольной области</param>
-        public Metal(Point location, int width, int height)
+        public Metal(Rectangle reactFrom, Rectangle reactIn)
         {
-            _rect = new Rectangle(location.x, location.y, width, height);
-            _Color = Color.FromArgb(211, 211, 211);
-        }
-
-        /// <summary>
-        /// Конструтор
-        /// </summary>
-        /// <param name="x">Координата по оси X левого верхнего угла прямоугольной области</param>
-        /// <param name="y">Координата по оси Y левого верхнего угла прямоугольной области</param>
-        /// <param name="w">Ширина прямоугольной области</param>
-        /// <param name="h">Высота прямоугольной области</param>
-        public Metal(int x, int y, int width, int height)
-        {
-            _rect = new Rectangle(x, y, width, height);
+            _rectFrom = reactFrom;
+            _rectIn = reactIn;
             _Color = Color.FromArgb(211, 211, 211);
         }
 
@@ -97,12 +80,14 @@ namespace TracProg.Calculation
         /// <returns>При наличии пересечения этот метод возвращает значение true, в противном случае возвращается значение false.</returns>
         public bool IntersectsWith(IElement metal)
         {
-            return this._rect.IntersectsWith(new Rectangle(metal.X, metal.Y, metal.Width, metal.Height));
+            return this._rectIn.IntersectsWith(new Rectangle(metal.X, metal.Y, metal.Width, metal.Height));
         }
 
         public void Draw(ref Graphics graphics)
         {
-            graphics.FillRectangle(new SolidBrush(_Color), X + 3, Y + 3, Width + 4, Height + 4);
+            Point p1 = new Point((_rectFrom.Right - (_rectFrom.Right - _rectFrom.X) / 2), _rectFrom.Bottom - (_rectFrom.Bottom - _rectFrom.Y) / 2);
+            Point p2 = new Point((_rectIn.Right - (_rectIn.Right - _rectIn.X) / 2), _rectIn.Bottom - (_rectIn.Bottom - _rectIn.Y) / 2);
+            graphics.DrawLine(new Pen(new SolidBrush(_Color)), p1.x, p1.y, p2.x, p2.y);
         }
 
         public override string ToString()
@@ -117,46 +102,46 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает координату по оси Y прямоугольной области, являющуюся суммой значений свойств Y и Height.
         /// </summary>
-        public int Bottom { get { return _rect.Y + _rect.Height; } }
+        public int Bottom { get { return _rectIn.Y + _rectIn.Height; } }
 
         /// <summary>
         /// Возвращает высоту прямоугольной области
         /// </summary>
-        public int Height { get { return _rect.Height; } }
+        public int Height { get { return _rectIn.Height; } }
 
         /// <summary>
         /// Данное свойство возвращает значение true, если значения всех свойств Width, Height, X и Y равны нулю. В противном случае возвращается значение false.
         /// </summary>
-        public bool IsEmpty { get { return _rect.IsEmpty; } }
+        public bool IsEmpty { get { return _rectIn.IsEmpty; } }
 
         /// <summary>
         /// Возвращает координату по оси X левого края прямоугольной области
         /// </summary>
-        public int Left { get { return _rect.X; } }
+        public int Left { get { return _rectIn.X; } }
 
         /// <summary>
         /// Возвращает координату по оси X прямоугольной области, являющуюся суммой значений свойств X и Width.
         /// </summary>
-        public int Right { get { return _rect.X + _rect.Width; } }
+        public int Right { get { return _rectIn.X + _rectIn.Width; } }
 
         /// <summary>
         /// Возвращает координату по оси Y верхнего края прямоугольной области
         /// </summary>
-        public int Top { get { return _rect.Y; } }
+        public int Top { get { return _rectIn.Y; } }
 
         /// <summary>
         /// Ширина прямоугольной области
         /// </summary>
-        public int Width { get { return _rect.Width; } }
+        public int Width { get { return _rectIn.Width; } }
 
         /// <summary>
         /// Возвращает координату по оси X левого верхнего угла прямоугольной области
         /// </summary>
-        public int X { get { return _rect.X; } }
+        public int X { get { return _rectIn.X; } }
         /// <summary>
         /// Возвращает координату по оси Y левого верхнего угла прямоугольной области
         /// </summary>
-        public int Y { get { return _rect.Y; } }
+        public int Y { get { return _rectIn.Y; } }
 
         /// <summary>
         /// Возвращает или задаёт цвет прямоугольной области

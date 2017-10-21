@@ -16,6 +16,7 @@ namespace TracProg.Calculation
         private byte[] _grid;
 
         public event Action Metalize;
+        private event Action<int> IsChanged;
 
         /// <summary>
         /// Конструтор
@@ -28,6 +29,7 @@ namespace TracProg.Calculation
         {
             GenerateCoord(location.x, location.y, width, height, koeff);
             _Color = Color.Black;
+            IsChanged += Grid_IsChanged;
         }
 
         /// <summary>
@@ -42,6 +44,7 @@ namespace TracProg.Calculation
         {
             GenerateCoord(x, y, width, height, koeff);
             _Color = Color.Black;
+            IsChanged += Grid_IsChanged;
         }
 
         #region Public methods
@@ -180,7 +183,7 @@ namespace TracProg.Calculation
                 UnsetValue(track[0], GridValue.OWN_METAL);
                 Random rand = new Random();
                 Color c = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
-                for (int i = 0; i < track.Count; ++i)
+                for (int i = 1; i < track.Count; ++i)
                 {
                     if (track[i] == -1)
                     {
@@ -189,39 +192,15 @@ namespace TracProg.Calculation
                     }
 
                     // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
-                    Point p = GetCoordCell(track[i]);
-                    Metal m = new Metal(p.x, p.y, 1, 1);
-                    m._Color = c;
-
-                    Add(m);
-
-                    //if (_from.y == _in.y)
-                    //{
-                    //    if (_from.x > _in.x) // справо-налево
-                    //    {
-                    //        Add(new Metal(_in.x, _in.y, _from.x - _in.x, 1));
-                    //    }
-                    //    else if (_from.x < _in.x) // слева-направо
-                    //    {
-                    //        Add(new Metal(_from.x, _from.y, _in.x - _from.x, 1));
-                    //    }
-                    //}
-                    //else if (_from.x == _in.x)
-                    //{
-                    //    if (_from.y > _in.y) // cнизу-вверх
-                    //    {
-                    //        Add(new Metal(_in.x, _in.y, 1, (_from.y - _in.y) + 1));
-                    //    }
-                    //    else if (_from.y < _in.y) // сверху-вниз 
-                    //    {
-                    //        Add(new Metal(_from.x, _from.y, 1, (_in.y - _from.y) + 1));
-                    //    }
-                    //}
+                    Point pFrom = GetCoordCell(track[i - 1]);
+                    Point pIn = GetCoordCell(track[i]);
+                    Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff), 
+                                  new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff)));
 
                     if (Metalize != null)
                     {
                         Metalize.Invoke();
-                        //Thread.Sleep(2000);
+                        Thread.Sleep(50);
                     }
 
                     // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
@@ -233,15 +212,18 @@ namespace TracProg.Calculation
                 for (int i = 1; i < track.Count; ++i)
                 {
                     Point p = GetCoordCell(track[i]);
-                    IElement el = _elements.Find(x => x.X == p.x && x.Y == p.y);
-                    if (el != null)
+                    try
                     {
-                        el._Color = Color.Red;
+                        _elements.Find(x => x.X == p.x && x.Y == p.y)._Color = Color.Red;
                     }
+                    catch (NullReferenceException) { }   
+                }
+
+                if (Metalize != null)
+                {
+                    Metalize.Invoke();
                 }
             }
-
-            
         }
 
         public int Compare(IElement x, IElement y)
@@ -546,6 +528,11 @@ namespace TracProg.Calculation
         #endregion
 
         #region Private methods
+
+        private void Grid_IsChanged(int numElement)
+        {
+            throw new NotImplementedException();
+        }
 
         private void GenerateCoord(int x, int y, int width, int height, int koeff)
         {

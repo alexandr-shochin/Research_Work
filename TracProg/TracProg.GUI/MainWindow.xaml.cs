@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -34,7 +35,6 @@ namespace TracProg.GUI
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-
             config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
             config.Grid.Metalize += Grid_Metalize;
 
@@ -43,23 +43,33 @@ namespace TracProg.GUI
             g = Graphics.FromImage(bmp);
 
             Li li = new Li(config.Grid, config.Net);
-            li.FindPath();
 
-            
-
-            System.Windows.Media.Imaging.BitmapSource b =
-                System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                       bmp.GetHbitmap(),
-                       IntPtr.Zero,
-                       Int32Rect.Empty,
-                       BitmapSizeOptions.FromEmptyOptions());
-            _image.Source = b;
+            Thread thread = new Thread(delegate()
+            {
+                li.FindPath();
+            });
+            thread.IsBackground = true;
+            thread.Start();
         }
 
         void Grid_Metalize()
         {
-            config.Grid.Draw(ref g);
-            bmp.Save("test.bmp");
+            try
+            {
+                Dispatcher.Invoke(delegate
+                    {
+                        config.Grid.Draw(ref g);
+                        System.Windows.Media.Imaging.BitmapSource b =
+                        System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                               bmp.GetHbitmap(),
+                               IntPtr.Zero,
+                               Int32Rect.Empty,
+                               BitmapSizeOptions.FromEmptyOptions());
+                        _image.Source = b;
+                        bmp.Save("test.bmp");
+                    });
+            }
+            catch (System.Runtime.InteropServices.ExternalException) { }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)

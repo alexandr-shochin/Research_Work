@@ -1,4 +1,4 @@
-KOEFF 10
+KOEFF 21
 
 GRID 0 0 20 20
 
@@ -26,13 +26,8 @@ z5 8 4 1 1
 z6 9 4 1 1
 z7 2 5 1 1
 
-NETS 5
-n0 a1 a3
-n1 a11 a0
-n2 a7 a6
-n4 a5 a10 a9 a2
-n5 a4 a8
-
+NETS 1
+n3 a5 a10 a11 a0 a1 a3 a7 a6 a9 a2 a4 a8
 
 
 

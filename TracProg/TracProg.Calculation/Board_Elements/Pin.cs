@@ -107,7 +107,7 @@ namespace TracProg.Calculation
         public void Draw(ref Graphics graphics)
         {
             graphics.FillRectangle(new SolidBrush(Color.FromArgb(211, 211, 211)), X + 1, Y + 1, Width - 1, Height - 1);
-            graphics.FillRectangle(new SolidBrush(_Color), X + 3, Y + 3, Width - 5.5f, Height - 5.5f);
+            graphics.FillRectangle(new SolidBrush(_Color), (X + 0.5f) + (((Width - 1) - ((Width - 1) / 2.0f))) / 2.0f, (Y + 0.5f) + (((Height - 1) - ((Height - 1) / 2.0f))) / 2.0f, (Width - 1) / 2.0f, (Height - 1) / 2.0f);
         }
 
         public override string ToString()
