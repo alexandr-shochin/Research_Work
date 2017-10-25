@@ -197,14 +197,12 @@ namespace TracProg.Calculation
                     Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff), 
                                   new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff)));
 
-                    if (Metalize != null)
-                    {
-                        Metalize.Invoke();
-                        Thread.Sleep(50);
-                    }
-
                     // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
                     UnsetValue(track[i], GridValue.OWN_METAL);
+                }
+                if (Metalize != null)
+                {
+                    Metalize.Invoke();
                 }
             }
             else // трасса не построена

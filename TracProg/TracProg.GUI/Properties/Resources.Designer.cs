@@ -73,6 +73,16 @@ namespace TracProg.GUI.Properties {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap icons8_Импортировать_64 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Импортировать_64", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap icons8_Калькулятор_64 {
             get {
                 object obj = ResourceManager.GetObject("icons8_Калькулятор_64", resourceCulture);
@@ -86,6 +96,16 @@ namespace TracProg.GUI.Properties {
         internal static System.Drawing.Bitmap icons8_Метла_64 {
             get {
                 object obj = ResourceManager.GetObject("icons8_Метла_64", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icons8_Новый_файл_64 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Новый_файл_64", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -116,6 +136,16 @@ namespace TracProg.GUI.Properties {
         internal static System.Drawing.Bitmap icons8_Сахарные_Кубики_48 {
             get {
                 object obj = ResourceManager.GetObject("icons8_Сахарные_Кубики_48", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icons8_Экспорт_40 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Экспорт_40", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

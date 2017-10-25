@@ -5,6 +5,11 @@
     <Grid Margin="0">
         <Menu Height="24" VerticalAlignment="Top">
             <MenuItem Header="Файл">
+                <MenuItem Name="_newConfiguration" Header="Новая конфигурацию" Click="_newConfiguration_Click">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/icons8-Новый файл-64.png" Width="24" Height="24" ></Image>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Name="_loadConfiguration" Header="Загрузить конфигурацию">
                     <MenuItem.Icon>
                         <Image Source="Resources/icons8-Добавить файл-64.png" Width="24" Height="24" ></Image>
@@ -13,6 +18,16 @@
                 <MenuItem Header="Изменить файл конфигурации">
                     <MenuItem.Icon>
                         <Image Source="Resources/icons8-Редактирование файла-64.png" Width="24" Height="24" ></Image>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Экспорт конфигурации">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/icons8-Экспорт-40.png" Width="24" Height="24" ></Image>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Импорт конфигурации">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/icons8-Импортировать-64.png" Width="24" Height="24" ></Image>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>

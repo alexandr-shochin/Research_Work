@@ -30,18 +30,26 @@ namespace TracProg.Calculation
         /// Конструктор
         /// </summary>
         /// <param name="pathConfigFile">Путь к файлу конфигурации с расширением *.mydeflef</param>
-        public Configuration(string pathConfigFile)
+        public Configuration()
+        {
+            _config = new ConfigGrid();
+        }
+
+        /// <summary>
+        /// Прочитать из файла
+        /// </summary>
+        /// <param name="pathConfigFile">Абсолютный путь до файла конфигурации</param>
+        public void ReadFromFile(string pathConfigFile)
         {
             int koeff = 0;
-            _config = new ConfigGrid();
-            
+
             try
             {
                 if (File.Exists(pathConfigFile))
                 {
                     string line;
                     int x, y, w, h;
-                    Dictionary<string, IElement> gridElements = new Dictionary<string,IElement>();
+                    Dictionary<string, IElement> gridElements = new Dictionary<string, IElement>();
                     int index;
                     List<Net> nets = new List<Net>();
 
@@ -156,7 +164,7 @@ namespace TracProg.Calculation
                                                 lineSplit = line.Split();
                                                 int[] net = new int[lineSplit.Length - 1];
                                                 for (int i = 0; i < net.Length; ++i)
-                                                { 
+                                                {
                                                     IElement el = gridElements[lineSplit[i + 1]];
                                                     int j, k;
                                                     _config.Grid.GetIndexes(el.X, el.Y, out j, out k);
@@ -196,6 +204,60 @@ namespace TracProg.Calculation
             }
         }
 
+        /// <summary>
+        /// Генерация случайной конфигурации
+        /// </summary>
+        /// <param name="n">Высота сетки</param>
+        /// <param name="m">Ширина сетки</param>
+        /// <param name="koeff">Коэфициент масштабирования</param>
+        public void GenerateRandomConfig(int x, int y, int n, int m, int countPins, int countProhibitionZone, int countNets, int koeff = 4)
+        {
+            _config.Grid = new Grid(x * koeff, y * koeff, n * koeff, m * koeff, koeff);
+
+            Dictionary<string, IElement> gridElements = new Dictionary<string, IElement>();
+
+            Random rand = new Random();
+
+            //Генерация Pins
+            for (int i = 0; i < countPins; )
+            {
+                try
+                {
+                    gridElements.Add(i.ToString() + "_pin", new Pin(rand.Next(x, n - 1) * koeff, rand.Next(y, m - 1) * koeff, koeff, koeff));
+                    i++;
+
+                    
+                }
+                catch (ArgumentException) { }
+            }
+
+            //Генерация ProhibitionZone           
+            for (int i = 0; i < countProhibitionZone; )
+            {
+                try
+                {
+                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(rand.Next(x, n - 1) * koeff, rand.Next(y, m - 1) * koeff, koeff, koeff));
+                    i++;
+                }
+                catch (ArgumentException) { }
+            }
+
+            foreach (var el in gridElements)
+            {
+                _config.Grid.Add(el.Value);
+            }
+            _config.Nets = new Net[1];
+            int[] net = new int[countPins];
+            for (int i = 0; i < countPins; ++i)
+            {
+                IElement el = gridElements.ElementAt(i).Value;
+                int j, k;
+                _config.Grid.GetIndexes(el.X, el.Y, out j, out k);
+                net[i] = _config.Grid.GetNum(j, k);
+            }
+            _config.Nets[0] = new Net(net);
+        }
+
         public ErrorCode Serialize(string path)
         {
             throw new NotImplementedException();
@@ -205,6 +267,8 @@ namespace TracProg.Calculation
         {
             throw new NotImplementedException();
         }
+
+        #region Properties
 
         /// <summary>
         /// Возвращает сетку трассировки
@@ -218,5 +282,7 @@ namespace TracProg.Calculation
 
 
         public string LastErr { get; private set; }
+
+        #endregion
     }
 }

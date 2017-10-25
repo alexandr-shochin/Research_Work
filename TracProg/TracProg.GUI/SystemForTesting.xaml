@@ -1,0 +1,10 @@
+﻿<Window x:Class="TracProg.GUI.SystemForTesting"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Тестовая система" Height="600" Width="800">
+    <Grid>
+        <ToolBar VerticalAlignment="Top" Height="31"/>
+        <DataGrid Margin="0,31,0,0"/>
+
+    </Grid>
+</Window>
