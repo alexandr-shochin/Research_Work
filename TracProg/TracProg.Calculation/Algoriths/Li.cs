@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,10 +33,12 @@ namespace TracProg.Calculation.Algoriths
             }
 
             private Dictionary<int, int> _set;
+            private List<int> _list;
 
             public Set()
             {
                 _set = new Dictionary<int, int>();
+                _list = new List<int>();
             }
 
             public bool Add(int item, int numLevel)
@@ -43,6 +46,7 @@ namespace TracProg.Calculation.Algoriths
                 if (!ContainsNumCell(item))
                 {
                     _set.Add(item, numLevel);
+                    _list.Add(item);
                     return true;
                 }
                 return false;
@@ -61,6 +65,7 @@ namespace TracProg.Calculation.Algoriths
             public void Clear()
             {
                 _set.Clear();
+                _list.Clear();
             }
 
             public ElementSet this[int index]
@@ -70,9 +75,7 @@ namespace TracProg.Calculation.Algoriths
                     if (_set == null || index < 0 || index >= _set.Count)
                         throw new OverflowException("Индекс находился вне границ массива.");
 
-                    KeyValuePair<int, int> key_value = _set.ElementAt(index);
-
-                    return new ElementSet() { NumCell = key_value.Key, NumLevel = key_value.Value };
+                    return new ElementSet() { NumCell = _list[index], NumLevel = _set[_list[index]] };
                 }
             }
 
@@ -121,6 +124,9 @@ namespace TracProg.Calculation.Algoriths
             List<int> path = new List<int>();
             for (int numNet = 0; numNet < _net.Length; ++numNet)
             {
+                Stopwatch sw = new Stopwatch();
+                sw.Reset();
+                sw.Start();
                 for (int numEl = 1; numEl < _net[numNet].Count; numEl++)
                 {
                     int start = _net[numNet][numEl];
@@ -155,6 +161,7 @@ namespace TracProg.Calculation.Algoriths
                         break;
                     }
                 }
+                sw.Stop();
                 _grid.MetallizeTrack(path);
                 path.Clear();
             }

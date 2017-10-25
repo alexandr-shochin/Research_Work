@@ -18,7 +18,7 @@ namespace TracProg.Calculation
         {
             _rectFrom = reactFrom;
             _rectIn = reactIn;
-            _Color = Color.FromArgb(211, 211, 211);
+            _Color = Color.FromArgb(183, 65, 14);
         }
 
         #endregion
@@ -87,7 +87,7 @@ namespace TracProg.Calculation
         {
             Point p1 = new Point((_rectFrom.Right - (_rectFrom.Right - _rectFrom.X) / 2), _rectFrom.Bottom - (_rectFrom.Bottom - _rectFrom.Y) / 2);
             Point p2 = new Point((_rectIn.Right - (_rectIn.Right - _rectIn.X) / 2), _rectIn.Bottom - (_rectIn.Bottom - _rectIn.Y) / 2);
-            graphics.DrawLine(new Pen(new SolidBrush(_Color)), p1.x, p1.y, p2.x, p2.y);
+            graphics.DrawLine(new Pen(new SolidBrush(_Color), 2.0f), p1.x, p1.y, p2.x, p2.y);
         }
 
         public override string ToString()
