@@ -32,20 +32,10 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Сервис">
-                <MenuItem Header="Волновой алгоритм Ли">
+                <MenuItem Name="_experimentSystem" Header="Система экспериментов">
                     <MenuItem.Icon>
-                        <Image Source="Resources/icons8-Последовательные задачи-48.png" Width="24" Height="24" ></Image>
+                        <Image Source="Resources/icons8-Микроскоп-64.png" Width="24" Height="24" ></Image>
                     </MenuItem.Icon>
-                    <MenuItem Header="Получить решение" Name="_getSolutionItem" Click="Button_Click">
-                        <MenuItem.Icon>
-                            <Image Source="Resources/icons8-Калькулятор-64.png" Width="24" Height="24" ></Image>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Очистить решение" Name="_clearSolutionItem" Click="Button_Click_1">
-                        <MenuItem.Icon>
-                            <Image Source="Resources/icons8-Метла-64.png" Width="24" Height="24" ></Image>
-                        </MenuItem.Icon>
-                    </MenuItem>
                 </MenuItem>
             </MenuItem>
         </Menu>

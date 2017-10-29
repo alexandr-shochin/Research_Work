@@ -31,6 +31,14 @@ namespace TracProg.GUI
         public MainWindow()
         {
             InitializeComponent();
+
+            _experimentSystem.Click += _experimentSystem_Click;
+        }
+
+        void _experimentSystem_Click(object sender, RoutedEventArgs e)
+        {
+            SystemForTesting _systemForTesting = new SystemForTesting();
+            _systemForTesting.Show();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -42,8 +50,6 @@ namespace TracProg.GUI
                 _getSolutionButton.IsEnabled = false;
                 _clearSolutionButton.IsEnabled = false;
 
-                _getSolutionItem.IsEnabled = false;
-                _clearSolutionItem.IsEnabled = false;
             });
 
             config = new Configuration();
@@ -72,8 +78,6 @@ namespace TracProg.GUI
                 _getSolutionButton.IsEnabled = true;
                 _clearSolutionButton.IsEnabled = true;
 
-                _getSolutionItem.IsEnabled = true;
-                _clearSolutionItem.IsEnabled = true;
             });
         }
 
@@ -113,14 +117,14 @@ namespace TracProg.GUI
             int n = 1000;
             int m = 1000;
 
-            int countPins = 1000;
-            int countProhibitionZone = 10000;
-            int countNets = 1000;
+            int countPins = 5;
+            int countProhibitionZone = 100000;
+            int countNodeInNet = 5;
 
             int koeff = 10;
 
             config = new Configuration();
-            config.GenerateRandomConfig(x, y, n, m, countPins, countProhibitionZone, countNets, koeff);
+            config.GenerateRandomConfig(x, y, n, m, countPins, countProhibitionZone, countNodeInNet, koeff);
             config.Grid.Metalize += Grid_Metalize;
 
             bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
