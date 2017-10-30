@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 using System.Windows.Forms;
+using System.IO;
 
 namespace TracProg.GUI
 {
@@ -49,15 +50,69 @@ namespace TracProg.GUI
             if (!int.TryParse(_gridWidth.Text, out width))
             {
                 System.Windows.MessageBox.Show("Значение ширины сетки имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
 
             int height;
             if (!int.TryParse(_gridHeight.Text, out height))
             {
                 System.Windows.MessageBox.Show("Значение высоты сетки имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
 
+            int countPins;
+            if (!int.TryParse(_gridСountNets.Text, out countPins))
+            {
+                System.Windows.MessageBox.Show("Значение количества элементов имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
+            int countProhibitionZones;
+            if (!int.TryParse(_gridСountProhibitionZone.Text, out countProhibitionZones))
+            {
+                System.Windows.MessageBox.Show("Значение количества зон запрета имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            int countPinsInNet;
+            if (!int.TryParse(_gridСountNodesInNet.Text, out countPinsInNet))
+            {
+                System.Windows.MessageBox.Show("Значение количества элементов в сети имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (!Directory.Exists(_outFilesPathTextBox.Text))
+            {
+                System.Windows.MessageBox.Show("Указанной папки для сохранения выходных элементов не существует.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            switch (this._typeOfAlgorithm.SelectedIndex)
+            {
+                case 0:
+                    {
+                        typeOfAlgorithm = TypeOfAlgorithm.li;
+                        break;
+                    }
+            }
+
+            int countRuns;
+            if (!int.TryParse(_countRuns.Text, out countRuns))
+            {
+                System.Windows.MessageBox.Show("Значение количества запусков имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            M = width;
+            N = height;
+            CountPins = countPins;
+            CountProhibitionZones = countProhibitionZones;
+            CountPinsInNet = countPinsInNet;
+            FileOutPath = _outFilesPathTextBox.Text;
+            CountRuns = countRuns;
+
+            IsConfigurationCompleted = true;
+            this.Visibility = Visibility.Hidden;
         }
 
         private void _cancelButton_Click(object sender, RoutedEventArgs e)
@@ -99,11 +154,16 @@ namespace TracProg.GUI
         /// <summary>
         /// Тип алгоритма
         /// </summary>
-        public TypeOfAlgorithm TypeOfAlgorithm { get; private set; }
+        public TypeOfAlgorithm typeOfAlgorithm { get; private set; }
 
         /// <summary>
         /// Количество запусков
         /// </summary>
         public int CountRuns { get; private set; }
+
+        /// <summary>
+        /// Возвращает значение, которое показывает, была ли задана конфигурация
+        /// </summary>
+        public bool IsConfigurationCompleted { get; private set; }
     }
 }

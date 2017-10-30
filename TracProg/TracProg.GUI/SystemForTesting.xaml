@@ -11,7 +11,27 @@
             <RowDefinition Height="539*"/>
             <RowDefinition Height="31*"/>
         </Grid.RowDefinitions>
-        <ToolBar VerticalAlignment="Top" Height="31" Grid.ColumnSpan="2">
+        <Menu Height="24
+              " VerticalAlignment="Top" Grid.ColumnSpan="2">
+            <MenuItem Header="Файл">
+                <MenuItem Name="_newConfiguration" Header="Новая конфигурация">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/icons8-Новый файл-64.png" Width="24" Height="24" ></Image>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Экспорт конфигурации">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/icons8-Экспорт-40.png" Width="24" Height="24" ></Image>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Импорт конфигурации">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/icons8-Импортировать-64.png" Width="24" Height="24" ></Image>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+        </Menu>
+        <ToolBar VerticalAlignment="Top" Height="36" Grid.ColumnSpan="2" Margin="0,19,0,0">
             <Button Name="_testStartButton" ToolTip="Начать эксперимент" Margin="0,-2,0,-1" VerticalAlignment="Stretch">
                 <Image Source="Resources/icons8-Панель запуска-64.png" Width="24" Height="24" />
             </Button>
@@ -22,7 +42,7 @@
                 <Image Source="Resources/icons8-Настройки-64.png" Width="24" Height="24" />
             </Button>
         </ToolBar>
-        <DataGrid Name="_dataGrid" Margin="0,31,0,0" Grid.ColumnSpan="2"/>
+        <DataGrid Name="_dataGrid" Margin="0,55,0,0" Grid.ColumnSpan="2"/>
         <Separator Margin="0" Grid.Row="1" Height="1" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
         <TextBlock Name="_statusBar" HorizontalAlignment="Left" Margin="0,1,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Height="30" Width="586"/>
         <ProgressBar Name="_progressBar" Height="18" Margin="0,6,1,0" Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200" Grid.Column="1"/>
