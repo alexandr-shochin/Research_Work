@@ -311,8 +311,8 @@ namespace TracProg.Calculation
                 throw new OverflowException("Координата y находилась вне границ сетки.");
             }
 
-            i = (x - X) / Koeff;
-            j = (y - Y) / Koeff;
+            i = ((x - X) / Koeff) * 2;
+            j = ((y - Y) / Koeff) * 2;
         }
 
         /// <summary>
@@ -502,7 +502,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            return new Point(X + (Koeff * i), Y + (Koeff * j));
+            return new Point(X + (Koeff * (i / 2)), Y + (Koeff * (j / 2)));
         }
 
         public Point GetCoordCell(int num)
@@ -570,9 +570,9 @@ namespace TracProg.Calculation
                 }
             }
 
-            CountColumn = (height / Koeff);
-            CountRows = (width / Koeff);
-            _grid = new byte[(width / Koeff) * (height / Koeff)];
+            CountColumn = (height / Koeff) * 2;
+            CountRows = (width / Koeff) * 2;
+            _grid = new byte[CountColumn * CountRows];
         }
 
         /// <summary>
@@ -592,7 +592,7 @@ namespace TracProg.Calculation
                 while (tmpX != x)
                 {
                     tmpX += Koeff;
-                    i++;
+                    i+=2;
                 }
 
                 int j = 0;
@@ -600,7 +600,7 @@ namespace TracProg.Calculation
                 while (tmpY != y)
                 {
                     tmpY += Koeff;
-                    j++;
+                    j+=2;
                 }
 
                 indexes = Tuple.Create(i, j);

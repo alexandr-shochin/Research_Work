@@ -205,22 +205,22 @@ namespace TracProg.Calculation.Algoriths
 
                     if (_set[index].NumLevel == numLevel - 1)
                     {
-                        if (i - 1 >= 0 && CheckCell(i - 1, j, numLevel, finish, ref countAdded)) // left
+                        if (i - 2 >= 0 && CheckCell(i - 2, j, numLevel, finish, ref countAdded)) // left
                         {
                             isFoundFinish = true;
                             break;
                         }
-                        if (i + 1 < _grid.CountRows && CheckCell(i + 1, j, numLevel, finish, ref countAdded)) // right
+                        if (i + 2 < _grid.CountRows && CheckCell(i + 2, j, numLevel, finish, ref countAdded)) // right
                         {
                             isFoundFinish = true;
                             break;
                         }
-                        if (j - 1 >= 0 && CheckCell(i, j - 1, numLevel, finish, ref countAdded)) // up
+                        if (j - 2 >= 0 && CheckCell(i, j - 2, numLevel, finish, ref countAdded)) // up
                         {
                             isFoundFinish = true;
                             break;
                         }
-                        if (j + 1 < _grid.CountColumn && CheckCell(i, j + 1, numLevel, finish, ref countAdded)) // down
+                        if (j + 2 < _grid.CountColumn && CheckCell(i, j + 2, numLevel, finish, ref countAdded)) // down
                         {
                             isFoundFinish = true;
                             break;
@@ -301,19 +301,19 @@ namespace TracProg.Calculation.Algoriths
                 currentLevel--;
 
                 _grid.GetIndexes(currentNumCell, out i, out j);
-                if (i - 1 >= 0 && SetMetalCell(_grid.GetNum(i - 1, j), currentLevel, ref currentNumCell, ref path)) // left
+                if (i - 2 >= 0 && SetMetalCell(_grid.GetNum(i - 2, j), currentLevel, ref currentNumCell, ref path)) // left
                 {
                     continue;
                 }
-                if (i + 1 < _grid.CountRows && SetMetalCell(_grid.GetNum(i + 1, j), currentLevel, ref currentNumCell, ref path)) // right
+                if (i + 2 < _grid.CountRows && SetMetalCell(_grid.GetNum(i + 2, j), currentLevel, ref currentNumCell, ref path)) // right
                 {
                     continue;
                 }
-                if (j - 1 >= 0 && SetMetalCell(_grid.GetNum(i, j - 1), currentLevel, ref currentNumCell, ref path)) // up
+                if (j - 2 >= 0 && SetMetalCell(_grid.GetNum(i, j - 2), currentLevel, ref currentNumCell, ref path)) // up
                 {
                     continue;
                 }
-                if (j + 1 < _grid.CountColumn && SetMetalCell(_grid.GetNum(i, j + 1), currentLevel, ref currentNumCell, ref path)) // down
+                if (j + 2 < _grid.CountColumn && SetMetalCell(_grid.GetNum(i, j + 2), currentLevel, ref currentNumCell, ref path)) // down
                 {
                     continue;
                 }
