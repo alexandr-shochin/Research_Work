@@ -19,12 +19,12 @@
                         <Image Source="Resources/icons8-Новый файл-64.png" Width="24" Height="24" ></Image>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Экспорт конфигурации">
+                <MenuItem Name="_exportButton" Header="Экспорт конфигурации">
                     <MenuItem.Icon>
                         <Image Source="Resources/icons8-Экспорт-40.png" Width="24" Height="24" ></Image>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Импорт конфигурации">
+                <MenuItem Name="_importButton" Header="Импорт конфигурации">
                     <MenuItem.Icon>
                         <Image Source="Resources/icons8-Импортировать-64.png" Width="24" Height="24" ></Image>
                     </MenuItem.Icon>

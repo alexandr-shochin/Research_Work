@@ -59,6 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Algoriths\IAlgorithm.cs" />
     <Compile Include="Algoriths\Li.cs" />
     <Compile Include="Board_Elements\Component.cs" />
     <Compile Include="Board_Elements\Grid.cs" />

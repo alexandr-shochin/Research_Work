@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -65,6 +66,10 @@ namespace TracProg.GUI
 
         private List<RowTest> _lists;
 
+        private string _filePathImport;
+
+        private bool _isSingleMode;
+
         public SystemForTesting()
         {
             InitializeComponent();
@@ -79,12 +84,55 @@ namespace TracProg.GUI
             _dataGrid.MouseDoubleClick += _dataGrid_MouseDoubleClick;
             _dataGrid.ItemsSource = _lists;
 
+            _exportButton.Click += _exportButton_Click;
+            _importButton.Click += _importButton_Click;
+
             _settingsButton.Click += _settingsButton_Click;
             _testStartButton.Click += _testStartButton_Click;
             _testStopButton.Click += _testStopButton_Click;
+
+            config = new Configuration(); 
         }
 
-        void _testStopButton_Click(object sender, RoutedEventArgs e)
+        void _importButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Файлы конфигурации (*.mydeflef)|*.mydeflef";
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                _filePathImport = openFileDialog.FileName;
+                _isSingleMode = true;
+            }
+        }
+
+        private void LockInterface()
+        {
+            Dispatcher.Invoke(delegate()
+            {
+                _statusBar.Text = string.Empty;
+                _testStartButton.IsEnabled = false;
+                _testStopButton.IsEnabled = true;
+                _settingsButton.IsEnabled = false;
+            });
+        }
+
+        private void UnlockInterface()
+        {
+            Dispatcher.Invoke(delegate()
+            {
+                _progressBar.Visibility = System.Windows.Visibility.Collapsed;
+
+                _testStartButton.IsEnabled = true;
+                _testStopButton.IsEnabled = false;
+                _settingsButton.IsEnabled = true;
+            });
+        }
+
+        private void _exportButton_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void _testStopButton_Click(object sender, RoutedEventArgs e)
         {
             Dispatcher.Invoke(delegate() { _statusBar.Text = string.Empty; });
             Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Collapsed; });
@@ -97,9 +145,7 @@ namespace TracProg.GUI
                 catch (Exception ex) { }
             }
 
-            _testStartButton.IsEnabled = true;
-            _testStopButton.IsEnabled = false;
-            _settingsButton.IsEnabled = true;
+            UnlockInterface();
         }
 
         void _dataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -117,75 +163,75 @@ namespace TracProg.GUI
         }
 
         private void _testStartButton_Click(object sender, RoutedEventArgs e)
-        {   
-            _thread = new Thread(delegate ()
+        {
+            Graphics g;
+            Li li;
+
+            if (!_isSingleMode)
             {
-                if (_testSettings != null && _testSettings.IsConfigurationCompleted == true)
+                _thread = new Thread(delegate()
                 {
-                    Dispatcher.Invoke(delegate()
+                    if (_testSettings != null && _testSettings.IsConfigurationCompleted == true)
                     {
-                        _statusBar.Text = string.Empty;
-                        _testStartButton.IsEnabled = false;
-                        _testStopButton.IsEnabled = true;
-                        _settingsButton.IsEnabled = false;
-                    });
-                    _lists.Clear();
-                    _id = 0;
-                    
-                    int x = 0;
-                    int y = 0;
+                        LockInterface();
+                        _lists.Clear();
+                        _id = 0;
 
-                    int koeff = 4;
+                        int x = 0;
+                        int y = 0;
 
-                    Graphics g;
-                    config = new Configuration();
+                        int koeff = 4;
 
-                    Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
-                    Dispatcher.Invoke(delegate() { _progressBar.Maximum = _testSettings.CountRuns; });
+                        Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
+                        Dispatcher.Invoke(delegate() { _progressBar.Maximum = _testSettings.CountRuns; });
 
-                    for (int i = 0; i < _testSettings.CountRuns; ++i)
-                    {
-                        config.GenerateRandomConfig(x, y, _testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
-                        Li li = new Li(config.Grid, config.Net);
-                        Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                        g = Graphics.FromImage(bmp);
-
-                        long time = li.FindPath()[0];
-
-                        config.Grid.Draw(ref g);
-
-                        string path = _testSettings.FileOutPath + "\\test_" + i + ".bmp";
-                        bmp.Save(path);
-
-                        AddRow(time);
-                        g = null;
-
-                        Dispatcher.Invoke(delegate() { _progressBar.Value = i + 1; });
-                    }
-
-                    if (_lists.Count > 0)
-                    {
-                        long average = 0;
-                        for (int i = 0; i < _lists.Count; ++i)
+                        for (int i = 0; i < _testSettings.CountRuns; ++i)
                         {
-                            average += _lists[i].Time;
+                            config.GenerateRandomConfig(x, y, _testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
+                            li = new Li(config.Grid, config.Net);
+                            Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                            g = Graphics.FromImage(bmp);
+
+                            long time = li.FindPath()[0];
+
+                            config.Grid.Draw(ref g);
+
+                            string path = _testSettings.FileOutPath + "\\test_" + i + ".bmp";
+                            bmp.Save(path);
+
+                            AddRow(time);
+                            g = null;
+
+                            Dispatcher.Invoke(delegate() { _progressBar.Value = i + 1; });
                         }
-                        average = average / _lists.Count;
-                        Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms"; });
+
+                        if (_lists.Count > 0)
+                        {
+                            long average = 0;
+                            for (int i = 0; i < _lists.Count; ++i)
+                            {
+                                average += _lists[i].Time;
+                            }
+                            average = average / _lists.Count;
+                            Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms"; });
+                        }
+
+                        UnlockInterface();
                     }
-
-                    Dispatcher.Invoke(delegate() 
-                    { 
-                        _progressBar.Visibility = System.Windows.Visibility.Collapsed;
-
-                        _testStartButton.IsEnabled = true;
-                        _testStopButton.IsEnabled = false;
-                        _settingsButton.IsEnabled = true;
-                    });
-                }
-            });
-            _thread.IsBackground = true;
-            _thread.Start();
+                });
+                _thread.IsBackground = true;
+                _thread.Start();
+            }
+            else
+            {
+                config.ReadFromFile(_filePathImport);
+                li = new Li(config.Grid, config.Net);
+                Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                g = Graphics.FromImage(bmp);
+                li.FindPath();
+                config.Grid.Draw(ref g);
+                bmp.Save("SingleTest.bmp");
+            }
         }
 
         private void _dataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
@@ -205,11 +251,14 @@ namespace TracProg.GUI
         private void _settingsButton_Click(object sender, RoutedEventArgs e)
         {
             if (_testSettings == null)
+            {
                 _testSettings = new TestSettings();
+                _isSingleMode = false;
+            }
             _testSettings.ShowDialog();
         }
 
-        private DataGrid SetGrigProperties(DataGrid data)
+        private System.Windows.Controls.DataGrid SetGrigProperties(System.Windows.Controls.DataGrid data)
         {
             data.AutoGenerateColumns = true;
             data.CanUserAddRows = false;

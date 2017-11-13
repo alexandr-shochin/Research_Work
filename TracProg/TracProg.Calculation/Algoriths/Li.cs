@@ -118,10 +118,11 @@ namespace TracProg.Calculation.Algoriths
         /// Найти трассу
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
-        /// <returns></returns>
-        public bool FindPath()
+        /// <returns>Время, затраченное на работу алгоритма</returns>
+        public long[] FindPath()
         {
             List<int> path = new List<int>();
+            List<long> times = new List<long>();
             for (int numNet = 0; numNet < _net.Length; ++numNet)
             {
                 Stopwatch sw = new Stopwatch();
@@ -131,6 +132,8 @@ namespace TracProg.Calculation.Algoriths
                 {
                     int start = _net[numNet][numEl];
                     int finish = _net[numNet][numEl - 1];
+
+                    
 
                     if (WavePropagation(start, finish) == true)
                     {
@@ -162,6 +165,7 @@ namespace TracProg.Calculation.Algoriths
                     }
                 }
                 sw.Stop();
+                times.Add(sw.ElapsedMilliseconds);
                 _grid.MetallizeTrack(path);
                 path.Clear();
             }
@@ -169,7 +173,7 @@ namespace TracProg.Calculation.Algoriths
             if (CalculateIsComplete != null)
                 CalculateIsComplete.Invoke();
 
-            return true;
+            return times.ToArray();
         }
 
         /// <summary>
