@@ -8,12 +8,26 @@ using System.Threading.Tasks;
 
 namespace TracProg.Calculation
 {
+    public struct GridElement
+    {
+        public int MetalID { get; set; }
+        public float WidthMetal { get; set; }
+        public byte Info { get; set; }
+
+        public override string ToString()
+        {
+            return MetalID.ToString();
+        }
+    }
+
     [Serializable]
     public class Grid : IElement
     {
+        private int _currentIDMetalTrack;
+
         private Point[] _nodes;
         private List<IElement> _elements;
-        private byte[] _grid;
+        private GridElement[] _grid;
 
         public event Action Metalize;
         private event Action<int> IsChanged;
@@ -27,9 +41,7 @@ namespace TracProg.Calculation
         /// <param name="koeff">Шаг для генерации точек узлов сетки</param>
         public Grid(Point location, int width, int height, int koeff)
         {
-            GenerateCoord(location.x, location.y, width, height, koeff);
-            _Color = Color.Black;
-            IsChanged += Grid_IsChanged;
+            Init(location.x, location.y, width, height, koeff);
         }
 
         /// <summary>
@@ -42,12 +54,18 @@ namespace TracProg.Calculation
         /// <param name="koeff">Шаг</param>
         public Grid(int x, int y, int width, int height, int koeff)
         {
+            Init(x, y, width, height, koeff);
+        }
+
+        #region Public methods
+
+        private void Init(int x, int y, int width, int height, int koeff)
+        {
+            _currentIDMetalTrack = 1;
             GenerateCoord(x, y, width, height, koeff);
             _Color = Color.Black;
             IsChanged += Grid_IsChanged;
         }
-
-        #region Public methods
 
         /// <summary>
         /// Добавить элемент в сетку
@@ -176,11 +194,13 @@ namespace TracProg.Calculation
             }
         }
 
-        public void MetallizeTrack(List<int> track)
+        public void MetallizeTrack(List<int> track, float widthMetal)
         {
             if (track[0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
                 UnsetValue(track[0], GridValue.OWN_METAL);
+                _grid[track[0]].MetalID = _currentIDMetalTrack;
+                _grid[track[0]].WidthMetal = widthMetal;
                 Random rand = new Random();
                 Color c = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
                 for (int i = 1; i < track.Count; ++i)
@@ -192,13 +212,16 @@ namespace TracProg.Calculation
                     }
 
                     // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
+                    _grid[track[i]].WidthMetal = widthMetal;
                     Point pFrom = GetCoordCell(track[i - 1]);
                     Point pIn = GetCoordCell(track[i]);
-                    Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff), 
-                                  new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff)));
+                    Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff),
+                                  new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff), _grid[track[i]].WidthMetal));
 
                     // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
                     UnsetValue(track[i], GridValue.OWN_METAL);
+                    _grid[track[i]].MetalID = _currentIDMetalTrack;
+                    
                 }
                 if (Metalize != null)
                 {
@@ -222,6 +245,7 @@ namespace TracProg.Calculation
                     Metalize.Invoke();
                 }
             }
+            _currentIDMetalTrack++;
         }
 
         public int Compare(IElement x, IElement y)
@@ -240,7 +264,7 @@ namespace TracProg.Calculation
         /// <param name="i">Номер строки</param>
         /// <param name="j">Номер столбца</param>
         /// <returns></returns>
-        public byte this[int i, int j]
+        public GridElement this[int i, int j]
         {
             get
             {
@@ -261,7 +285,7 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public byte this[int num]
+        public GridElement this[int num]
         {
             get
             {
@@ -572,7 +596,7 @@ namespace TracProg.Calculation
 
             CountColumn = (height / Koeff) * 2;
             CountRows = (width / Koeff) * 2;
-            _grid = new byte[CountColumn * CountRows];
+            _grid = new GridElement[CountColumn * CountRows];
         }
 
         /// <summary>
@@ -618,17 +642,17 @@ namespace TracProg.Calculation
         /// <param name="el">Байт в котором нужно установить бит</param>
         /// <param name="numBit">Номер бита</param>
         /// <param name="value">значение: true - 1, false - 0</param>
-        private void SetBit(ref byte el, int numBit, bool value)
+        private void SetBit(ref GridElement el, int numBit, bool value)
         {
             byte mask = (byte)(1 << numBit); // 0000100000....
 
             if (value)
             {
-                el = (byte)(el | mask);// 1 | x = 1
+                el.Info = (byte)(el.Info | mask);// 1 | x = 1
             }
             else
             {
-                el = (byte)(el & ~mask); // 0 & x = 0, x = 111110111111..
+                el.Info = (byte)(el.Info & ~mask); // 0 & x = 0, x = 111110111111..
             }
 
         }
@@ -639,11 +663,11 @@ namespace TracProg.Calculation
         /// <param name="el">Байт в котором нужно получить занчение бита</param>
         /// <param name="numBit">Номер бита</param>
         /// <param name="value">значение: true - 1, false - 0</param>
-        private bool GetBit(byte el, int numBit)
+        private bool GetBit(GridElement el, int numBit)
         {
             byte mask = (byte)(1 << numBit); // 0000100000....
-            el = (byte)(mask & el);
-            if (el > 0)
+            el.Info = (byte)(mask & el.Info);
+            if (el.Info > 0)
             {
                 return true;
             }
