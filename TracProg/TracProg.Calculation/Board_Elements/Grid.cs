@@ -11,6 +11,7 @@ namespace TracProg.Calculation
 {
     public struct GridElement
     {
+        public IElement ViewElement { get; set; }
         public int MetalID { get; set; }
         public float WidthMetal { get; set; }
         public byte Info { get; set; }
@@ -27,11 +28,10 @@ namespace TracProg.Calculation
         private int _currentIDMetalTrack;
 
         private Point[] _nodes;
-        private List<IElement> _elements;
+        //private List<IElement> _elements;
         private GridElement[] _grid;
 
         public event Action Metalize;
-        private event Action<int> IsChanged;
 
         /// <summary>
         /// Конструтор
@@ -65,7 +65,6 @@ namespace TracProg.Calculation
             _currentIDMetalTrack = 1;
             GenerateCoord(x, y, width, height, koeff);
             _Color = Color.Black;
-            IsChanged += Grid_IsChanged;
         }
 
         /// <summary>
@@ -80,7 +79,8 @@ namespace TracProg.Calculation
             {
                 try
                 {
-                    _elements.Add(el);
+                    //_elements.Add(el);
+                    _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
                     if (el is Pin)
                     {
                         SetValue(indexes.Item1, indexes.Item2, GridValue.PIN);
@@ -189,9 +189,12 @@ namespace TracProg.Calculation
                 graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
-            for (int i = _elements.Count - 1; i >= 0; --i)
+            for (int i = _grid.Length - 1; i >= 0; --i)
             {
-                _elements[i].Draw(ref graphics);
+                if (_grid[i].ViewElement != null)
+                {
+                    _grid[i].ViewElement.Draw(ref graphics);
+                }
             }
         }
 
@@ -203,11 +206,14 @@ namespace TracProg.Calculation
                 _grid[track[0]].MetalID = _currentIDMetalTrack;
                 _grid[track[0]].WidthMetal = widthMetal;
                 Random rand = new Random();
-                Color c = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
                 for (int i = 1; i < track.Count; ++i)
                 {
                     if (track[i] == -1)
                     {
+                        if (i + 1 <= track.Count - 1)
+                        {
+                            _grid[track[i + 1]].ViewElement = new Pin(_grid[track[i + 1]].ViewElement.X, _grid[track[i + 1]].ViewElement.Y, _grid[track[i + 1]].ViewElement.Width, _grid[track[i + 1]].ViewElement.Height);
+                        }
                         i++;
                         continue;
                     }
@@ -219,11 +225,13 @@ namespace TracProg.Calculation
                     Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff),
                                   new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff), _grid[track[i]].WidthMetal));
 
+
                     // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
                     UnsetValue(track[i], GridValue.OWN_METAL);
                     _grid[track[i]].MetalID = _currentIDMetalTrack;
-                    
                 }
+                _grid[track[0]].ViewElement = new Pin(_grid[track[0]].ViewElement.X, _grid[track[0]].ViewElement.Y, _grid[track[0]].ViewElement.Width, _grid[track[0]].ViewElement.Height);
+
                 if (Metalize != null)
                 {
                     Metalize.Invoke();
@@ -236,7 +244,7 @@ namespace TracProg.Calculation
                     Point p = GetCoordCell(track[i]);
                     try
                     {
-                        _elements.Find(x => x.X == p.x && x.Y == p.y)._Color = Color.Red;
+                        _grid[track[i]].ViewElement._Color = Color.Red;
                     }
                     catch (NullReferenceException) { }   
                 }
@@ -601,7 +609,6 @@ namespace TracProg.Calculation
             Height = height;
             Koeff = koeff;
 
-            _elements = new List<IElement>();
             _nodes = new Point[((width / Koeff) + 1) * ((height / Koeff) + 1)];
 
             // TODO определять квадрант

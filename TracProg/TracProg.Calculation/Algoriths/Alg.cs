@@ -12,10 +12,12 @@ namespace TracProg.Calculation.Algoriths
         private Set _set;
         private Set _virtualSet;
 
-        private int minXRectangle;
-        private int maxXRectangle;
-        private int minYRectangle;
-        private int maxYRectangle;
+        private int _leftBorderLimitingRectangle;
+        private int _upBorderLimitingRectangle;
+        private int _rightBorderLimitingRectangle;
+        private int _downBorderLimitingRectangle;
+
+        private Grid _newGrid;
 
         public Alg()
         {
@@ -36,14 +38,32 @@ namespace TracProg.Calculation.Algoriths
                     List<int> path = new List<int>();
                     RestorationPath(ref grid, ref path);
 
-                    GetCoordRectangle(ref path, 5, 5);
+                    GetCoordLimitingRectangle(ref grid, ref path, 5, 5, 5, 5);
+
+                    //_newGrid = new Grid(
                 }
             }
         }
 
-        private void GetCoordRectangle(ref List<int> path, int h, int w)
+        private void GetCoordLimitingRectangle(ref Grid grid, ref List<int> path, int additLeftParam, int additUpParam, int additRightParam, int additDownParam)
         {
-            
+            int minItem = path.Min();
+            int maxItem = path.Max();
+
+            grid.GetIndexes(minItem, out _leftBorderLimitingRectangle, out _upBorderLimitingRectangle);
+            grid.GetIndexes(maxItem, out _rightBorderLimitingRectangle, out _downBorderLimitingRectangle);
+
+            _leftBorderLimitingRectangle -= additLeftParam;
+            if (_leftBorderLimitingRectangle < 0) _leftBorderLimitingRectangle = 0;
+
+            _upBorderLimitingRectangle -= additUpParam;
+            if (_upBorderLimitingRectangle < 0) _upBorderLimitingRectangle = 0;
+
+            _rightBorderLimitingRectangle += additRightParam;
+            if (_rightBorderLimitingRectangle > grid.CountColumn) _rightBorderLimitingRectangle = grid.CountColumn;
+
+            _downBorderLimitingRectangle += additDownParam;
+            if (_downBorderLimitingRectangle > grid.CountRows) _downBorderLimitingRectangle = grid.CountRows;
         }
 
         private bool WavePropagation(ref Grid grid, int start, int finish) // TODO
