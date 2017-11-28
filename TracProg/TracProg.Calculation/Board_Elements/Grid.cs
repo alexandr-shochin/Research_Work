@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -423,6 +424,8 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
+
+
             return GetBit(_grid[num], (int)GridValue.OWN_METAL);
         }
 
@@ -506,7 +509,26 @@ namespace TracProg.Calculation
             {
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
-            return IsForeignMetal(GetNum(i, j));
+
+            bool result = false;
+            if (j > 0 && j < CountColumn - 1)
+            {
+                if (this[i, j - 1].MetalID == this[i, j + 1].MetalID && this[i, j - 1].MetalID != 0 && this[i, j + 1].MetalID != 0)
+                {
+                    result = true;
+                }
+            }
+            if (i > 0 && i < CountRows - 1)
+            {
+                if (this[i - 1, j].MetalID == this[i + 1, j].MetalID && this[i - 1, j].MetalID != 0 && this[i + 1, j].MetalID != 0)
+                {
+                    result = true;
+                }
+            }
+
+            result |= IsForeignMetal(GetNum(i, j));
+
+            return result;
         }
 
         /// <summary>
@@ -545,6 +567,21 @@ namespace TracProg.Calculation
         public override string ToString()
         {
             return "Count = " + Count;
+        }
+
+        public void WriteToFile()
+        {
+            List<string> lines = new List<string>();
+            for (int i = 0; i < CountRows; i++)
+            {
+                string str = "";
+                for (int j = 0; j < CountColumn; j++)
+                {
+                    str += this[j, i].MetalID.ToString();
+                }
+                lines.Add(str);
+            }
+            File.WriteAllLines("matrixTest.txt", lines);
         }
 
         #endregion
@@ -594,8 +631,8 @@ namespace TracProg.Calculation
                 }
             }
 
-            CountColumn = (height / Koeff) * 2;
-            CountRows = (width / Koeff) * 2;
+            CountColumn = (height / Koeff) * 2 - 1;
+            CountRows = (width / Koeff) * 2 - 1;
             _grid = new GridElement[CountColumn * CountRows];
         }
 

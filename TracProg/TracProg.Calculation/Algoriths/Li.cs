@@ -48,13 +48,17 @@ namespace TracProg.Calculation.Algoriths
                     }
                     else //если какие-то подтрассы нашли и какую-то не смогли реализовать
                     {
-                        path.Clear();
-                        path.Add(-1); // индикатор того, что трасса не реализована
-                        for (int i = 0; i < _net[numNet].Count; ++i)
-                        {
-                            path.Add(_net[numNet][i]);
-                        }
-                        break;
+                        _grid.WriteToFile();
+                        Alg alg = new Alg();
+                        alg.FindPath(ref _grid, start, finish);
+
+                        //path.Clear();
+                        //path.Add(-1); // индикатор того, что трасса не реализована
+                        //for (int i = 0; i < _net[numNet].Count; ++i)
+                        //{
+                        //    path.Add(_net[numNet][i]);
+                        //}
+                        //break;
                     }
                     _set.Clear();
                     if (path.Count != 0)
