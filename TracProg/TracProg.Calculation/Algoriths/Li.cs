@@ -30,55 +30,50 @@ namespace TracProg.Calculation.Algoriths
         /// <returns>Время, затраченное на работу алгоритма</returns>
         public long[] FindPath()
         {
-            List<int> path = new List<int>();
             List<long> times = new List<long>();
             for (int numNet = 0; numNet < _net.Length; ++numNet)
             {
+                List<List<int>> path = new List<List<int>>();
+
                 Stopwatch sw = new Stopwatch();
                 sw.Reset();
                 sw.Start();
                 for (int numEl = 1; numEl < _net[numNet].Count; numEl++)
                 {
+                    List<int> subPath = new List<int>();
+
                     int start = _net[numNet][numEl];
                     int finish = _net[numNet][numEl - 1];
 
                     if (WavePropagation(start, finish) == true)
                     {
-                        RestorationPath(ref path);
+                        RestorationPath(ref subPath);
                     }
                     else //если какие-то подтрассы нашли и какую-то не смогли реализовать
                     {
                         _grid.WriteToFile();
                         Alg alg = new Alg();
                         alg.FindPath(ref _grid, start, finish);
-
-                        //path.Clear();
-                        //path.Add(-1); // индикатор того, что трасса не реализована
-                        //for (int i = 0; i < _net[numNet].Count; ++i)
-                        //{
-                        //    path.Add(_net[numNet][i]);
-                        //}
-                        //break;
                     }
                     _set.Clear();
-                    if (path.Count != 0)
+                    if (subPath.Count != 0)
                     {
-                        path.Add(-1); // добавляем -1, чтобы разделить трассы
+                        path.Add(subPath);
                     }
                     else // если не можем реализовать трассу
                     {
-                        path.Add(-1); // индикатор того, что трасса не реализована
+                        subPath.Add(-1); // индикатор того, что трасса не реализована
                         for (int i = 0; i < _net[numNet].Count; ++i)
                         {
-                            path.Add(_net[numNet][i]);
+                            subPath.Add(_net[numNet][i]);
                         }
+                        path.Add(subPath);
                         break;
                     }
                 }
                 sw.Stop();
                 times.Add(sw.ElapsedMilliseconds);
-                _grid.MetallizeTrack(path, (float)(numNet + 1));
-                path.Clear();
+                _grid.MetallizeTrack(path, (numNet + 1));
             }
 
             if (CalculateIsComplete != null)

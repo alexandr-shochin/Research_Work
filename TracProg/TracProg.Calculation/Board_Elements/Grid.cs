@@ -14,7 +14,7 @@ namespace TracProg.Calculation
         public IElement ViewElement { get; set; }
         public int MetalID { get; set; }
         public float WidthMetal { get; set; }
-        public byte Info { get; set; }
+        public byte ByteInfo { get; set; }
 
         public override string ToString()
         {
@@ -31,39 +31,28 @@ namespace TracProg.Calculation
         //private List<IElement> _elements;
         private GridElement[] _grid;
 
+        private List<IElement> _metalizedTracks;
+
         public event Action Metalize;
 
         /// <summary>
         /// Конструтор
         /// </summary>
-        /// <param name="location">Объект Point, представляющий левый верхний угол прямоугольной области.</param>
         /// <param name="width">Ширина прямоугольной области</param>
         /// <param name="height">Высота прямоугольной области</param>
         /// <param name="koeff">Шаг для генерации точек узлов сетки</param>
-        public Grid(Point location, int width, int height, int koeff)
+        public Grid(int width, int height, int koeff)
         {
-            Init(location.x, location.y, width, height, koeff);
-        }
-
-        /// <summary>
-        /// Конструтор
-        /// </summary>
-        /// <param name="x">Координата по оси X левого верхнего угла прямоугольной области</param>
-        /// <param name="">Координата по оси Y левого верхнего угла прямоугольной области</param>
-        /// <param name="width">Ширина прямоугольной области</param>
-        /// <param name="height">Высота прямоугольной области</param>
-        /// <param name="koeff">Шаг</param>
-        public Grid(int x, int y, int width, int height, int koeff)
-        {
-            Init(x, y, width, height, koeff);
+            Init(0, 0, width, height, koeff);
         }
 
         #region Public methods
 
         private void Init(int x, int y, int width, int height, int koeff)
         {
+            _metalizedTracks = new List<IElement>();
             _currentIDMetalTrack = 1;
-            GenerateCoord(x, y, width, height, koeff);
+            GenerateCoord(width, height, koeff);
             _Color = Color.Black;
         }
 
@@ -189,6 +178,11 @@ namespace TracProg.Calculation
                 graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
+            for (int i = 0; i < _metalizedTracks.Count; i++)
+            {
+                _metalizedTracks[i].Draw(ref graphics);
+            }
+
             for (int i = _grid.Length - 1; i >= 0; --i)
             {
                 if (_grid[i].ViewElement != null)
@@ -198,40 +192,29 @@ namespace TracProg.Calculation
             }
         }
 
-        public void MetallizeTrack(List<int> track, float widthMetal)
+        public void MetallizeTrack(List<List<int>> track, float widthMetal)
         {
-            if (track[0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
+            if (track != null && track.Count != 0 && track[0][0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
-                UnsetValue(track[0], GridValue.OWN_METAL);
-                _grid[track[0]].MetalID = _currentIDMetalTrack;
-                _grid[track[0]].WidthMetal = widthMetal;
-                Random rand = new Random();
-                for (int i = 1; i < track.Count; ++i)
+                for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
                 {
-                    if (track[i] == -1)
+                    UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
+                    _grid[track[numSubPath][0]].MetalID = _currentIDMetalTrack;
+                    _grid[track[numSubPath][0]].WidthMetal = widthMetal;
+
+                    for (int node = 1; node < track[numSubPath].Count; ++node)
                     {
-                        if (i + 1 <= track.Count - 1)
-                        {
-                            _grid[track[i + 1]].ViewElement = new Pin(_grid[track[i + 1]].ViewElement.X, _grid[track[i + 1]].ViewElement.Y, _grid[track[i + 1]].ViewElement.Width, _grid[track[i + 1]].ViewElement.Height);
-                        }
-                        i++;
-                        continue;
+                        // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])                     
+                        Point pFrom = GetCoordCell(track[numSubPath][node - 1]);
+                        Point pIn = GetCoordCell(track[numSubPath][node]);
+                        _metalizedTracks.Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff), new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff), widthMetal));
+
+                        // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
+                        SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
+                        _grid[track[numSubPath][node]].MetalID = _currentIDMetalTrack;
+                        _grid[track[numSubPath][node]].WidthMetal = widthMetal;
                     }
-
-                    // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])
-                    _grid[track[i]].WidthMetal = widthMetal;
-                    Point pFrom = GetCoordCell(track[i - 1]);
-                    Point pIn = GetCoordCell(track[i]);
-                    Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff),
-                                  new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff), _grid[track[i]].WidthMetal));
-
-
-                    // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
-                    UnsetValue(track[i], GridValue.OWN_METAL);
-                    _grid[track[i]].MetalID = _currentIDMetalTrack;
                 }
-                _grid[track[0]].ViewElement = new Pin(_grid[track[0]].ViewElement.X, _grid[track[0]].ViewElement.Y, _grid[track[0]].ViewElement.Width, _grid[track[0]].ViewElement.Height);
-
                 if (Metalize != null)
                 {
                     Metalize.Invoke();
@@ -239,12 +222,12 @@ namespace TracProg.Calculation
             }
             else // трасса не построена
             {
-                for (int i = 1; i < track.Count; ++i)
+                for (int node = 1; node < track[0].Count; ++node)
                 {
-                    Point p = GetCoordCell(track[i]);
+                    Point p = GetCoordCell(track[0][node]);
                     try
                     {
-                        _grid[track[i]].ViewElement._Color = Color.Red;
+                        _grid[track[0][node]].ViewElement._Color = Color.Red;
                     }
                     catch (NullReferenceException) { }   
                 }
@@ -601,31 +584,31 @@ namespace TracProg.Calculation
             throw new NotImplementedException();
         }
 
-        private void GenerateCoord(int x, int y, int width, int height, int koeff)
+        private void GenerateCoord(int width, int height, int koeff)
         {
-            X = x;
-            Y = y;
-            Width = width;
-            Height = height;
+            X = 0;
+            Y = 0;
+            Width = width + koeff;
+            Height = height + koeff;
             Koeff = koeff;
 
-            _nodes = new Point[((width / Koeff) + 1) * ((height / Koeff) + 1)];
+            _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
 
-            // TODO определять квадрант
+            int[] xs = new int[((width / Koeff) + 2)];
+            int[] ys = new int[((height / Koeff) + 2)];
 
-            int[] xs = new int[((width / Koeff) + 1)];
-            int[] ys = new int[((height / Koeff) + 1)];
-
+            int tmpX = 0;
             for (int i = 0; i < xs.Length; ++i)
             {
-                xs[i] = x;
-                x += koeff;
+                xs[i] = tmpX;
+                tmpX += koeff;
             }
 
+            int tmpY = 0;
             for (int i = 0; i < ys.Length; ++i)
             {
-                ys[i] = y;
-                y += koeff;
+                ys[i] = tmpY;
+                tmpY += koeff;
             }
 
             int index = 0;
@@ -692,11 +675,11 @@ namespace TracProg.Calculation
 
             if (value)
             {
-                el.Info = (byte)(el.Info | mask);// 1 | x = 1
+                el.ByteInfo = (byte)(el.ByteInfo | mask);// 1 | x = 1
             }
             else
             {
-                el.Info = (byte)(el.Info & ~mask); // 0 & x = 0, x = 111110111111..
+                el.ByteInfo = (byte)(el.ByteInfo & ~mask); // 0 & x = 0, x = 111110111111..
             }
 
         }
@@ -710,8 +693,8 @@ namespace TracProg.Calculation
         private bool GetBit(GridElement el, int numBit)
         {
             byte mask = (byte)(1 << numBit); // 0000100000....
-            el.Info = (byte)(mask & el.Info);
-            if (el.Info > 0)
+            el.ByteInfo = (byte)(mask & el.ByteInfo);
+            if (el.ByteInfo > 0)
             {
                 return true;
             }

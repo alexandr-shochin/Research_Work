@@ -14,8 +14,8 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_Init()
         {
-            Configuration config = new Configuration(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
-
+            Configuration config = new Configuration();
+            config.ReadFromFile(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
 
         }
     }

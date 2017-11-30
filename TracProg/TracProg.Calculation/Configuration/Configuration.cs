@@ -83,12 +83,10 @@ namespace TracProg.Calculation
                                     {
                                         try
                                         {
-                                            x = int.Parse(lineSplit[1]);
-                                            y = int.Parse(lineSplit[2]);
-                                            w = int.Parse(lineSplit[3]);
-                                            h = int.Parse(lineSplit[4]);
+                                            w = int.Parse(lineSplit[1]);
+                                            h = int.Parse(lineSplit[2]);
 
-                                            _config.Grid = new Grid(x * koeff, y * koeff, w * koeff, h * koeff, koeff);
+                                            _config.Grid = new Grid(w * koeff, h * koeff, koeff);
                                             break;
                                         }
                                         catch (Exception ex)
@@ -210,9 +208,9 @@ namespace TracProg.Calculation
         /// <param name="n">Высота сетки</param>
         /// <param name="m">Ширина сетки</param>
         /// <param name="koeff">Коэфициент масштабирования</param>
-        public void GenerateRandomConfig(int x, int y, int n, int m, int countPins, int countProhibitionZone, int countNets, int koeff = 4)
+        public void GenerateRandomConfig(int n, int m, int countPins, int countProhibitionZone, int countNets, int koeff = 4)
         {
-            _config.Grid = new Grid(x * koeff, y * koeff, n * koeff, m * koeff, koeff);
+            _config.Grid = new Grid(n * koeff, m * koeff, koeff);
 
             Dictionary<string, IElement> gridElements = new Dictionary<string, IElement>();
 
@@ -223,7 +221,7 @@ namespace TracProg.Calculation
             {
                 try
                 {
-                    gridElements.Add(i.ToString() + "_pin", new Pin(rand.Next(x, n - 1) * koeff, rand.Next(y, m - 1) * koeff, koeff, koeff));
+                    gridElements.Add(i.ToString() + "_pin", new Pin(rand.Next(0, n - 1) * koeff, rand.Next(0, m - 1) * koeff, koeff, koeff));
                     i++;
 
                     
@@ -236,7 +234,7 @@ namespace TracProg.Calculation
             {
                 try
                 {
-                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(rand.Next(x, n - 1) * koeff, rand.Next(y, m - 1) * koeff, koeff, koeff));
+                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(rand.Next(0, n - 1) * koeff, rand.Next(0, m - 1) * koeff, koeff, koeff));
                     i++;
                 }
                 catch (ArgumentException) { }

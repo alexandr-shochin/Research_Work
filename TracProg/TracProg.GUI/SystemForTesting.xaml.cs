@@ -177,9 +177,6 @@ namespace TracProg.GUI
                         _lists.Clear();
                         _id = 0;
 
-                        int x = 0;
-                        int y = 0;
-
                         int koeff = 4;
 
                         Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
@@ -187,7 +184,7 @@ namespace TracProg.GUI
 
                         for (int i = 0; i < _testSettings.CountRuns; ++i)
                         {
-                            config.GenerateRandomConfig(x, y, _testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
+                            config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
                             li = new Li(config.Grid, config.Net);
                             Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             g = Graphics.FromImage(bmp);
