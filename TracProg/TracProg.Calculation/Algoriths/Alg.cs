@@ -44,7 +44,6 @@ namespace TracProg.Calculation.Algoriths
 
                     // копируем нужные элементы сетки и создаём новую
                     GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
-                    Dictionary<int, List<int>> tracks = new Dictionary<int, List<int>>();
                     int numElement = 0;
                     for (int i = _leftBorderLimitingRectangle; i <= _rightBorderLimitingRectangle; ++i)
                     {
@@ -62,6 +61,30 @@ namespace TracProg.Calculation.Algoriths
                         (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
                         grid.Koeff);
 
+                    Dictionary<int, List<Tuple<int, int>>> tracks = new Dictionary<int,List<Tuple<int,int>>>();
+                    for (int i = 0; i < grid.CurrentIDMetalTrack - 1; i++)
+			        {
+                        tracks.Add(i + 1, new List<Tuple<int,int>>());
+			        }
+
+                    for (int i = 0; i < _newGrid.CountRows; i++)
+                    {
+                        for (int j = 0; j < _newGrid.CountColumn; j++)
+                        {
+                            if (_newGrid[i, j].MetalID != 0)
+                            {
+                                if (IsBoardGridElement(ref _newGrid, i, j))
+                                {
+                                    tracks[_newGrid[i, j].MetalID].Add(Tuple.Create(i, j));
+                                }
+                                else if (_newGrid.IsPin(i, j))
+                                {
+                                    tracks[_newGrid[i, j].MetalID].Add(Tuple.Create(i, j));
+                                }
+                            }
+                        }
+                    }
+
                     _newGrid.WriteToFile("matrixTest.txt");
                     Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
                     Graphics g = Graphics.FromImage(bmp);
@@ -71,44 +94,6 @@ namespace TracProg.Calculation.Algoriths
 
                     string pathStr = "test.bmp";
                     bmp.Save(pathStr);
-
-
-                    for (int i = 0; i < _newGrid.CountRows; i++)
-                    {
-                        for (int j = 0; j < _newGrid.CountColumn; j++)
-                        {
-                            if (_newGrid[i, j].MetalID != 0) // ячейка является частью какой-то трассы
-                            {
-                                if (_newGrid.IsPin(i, j))
-                                {
-                                    if (!tracks.ContainsKey(_newGrid[i, j].MetalID))
-                                    {
-                                        tracks.Add(_newGrid[i, j].MetalID, new List<int>());
-                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
-                                    }
-                                    else
-                                    {
-                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
-                                    }
-                                }
-                                if (IsBoardGridElement(ref _newGrid, i, j))
-                                {
-                                    if (!tracks.ContainsKey(_newGrid[i, j].MetalID))
-                                    {
-                                        tracks.Add(_newGrid[i, j].MetalID, new List<int>());
-
-                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
-                                    }
-                                    else
-                                    {
-                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    
                 }
             }
         }

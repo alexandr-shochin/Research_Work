@@ -25,7 +25,7 @@ namespace TracProg.Calculation
     [Serializable]
     public class Grid : IElement
     {
-        private int _currentIDMetalTrack;
+        public int CurrentIDMetalTrack { get; private set; }
 
         private Point[] _nodes;
         //private List<IElement> _elements;
@@ -54,7 +54,7 @@ namespace TracProg.Calculation
             _grid = new GridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);
 
-            _currentIDMetalTrack = 1;
+            CurrentIDMetalTrack = 1;
 
             X = x0;
             Y = y0;
@@ -102,7 +102,7 @@ namespace TracProg.Calculation
         {
             MetTrack = new List<List<int>>();
             _metalizedTracks = new List<IElement>();
-            _currentIDMetalTrack = 1;
+            CurrentIDMetalTrack = 1;
             
             GenerateCoord(width, height, koeff);
 
@@ -259,7 +259,7 @@ namespace TracProg.Calculation
                     MetTrack.Add(track[numSubPath]);
 
                     UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
-                    _grid[track[numSubPath][0]].MetalID = _currentIDMetalTrack;
+                    _grid[track[numSubPath][0]].MetalID = CurrentIDMetalTrack;
                     _grid[track[numSubPath][0]].WidthMetal = widthMetal;
 
                     for (int node = 1; node < track[numSubPath].Count; ++node)
@@ -271,7 +271,7 @@ namespace TracProg.Calculation
 
                         // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
                         SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
-                        _grid[track[numSubPath][node]].MetalID = _currentIDMetalTrack;
+                        _grid[track[numSubPath][node]].MetalID = CurrentIDMetalTrack;
                         _grid[track[numSubPath][node]].WidthMetal = widthMetal;
                     }
                 }
@@ -297,7 +297,7 @@ namespace TracProg.Calculation
                     Metalize.Invoke();
                 }
             }
-            _currentIDMetalTrack++;
+            CurrentIDMetalTrack++;
         }
 
         public int Compare(IElement x, IElement y)
