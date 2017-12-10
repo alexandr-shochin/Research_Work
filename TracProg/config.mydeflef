@@ -2,7 +2,7 @@ KOEFF 18
 
 GRID 23 23
 
-COMPONENTS 14
+COMPONENTS 13
 a1 5 0 1 1
 a2 8 1 1 1
 a3 4 2 1 1
@@ -16,7 +16,6 @@ a10 7 15 1 1
 a11 17 15 1 1
 a12 5 17 1 1
 a13 15 22 1 1
-a14 22 11 1 1
 
 PROHIBITION_ZONE 0
 z0 2 4 1 1
@@ -32,4 +31,4 @@ NETS 4
 n1 a1 a12 a9
 n2 a4 a2
 n4 a7 a13
-n3 a5 a11
+n3 a5 a11 a8

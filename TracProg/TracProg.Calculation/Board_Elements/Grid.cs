@@ -31,6 +31,8 @@ namespace TracProg.Calculation
         //private List<IElement> _elements;
         private GridElement[] _grid;
 
+        public List<List<int>> MetTrack {get; private set; }
+
         private List<IElement> _metalizedTracks;
 
         public event Action Metalize;
@@ -46,13 +48,68 @@ namespace TracProg.Calculation
             Init(0, 0, width, height, koeff);
         }
 
+        public Grid(GridElement[] grid, int x0, int y0, int width, int height, int koeff)
+        {
+            _metalizedTracks = new List<IElement>();
+            _grid = new GridElement[grid.Length];
+            Array.Copy(grid, 0,_grid, 0, grid.Length);
+
+            _currentIDMetalTrack = 1;
+
+            X = x0;
+            Y = y0;
+            Width = width + 1;
+            Height = height + 1;
+            Koeff = koeff;
+
+            CountColumn = (width / Koeff) * 2 - 1;
+            CountRows = (height / Koeff) * 2 - 1;
+
+            _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
+
+            int[] xs = new int[((width / Koeff) + 2)];
+            int[] ys = new int[((height / Koeff) + 2)];
+
+            int tmpX = X;
+            for (int i = 0; i < xs.Length; ++i)
+            {
+                xs[i] = tmpX;
+                tmpX += koeff;
+            }
+
+            int tmpY = Y;
+            for (int i = 0; i < ys.Length; ++i)
+            {
+                ys[i] = tmpY;
+                tmpY += koeff;
+            }
+
+            int index = 0;
+            for (int i = 0; i < xs.Length; ++i)
+            {
+                for (int j = 0; j < ys.Length; ++j)
+                {
+                    _nodes[index] = new Point(xs[i], ys[j]);
+                    index++;
+                }
+            }
+            _Color = Color.Black;
+        }
+
         #region Public methods
 
         private void Init(int x, int y, int width, int height, int koeff)
         {
+            MetTrack = new List<List<int>>();
             _metalizedTracks = new List<IElement>();
             _currentIDMetalTrack = 1;
+            
             GenerateCoord(width, height, koeff);
+
+            CountColumn = (width / Koeff) * 2 - 1;
+            CountRows = (height / Koeff) * 2 - 1;
+            _grid = new GridElement[CountColumn * CountRows];
+
             _Color = Color.Black;
         }
 
@@ -194,10 +251,13 @@ namespace TracProg.Calculation
 
         public void MetallizeTrack(List<List<int>> track, float widthMetal)
         {
+            
             if (track != null && track.Count != 0 && track[0][0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
                 for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
                 {
+                    MetTrack.Add(track[numSubPath]);
+
                     UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
                     _grid[track[numSubPath][0]].MetalID = _currentIDMetalTrack;
                     _grid[track[numSubPath][0]].WidthMetal = widthMetal;
@@ -560,7 +620,7 @@ namespace TracProg.Calculation
             return "Count = " + Count;
         }
 
-        public void WriteToFile()
+        public void WriteToFile(string path)
         {
             List<string> lines = new List<string>();
             for (int i = 0; i < CountRows; i++)
@@ -568,11 +628,11 @@ namespace TracProg.Calculation
                 string str = "";
                 for (int j = 0; j < CountColumn; j++)
                 {
-                    str += this[j, i].MetalID.ToString();
+                    str += this[i, j].MetalID.ToString();
                 }
                 lines.Add(str);
             }
-            File.WriteAllLines("matrixTest.txt", lines);
+            File.WriteAllLines(path, lines);
         }
 
         #endregion
@@ -588,8 +648,8 @@ namespace TracProg.Calculation
         {
             X = 0;
             Y = 0;
-            Width = width + koeff;
-            Height = height + koeff;
+            Width = width + 1;
+            Height = height + 1;
             Koeff = koeff;
 
             _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
@@ -620,10 +680,6 @@ namespace TracProg.Calculation
                     index++;
                 }
             }
-
-            CountColumn = (height / Koeff) * 2 - 1;
-            CountRows = (width / Koeff) * 2 - 1;
-            _grid = new GridElement[CountColumn * CountRows];
         }
 
         /// <summary>

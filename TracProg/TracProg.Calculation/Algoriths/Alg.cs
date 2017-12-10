@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,32 +39,118 @@ namespace TracProg.Calculation.Algoriths
                     List<int> path = new List<int>();
                     RestorationPath(ref grid, ref path);
 
-                    GetCoordLimitingRectangle(ref grid, ref path, 5, 5, 5, 5);
+                    // получаем координаты ограничивающего прямоугольника
+                    GetCoordLimitingRectangle(ref grid, ref path, 1, 1, 1, 1);
 
-                    //_newGrid = new Grid(
+                    // копируем нужные элементы сетки и создаём новую
+                    GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
+                    Dictionary<int, List<int>> tracks = new Dictionary<int, List<int>>();
+                    int numElement = 0;
+                    for (int i = _leftBorderLimitingRectangle; i <= _rightBorderLimitingRectangle; ++i)
+                    {
+                        for (int j = _upBorderLimitingRectangle; j <= _downBorderLimitingRectangle; ++j)
+                        {
+                            gridElements[numElement] = grid[i, j];
+                            numElement++;
+                        }
+                    }
+
+                    Point p0 = grid.GetCoordCell(_leftBorderLimitingRectangle, _upBorderLimitingRectangle);
+
+                    _newGrid = new Grid(gridElements, p0.x, p0.y,
+                        (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
+                        (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
+                        grid.Koeff);
+
+                    _newGrid.WriteToFile("matrixTest.txt");
+                    Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
+                    Graphics g = Graphics.FromImage(bmp);
+                    g.TranslateTransform(-p0.x, -p0.y);
+
+                    _newGrid.Draw(ref g);
+
+                    string pathStr = "test.bmp";
+                    bmp.Save(pathStr);
+
+
+                    for (int i = 0; i < _newGrid.CountRows; i++)
+                    {
+                        for (int j = 0; j < _newGrid.CountColumn; j++)
+                        {
+                            if (_newGrid[i, j].MetalID != 0) // ячейка является частью какой-то трассы
+                            {
+                                if (_newGrid.IsPin(i, j))
+                                {
+                                    if (!tracks.ContainsKey(_newGrid[i, j].MetalID))
+                                    {
+                                        tracks.Add(_newGrid[i, j].MetalID, new List<int>());
+                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
+                                    }
+                                    else
+                                    {
+                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
+                                    }
+                                }
+                                if (IsBoardGridElement(ref _newGrid, i, j))
+                                {
+                                    if (!tracks.ContainsKey(_newGrid[i, j].MetalID))
+                                    {
+                                        tracks.Add(_newGrid[i, j].MetalID, new List<int>());
+
+                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
+                                    }
+                                    else
+                                    {
+                                        tracks[_newGrid[i, j].MetalID].Add(_newGrid.GetNum(i, j));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    
                 }
             }
         }
 
+        private bool IsBoardGridElement(ref Grid grid, int i, int j)
+        {
+            if (i - 1 == -1 || 
+                i + 1 == grid.CountRows ||
+                j - 1 == 0 ||
+                j + 1 == grid.CountColumn)
+            {
+                return true;
+            }
+            return false;
+        }
+
         private void GetCoordLimitingRectangle(ref Grid grid, ref List<int> path, int additLeftParam, int additUpParam, int additRightParam, int additDownParam)
         {
+            // 1. нужно найти корректные() minItem и maxItem
             int minItem = path.Min();
             int maxItem = path.Max();
 
             grid.GetIndexes(minItem, out _leftBorderLimitingRectangle, out _upBorderLimitingRectangle);
             grid.GetIndexes(maxItem, out _rightBorderLimitingRectangle, out _downBorderLimitingRectangle);
 
-            _leftBorderLimitingRectangle -= additLeftParam;
+            if (_leftBorderLimitingRectangle % 2 == 1) _leftBorderLimitingRectangle++;
+            if (_upBorderLimitingRectangle % 2 == 1) _upBorderLimitingRectangle++;
+            if (_rightBorderLimitingRectangle % 2 == 1) _rightBorderLimitingRectangle++;
+            if (_downBorderLimitingRectangle % 2 == 1) _downBorderLimitingRectangle++;
+
+
+            _leftBorderLimitingRectangle -= (2 * additLeftParam);
             if (_leftBorderLimitingRectangle < 0) _leftBorderLimitingRectangle = 0;
 
-            _upBorderLimitingRectangle -= additUpParam;
+            _upBorderLimitingRectangle -= (2 * additUpParam);
             if (_upBorderLimitingRectangle < 0) _upBorderLimitingRectangle = 0;
 
-            _rightBorderLimitingRectangle += additRightParam;
-            if (_rightBorderLimitingRectangle > grid.CountColumn) _rightBorderLimitingRectangle = grid.CountColumn;
+            _rightBorderLimitingRectangle += (2 * additRightParam);
+            if (_rightBorderLimitingRectangle > grid.CountColumn) _rightBorderLimitingRectangle = (grid.CountColumn % 2 == 0) ? grid.CountColumn : grid.CountColumn - 1;
 
-            _downBorderLimitingRectangle += additDownParam;
-            if (_downBorderLimitingRectangle > grid.CountRows) _downBorderLimitingRectangle = grid.CountRows;
+            _downBorderLimitingRectangle += (2 * additDownParam);
+            if (_downBorderLimitingRectangle > grid.CountRows) _downBorderLimitingRectangle = (grid.CountRows % 2 == 0) ? grid.CountRows : grid.CountRows - 1;
         }
 
         private bool WavePropagation(ref Grid grid, int start, int finish) // TODO

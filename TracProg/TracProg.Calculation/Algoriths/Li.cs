@@ -51,7 +51,7 @@ namespace TracProg.Calculation.Algoriths
                     }
                     else //если какие-то подтрассы нашли и какую-то не смогли реализовать
                     {
-                        _grid.WriteToFile();
+                        _grid.WriteToFile("matrixTest.txt");
                         Alg alg = new Alg();
                         alg.FindPath(ref _grid, start, finish);
                     }
