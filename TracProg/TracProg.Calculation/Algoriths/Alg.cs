@@ -44,7 +44,12 @@ namespace TracProg.Calculation.Algoriths
 
                     // копируем нужные элементы сетки и создаём новую
                     GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
-                    int numElement = 0;
+                    Dictionary<int, List<Tuple<int, int>>> tracks = new Dictionary<int, List<Tuple<int, int>>>();
+                    for (int i = 0; i < grid.CurrentIDMetalTrack; i++)
+                    {
+                        tracks.Add(i + 1, new List<Tuple<int, int>>());
+                    }
+                    int numElement = 0; // TODO важное замечание: исходная сетка хранится по столбцам, а новая по строкам!!!!
                     for (int i = _leftBorderLimitingRectangle; i <= _rightBorderLimitingRectangle; ++i)
                     {
                         for (int j = _upBorderLimitingRectangle; j <= _downBorderLimitingRectangle; ++j)
@@ -53,6 +58,10 @@ namespace TracProg.Calculation.Algoriths
                             numElement++;
                         }
                     }
+                    //for (int i = 0; i < grid.CountColumn * grdi; i++)
+                    //{
+                        
+                    //}
 
                     Point p0 = grid.GetCoordCell(_leftBorderLimitingRectangle, _upBorderLimitingRectangle);
 
@@ -61,29 +70,36 @@ namespace TracProg.Calculation.Algoriths
                         (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
                         grid.Koeff);
 
-                    Dictionary<int, List<Tuple<int, int>>> tracks = new Dictionary<int,List<Tuple<int,int>>>();
-                    for (int i = 0; i < grid.CurrentIDMetalTrack - 1; i++)
-			        {
-                        tracks.Add(i + 1, new List<Tuple<int,int>>());
-			        }
 
-                    for (int i = 0; i < _newGrid.CountRows; i++)
+                    int oldI = _upBorderLimitingRectangle;
+                    int oldJ = _leftBorderLimitingRectangle;
+                    for (int newI = 0; newI < _newGrid.CountRows; newI++)
                     {
-                        for (int j = 0; j < _newGrid.CountColumn; j++)
+                        oldJ = 0;
+                        for (int newJ = 0; newJ < _newGrid.CountColumn; newJ++)
                         {
-                            if (_newGrid[i, j].MetalID != 0)
+                            if (_newGrid[newI, newJ].MetalID != 0)
                             {
-                                if (IsBoardGridElement(ref _newGrid, i, j))
+                                if (IsBoardGridElement(ref grid, ref _newGrid, newI, newJ, oldI, oldJ))
                                 {
-                                    tracks[_newGrid[i, j].MetalID].Add(Tuple.Create(i, j));
+                                    tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
                                 }
-                                else if (_newGrid.IsPin(i, j))
+                                else if (_newGrid.IsPin(newI, newJ))
                                 {
-                                    tracks[_newGrid[i, j].MetalID].Add(Tuple.Create(i, j));
+                                    tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
                                 }
                             }
+
+                            oldJ++;
                         }
+
+                        oldI++;
                     }
+                    int k,l;
+                    grid.GetIndexes(start, out k, out l);
+                    tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                    grid.GetIndexes(finish, out k, out l);
+                    tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
 
                     _newGrid.WriteToFile("matrixTest.txt");
                     Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
@@ -98,16 +114,44 @@ namespace TracProg.Calculation.Algoriths
             }
         }
 
-        private bool IsBoardGridElement(ref Grid grid, int i, int j)
+        private bool IsBoardGridElement(ref Grid grid, ref Grid newGrid, int newI, int newJ, int oldI, int oldJ)
         {
-            if (i - 1 == -1 || 
-                i + 1 == grid.CountRows ||
-                j - 1 == 0 ||
-                j + 1 == grid.CountColumn)
+            try
             {
-                return true;
+                if (newJ - 1 == -1) // left
+                {
+                    if (newGrid[newI, newJ].MetalID == grid[oldJ - 2, oldI].MetalID)
+                    {
+                        return true;
+                    }
+                }
+                if (newJ + 1 == newGrid.CountColumn) // right
+                {
+                    if (newGrid[newI, newJ].MetalID == grid[oldJ + 2, oldI].MetalID)
+                    {
+                        return true;
+                    }
+                }
+                if (newI - 1 == -1) // up
+                {
+                    if (newGrid[newI, newJ].MetalID == grid[oldJ, oldI - 2].MetalID)
+                    {
+                        return true;
+                    }
+                }
+                if (newI + 1 == newGrid.CountRows) // down
+                {
+                    if (newGrid[newI, newJ].MetalID == grid[oldJ, oldI + 2].MetalID)
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
-            return false;
+            catch (OverflowException)
+            {
+                return false;
+            }  
         }
 
         private void GetCoordLimitingRectangle(ref Grid grid, ref List<int> path, int additLeftParam, int additUpParam, int additRightParam, int additDownParam)
