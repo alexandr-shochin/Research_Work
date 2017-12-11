@@ -18,6 +18,8 @@ namespace TracProg.Calculation.Algoriths
         private int _rightBorderLimitingRectangle;
         private int _downBorderLimitingRectangle;
 
+        private List<Tuple<int, int>> _pinnedNodes;
+
         private Grid _newGrid;
 
         public Alg()
@@ -36,11 +38,11 @@ namespace TracProg.Calculation.Algoriths
             {
                 if (VirtualWavePropagation(ref grid, start, finish) == true) // нашли трассу через междоузлие
                 {
-                    List<int> path = new List<int>();
-                    RestorationPath(ref grid, ref path);
+                    List<int> pathWithInternodes = new List<int>();
+                    RestorationPath(ref grid, ref pathWithInternodes);
 
                     // получаем координаты ограничивающего прямоугольника
-                    GetCoordLimitingRectangle(ref grid, ref path, 1, 1, 1, 1);
+                    GetCoordLimitingRectangle(ref grid, ref pathWithInternodes, 1, 1, 1, 1);
 
                     // копируем нужные элементы сетки и создаём новую
                     GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
@@ -58,12 +60,8 @@ namespace TracProg.Calculation.Algoriths
                             numElement++;
                         }
                     }
-                    //for (int i = 0; i < grid.CountColumn * grdi; i++)
-                    //{
-                        
-                    //}
 
-                    Point p0 = grid.GetCoordCell(_leftBorderLimitingRectangle, _upBorderLimitingRectangle);
+                    Point p0 = grid.GetCoordCell(_leftBorderLimitingRectangle, _upBorderLimitingRectangle); // координата смещения
 
                     _newGrid = new Grid(gridElements, p0.x, p0.y,
                         (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
@@ -95,11 +93,43 @@ namespace TracProg.Calculation.Algoriths
 
                         oldI++;
                     }
+                    // добаявлем start и finish
                     int k,l;
                     grid.GetIndexes(start, out k, out l);
                     tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
                     grid.GetIndexes(finish, out k, out l);
                     tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                    // на выходе после цикла чистая сетка с MetalID = 0
+
+                    // граничные узлы делаем pin'ами и запоминаем какие узлы мы сделали 
+                    _pinnedNodes = new List<Tuple<int, int>>();
+                    foreach (var track in tracks)
+                    {
+                        for (int i = 0; i < track.Value.Count; i++)
+                        {
+                            if (!_newGrid.IsPin(track.Value[i].Item1, track.Value[i].Item2))
+                            {
+                                Point p = grid.GetCoordCell(track.Value[i].Item1, track.Value[i].Item2);
+
+                                GridElement el = _newGrid[track.Value[i].Item1, track.Value[i].Item2];
+                                el.ViewElement = new Pin(p.y + p0.x, p.x + p0.y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
+                                _newGrid[track.Value[i].Item1, track.Value[i].Item2] = el;
+
+                                _pinnedNodes.Add(track.Value[i]);
+                            }
+                        }
+                    }
+
+
+                    // определить реализованные трассы (использовать словарь) можно искать на этапе определения граничных узлов
+                    // вычисляем вес каждой релизованной трассы (завести массив размера _newGrid и )
+                        // по той трассе, что не релизована эти ячейки пометить значением max(width, height)
+                        // пометить всю матрицу значениями уменьшая для соседа на 1? (см. алгортим)
+                    // сосчитать сумарный штраф для каждой трассы реализованной и нет (как считать, если в пути указаны узлы, как реальные так и виртуальные? дополнять до полной(реальная + виртуальная) трассы уже реализованные)
+                    // перетрассировать в порядке убывания, начиная с самой дорогой
+
+
+
 
                     _newGrid.WriteToFile("matrixTest.txt");
                     Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
@@ -108,7 +138,7 @@ namespace TracProg.Calculation.Algoriths
 
                     _newGrid.Draw(ref g);
 
-                    string pathStr = "test.bmp";
+                    string pathStr = "AlgTest.bmp";
                     bmp.Save(pathStr);
                 }
             }

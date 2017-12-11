@@ -31,7 +31,7 @@ namespace TracProg.Calculation
         //private List<IElement> _elements;
         private GridElement[] _grid;
 
-        public List<List<int>> MetTrack {get; private set; }
+        public List<List<List<int>>> MetTrack { get; private set; }
 
         private List<IElement> _metalizedTracks;
 
@@ -100,7 +100,7 @@ namespace TracProg.Calculation
 
         private void Init(int x, int y, int width, int height, int koeff)
         {
-            MetTrack = new List<List<int>>();
+            MetTrack = new List<List<List<int>>>();
             _metalizedTracks = new List<IElement>();
             CurrentIDMetalTrack = 1;
             
@@ -251,13 +251,11 @@ namespace TracProg.Calculation
 
         public void MetallizeTrack(List<List<int>> track, float widthMetal)
         {
-            
             if (track != null && track.Count != 0 && track[0][0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
+                MetTrack.Add(track);
                 for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
                 {
-                    MetTrack.Add(track[numSubPath]);
-
                     UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
                     _grid[track[numSubPath][0]].MetalID = CurrentIDMetalTrack;
                     _grid[track[numSubPath][0]].WidthMetal = widthMetal;
@@ -330,6 +328,18 @@ namespace TracProg.Calculation
                 }
                 return _grid[i + j * CountRows];
             }
+            set
+            {
+                if (i < 0 || i >= CountRows)
+                {
+                    throw new OverflowException("Индекс i находился вне границ сетки.");
+                }
+                if (j < 0 || j >= CountColumn)
+                {
+                    throw new OverflowException("Индекс j находился вне границ сетки.");
+                }
+                _grid[i + j * CountRows] = value;
+            }
         }
 
         /// <summary>
@@ -346,6 +356,14 @@ namespace TracProg.Calculation
                     throw new OverflowException("Номер ячейки находился вне границ.");
                 }
                 return _grid[num];
+            }
+            set
+            {
+                if (num < 0 || num >= _grid.Length)
+                {
+                    throw new OverflowException("Номер ячейки находился вне границ.");
+                }
+                _grid[num] = value;
             }
         }
 
