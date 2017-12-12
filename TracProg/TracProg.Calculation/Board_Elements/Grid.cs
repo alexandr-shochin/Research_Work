@@ -50,6 +50,7 @@ namespace TracProg.Calculation
 
         public Grid(GridElement[] grid, int x0, int y0, int width, int height, int koeff)
         {
+            MetTrack = new List<List<List<int>>>();
             _metalizedTracks = new List<IElement>();
             _grid = new GridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);

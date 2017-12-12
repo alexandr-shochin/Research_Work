@@ -28,8 +28,9 @@ namespace TracProg.Calculation.Algoriths
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns>Время, затраченное на работу алгоритма</returns>
-        public long[] FindPath()
+        public long[] FindPath(out List<List<List<int>>> nets)
         {
+            nets = new List<List<List<int>>>();
             List<long> times = new List<long>();
             for (int numNet = 0; numNet < _net.Length; ++numNet)
             {
@@ -74,6 +75,8 @@ namespace TracProg.Calculation.Algoriths
                 sw.Stop();
                 times.Add(sw.ElapsedMilliseconds);
                 _grid.MetallizeTrack(path, (numNet + 1));
+
+                nets.Add(path);
             }
 
             if (CalculateIsComplete != null)

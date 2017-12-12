@@ -189,7 +189,8 @@ namespace TracProg.GUI
                             Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             g = Graphics.FromImage(bmp);
 
-                            long time = li.FindPath()[0];
+                            List<List<List<int>>> nets;
+                            long time = li.FindPath(out nets)[0];
 
                             config.Grid.Draw(ref g);
 
@@ -225,7 +226,8 @@ namespace TracProg.GUI
                 li = new Li(config.Grid, config.Net);
                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                 g = Graphics.FromImage(bmp);
-                li.FindPath();
+                List<List<List<int>>> nets;
+                li.FindPath(out nets);
                 config.Grid.Draw(ref g);
                 bmp.Save("SingleTest.bmp");
             }

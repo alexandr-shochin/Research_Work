@@ -43,7 +43,7 @@ namespace TracProg.Calculation.Algoriths
                     RestorationPath(ref grid, ref pathWithInternodes);
 
                     // получаем координаты ограничивающего прямоугольника
-                    GetCoordLimitingRectangle(ref grid, ref pathWithInternodes, 1, 1, 1, 1);
+                    GetCoordLimitingRectangle(ref grid, ref pathWithInternodes, 1, 2, 1, 1);
 
                     // копируем нужные элементы сетки и создаём новую
                     GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
@@ -129,41 +129,36 @@ namespace TracProg.Calculation.Algoriths
                                 el.ViewElement = new Pin(p.y + p0.x, p.x + p0.y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
                                 _newGrid[track.Value[i].Item1, track.Value[i].Item2] = el;
 
+                                _newGrid.SetValue(track.Value[i].Item1, track.Value[i].Item2, GridValue.PIN);
+
                                 _pinnedNodes.Add(track.Value[i]);
                             }
                         }
                     }
 
                     //формируем матрицу коэфициентов-штрафов
-                    int[,] fineMmatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
+                    int[,] penaltyMatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
                     int startKoeff = Math.Max(_newGrid.CountColumn, _newGrid.CountRows);
-                    FormPenaltyMatrix(ref grid, startKoeff, ref fineMmatrix, ref tracks);
-
-                    ///////////////////////////////////////////////////////////////
-                    // проверка
-                    List<string> lines = new List<string>();
-                    for (int row = 0; row < _newGrid.CountRows; row++)
-                    {
-                        string str = "";
-                        for (int col = 0; col < _newGrid.CountColumn; col++)
-                        {
-                            str += fineMmatrix[row, col].ToString();
-                        }
-                        lines.Add(str);
-                    }
-                    File.WriteAllLines("testPenaltyMatrix.txt", lines);
-                    ////////////////////////////////////////////////////////////////
+                    FormPenaltyMatrix(ref grid, startKoeff, ref penaltyMatrix, ref tracks);
 
                     // сосчитать сумарный штраф для каждой трассы реализованной и нет (как считать, если в пути указаны узлы, как реальные так и виртуальные? дополнять до полной(реальная + виртуальная) трассы уже реализованные)
                     Dictionary<int, int> penalty = new Dictionary<int, int>();
+                    CalculatePenalty(grid, tracks, penaltyMatrix, ref penalty);
 
-
-
+                    // обнуляем весь метал
+                    for (int i = 0; i < _newGrid.Count; i++)
+                    {
+                        GridElement el = _newGrid[i];
+                        el.MetalID = 0;
+                        _newGrid[i] = el;
+                        _newGrid.UnsetValue(i, GridValue.FOREIGN_METAL);
+                        _newGrid.UnsetValue(i, GridValue.OWN_METAL);
+                    }
 
                     // перетрассировать в порядке убывания, начиная с самой дорогой
+                    Retracing(ref _newGrid, futurePins, penalty);
 
-
-
+                    // превратить те узлы что стали пинами обртано в просто узлы
 
                     _newGrid.WriteToFile("matrixTest.txt");
                     Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
@@ -176,6 +171,71 @@ namespace TracProg.Calculation.Algoriths
                     bmp.Save(pathStr);
                 }
             }
+        }
+
+        private void CalculatePenalty(Grid grid, Dictionary<int, List<Tuple<int, int>>> tracks, int[,] penaltyMatrix, ref Dictionary<int, int> penalty)
+        {
+            foreach (var track in tracks)
+            {
+                if (track.Key != grid.CurrentIDMetalTrack)
+                {
+                    int sum = 0;
+                    for (int item = 0; item < track.Value.Count; ++item)
+                    {
+                        int i = track.Value[item].Item1;
+                        int j = track.Value[item].Item2;
+                        sum += penaltyMatrix[i, j];
+                    }
+                    penalty.Add(track.Key, sum);
+                }
+                else
+                {
+                    int sum = 0;
+                    for (int item = 0; item < track.Value.Count; ++item)
+                    {
+                        if (!(item % 2 == 1)) // будем это учитывать при подсчтёте штрафа делается для того чтобы подсчёт штрафа для каждой трассы был "честным"
+                        {
+                            int i = track.Value[item].Item1;
+                            int j = track.Value[item].Item2;
+                            sum += penaltyMatrix[i, j];
+                        }
+                    }
+                    penalty.Add(track.Key, sum);
+                }
+            }
+        }
+
+        private bool Retracing(ref Grid grid, Dictionary<int, List<Tuple<int, int>>> futurePins, Dictionary<int, int> penalty)
+        {
+            // очередёность - penalty
+            // сетка - на чём будем  - _newGrid
+            // стартовые и финишные вершины - tracks
+
+            while (penalty.Count != 0)
+            {
+                // ищем максимальный штраф
+                int MetalID = 0;
+                int max = 0;
+                foreach (var track in penalty)
+                {
+                    if (max < track.Value)
+                    {
+                        max = track.Value;
+                        MetalID = track.Key;
+                    }
+                }
+                penalty.Remove(MetalID);
+
+                List<int> net = new List<int>();
+                foreach (var pin in futurePins[MetalID])
+                {
+                    net.Add(grid.GetNum(pin.Item1, pin.Item2));
+                }
+                Li li = new Li(grid, new Net[]{new Net(net.ToArray())});
+                List<List<List<int>>> nets; // нужно сформировать словарь - <ID, перетрассированнная трасса>
+                li.FindPath(out nets);
+            }
+            return true;
         }
 
         private void FormPenaltyMatrix(ref Grid grid, int startKoeff, ref int[,] fineMmatrix, ref Dictionary<int, List<Tuple<int, int>>> tracks)
