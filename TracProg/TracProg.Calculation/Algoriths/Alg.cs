@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,9 +47,11 @@ namespace TracProg.Calculation.Algoriths
 
                     // копируем нужные элементы сетки и создаём новую
                     GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
-                    Dictionary<int, List<Tuple<int, int>>> tracks = new Dictionary<int, List<Tuple<int, int>>>();
+                    Dictionary<int, List<Tuple<int, int>>> futurePins = new Dictionary<int, List<Tuple<int, int>>>(); //<MetalID, список с Pin или граничным узлом>
+                    Dictionary<int, List<Tuple<int, int>>> tracks = new Dictionary<int,List<Tuple<int,int>>>(); // реализованные трассы в прямоугольнике в том числе с междоузлие
                     for (int i = 0; i < grid.CurrentIDMetalTrack; i++)
                     {
+                        futurePins.Add(i + 1, new List<Tuple<int, int>>());
                         tracks.Add(i + 1, new List<Tuple<int, int>>());
                     }
                     int numElement = 0; // TODO важное замечание: исходная сетка хранится по столбцам, а новая по строкам!!!!
@@ -68,7 +71,8 @@ namespace TracProg.Calculation.Algoriths
                         (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
                         grid.Koeff);
 
-
+                    
+                    // ищем граничные узлы
                     int oldI = _upBorderLimitingRectangle;
                     int oldJ = _leftBorderLimitingRectangle;
                     for (int newI = 0; newI < _newGrid.CountRows; newI++)
@@ -78,13 +82,14 @@ namespace TracProg.Calculation.Algoriths
                         {
                             if (_newGrid[newI, newJ].MetalID != 0)
                             {
+                                tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ)); // ищем реализованные трассы в нашем прямоугольнике
                                 if (IsBoardGridElement(ref grid, ref _newGrid, newI, newJ, oldI, oldJ))
                                 {
-                                    tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                    futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
                                 }
                                 else if (_newGrid.IsPin(newI, newJ))
                                 {
-                                    tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                    futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
                                 }
                             }
 
@@ -96,14 +101,23 @@ namespace TracProg.Calculation.Algoriths
                     // добаявлем start и finish
                     int k,l;
                     grid.GetIndexes(start, out k, out l);
-                    tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                    futurePins[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
                     grid.GetIndexes(finish, out k, out l);
-                    tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
-                    // на выходе после цикла чистая сетка с MetalID = 0
+                    futurePins[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+
+                    // добавляем узлы из трассы с междоузлием    
+                    for (int i = 0; i < pathWithInternodes.Count; i++)
+                    {
+                        //if (!(i % 2 == 1)) // будем это учитывать при подсчтёте штрафа делается для того чтобы подсчёт штрафа для каждой трассы был "честным"
+                        {
+                            grid.GetIndexes(pathWithInternodes[i], out k, out l);
+                            tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                        }
+                    }
 
                     // граничные узлы делаем pin'ами и запоминаем какие узлы мы сделали 
                     _pinnedNodes = new List<Tuple<int, int>>();
-                    foreach (var track in tracks)
+                    foreach (var track in futurePins)
                     {
                         for (int i = 0; i < track.Value.Count; i++)
                         {
@@ -120,12 +134,32 @@ namespace TracProg.Calculation.Algoriths
                         }
                     }
 
+                    //формируем матрицу коэфициентов-штрафов
+                    int[,] fineMmatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
+                    int startKoeff = Math.Max(_newGrid.CountColumn, _newGrid.CountRows);
+                    FormPenaltyMatrix(ref grid, startKoeff, ref fineMmatrix, ref tracks);
 
-                    // определить реализованные трассы (использовать словарь) можно искать на этапе определения граничных узлов
-                    // вычисляем вес каждой релизованной трассы (завести массив размера _newGrid и )
-                        // по той трассе, что не релизована эти ячейки пометить значением max(width, height)
-                        // пометить всю матрицу значениями уменьшая для соседа на 1? (см. алгортим)
+                    ///////////////////////////////////////////////////////////////
+                    // проверка
+                    List<string> lines = new List<string>();
+                    for (int row = 0; row < _newGrid.CountRows; row++)
+                    {
+                        string str = "";
+                        for (int col = 0; col < _newGrid.CountColumn; col++)
+                        {
+                            str += fineMmatrix[row, col].ToString();
+                        }
+                        lines.Add(str);
+                    }
+                    File.WriteAllLines("testPenaltyMatrix.txt", lines);
+                    ////////////////////////////////////////////////////////////////
+
                     // сосчитать сумарный штраф для каждой трассы реализованной и нет (как считать, если в пути указаны узлы, как реальные так и виртуальные? дополнять до полной(реальная + виртуальная) трассы уже реализованные)
+                    Dictionary<int, int> penalty = new Dictionary<int, int>();
+
+
+
+
                     // перетрассировать в порядке убывания, начиная с самой дорогой
 
 
@@ -143,6 +177,75 @@ namespace TracProg.Calculation.Algoriths
                 }
             }
         }
+
+        private void FormPenaltyMatrix(ref Grid grid, int startKoeff, ref int[,] fineMmatrix, ref Dictionary<int, List<Tuple<int, int>>> tracks)
+        {
+            _set.Clear();
+            
+            for (int item = 0; item < tracks[grid.CurrentIDMetalTrack].Count; item++)
+            {
+                fineMmatrix[tracks[grid.CurrentIDMetalTrack][item].Item1,
+                            tracks[grid.CurrentIDMetalTrack][item].Item2] = startKoeff;
+                _set.Add(tracks[grid.CurrentIDMetalTrack][item].Item1 * _newGrid.CountColumn + tracks[grid.CurrentIDMetalTrack][item].Item2, startKoeff);
+            }
+
+            startKoeff--;
+
+            int i = 0;
+            int j = 0;
+
+            int prevCountAdded;
+            int countAdded = _set.Count;
+            for (int index = 0; index < _set.Count;)
+            {
+                prevCountAdded = countAdded;
+                countAdded = 0;
+                for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
+                {
+                    j = (int)Math.Floor((double)(_set[index + elEdded].NumCell) % _newGrid.CountColumn);
+                    i = ((_set[index + elEdded].NumCell) - j) / _newGrid.CountColumn;
+
+                    if (_set[index].NumLevel == startKoeff + 1)
+                    {
+                        if (i - 1 >= 0 && fineMmatrix[i - 1, j] == 0) // up
+                        {
+                            fineMmatrix[i - 1, j] = startKoeff;
+                            _set.Add((i - 1) * _newGrid.CountColumn + j, startKoeff);
+                            countAdded++;
+                        }
+                        if (i + 1 < _newGrid.CountRows && fineMmatrix[i + 1, j] == 0) // down
+                        {
+                            fineMmatrix[i + 1, j] = startKoeff;
+                            _set.Add((i + 1) * _newGrid.CountColumn + j, startKoeff);
+                            countAdded++;
+                            
+                        }
+                        if (j - 1 >= 0 && fineMmatrix[i, j - 1] == 0) // left
+                        {
+                            fineMmatrix[i, j - 1] = startKoeff;
+                            _set.Add(i * _newGrid.CountColumn + (j - 1), startKoeff);
+                            countAdded++;
+                        }
+                        if (j + 1 < _newGrid.CountColumn && fineMmatrix[i, j + 1] == 0) // right
+                        {
+                            fineMmatrix[i, j + 1] = startKoeff;
+                            _set.Add(i * _newGrid.CountColumn + (j + 1), startKoeff);
+                            countAdded++;
+                        }
+                    }
+                }
+                if (countAdded > 0)
+                {
+                    index += prevCountAdded;
+                    startKoeff--;
+                }
+                if (countAdded == 0) // условие выхода
+                {
+                    return;
+                }
+            }
+        }
+
 
         private bool IsBoardGridElement(ref Grid grid, ref Grid newGrid, int newI, int newJ, int oldI, int oldJ)
         {
