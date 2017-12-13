@@ -54,17 +54,17 @@ namespace TracProg.Calculation.Algoriths
                         futurePins.Add(i + 1, new List<Tuple<int, int>>());
                         tracks.Add(i + 1, new List<Tuple<int, int>>());
                     }
-                    int numElement = 0; // TODO важное замечание: исходная сетка хранится по столбцам, а новая по строкам!!!!
-                    for (int i = _leftBorderLimitingRectangle; i <= _rightBorderLimitingRectangle; ++i)
+                    int numElement = 0;
+                    for (int i = _upBorderLimitingRectangle; i <= _downBorderLimitingRectangle; ++i)
                     {
-                        for (int j = _upBorderLimitingRectangle; j <= _downBorderLimitingRectangle; ++j)
+                        for (int j = _leftBorderLimitingRectangle; j <= _rightBorderLimitingRectangle; ++j)
                         {
                             gridElements[numElement] = grid[i, j];
                             numElement++;
                         }
                     }
 
-                    Point p0 = grid.GetCoordCell(_leftBorderLimitingRectangle, _upBorderLimitingRectangle); // координата смещения
+                    Point p0 = grid.GetCoordCell(_upBorderLimitingRectangle, _leftBorderLimitingRectangle); // координата смещения
 
                     _newGrid = new Grid(gridElements, p0.x, p0.y,
                         (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * grid.Koeff,
@@ -77,7 +77,7 @@ namespace TracProg.Calculation.Algoriths
                     int oldJ = _leftBorderLimitingRectangle;
                     for (int newI = 0; newI < _newGrid.CountRows; newI++)
                     {
-                        oldJ = 0;
+                        oldJ = _leftBorderLimitingRectangle;
                         for (int newJ = 0; newJ < _newGrid.CountColumn; newJ++)
                         {
                             if (_newGrid[newI, newJ].MetalID != 0)
@@ -99,11 +99,11 @@ namespace TracProg.Calculation.Algoriths
                         oldI++;
                     }
                     // добаявлем start и finish
-                    int k,l;
+                    int k, l;
                     grid.GetIndexes(start, out k, out l);
-                    futurePins[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                    futurePins[grid.CurrentIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                     grid.GetIndexes(finish, out k, out l);
-                    futurePins[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                    futurePins[grid.CurrentIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
 
                     // добавляем узлы из трассы с междоузлием    
                     for (int i = 0; i < pathWithInternodes.Count; i++)
@@ -111,7 +111,7 @@ namespace TracProg.Calculation.Algoriths
                         //if (!(i % 2 == 1)) // будем это учитывать при подсчтёте штрафа делается для того чтобы подсчёт штрафа для каждой трассы был "честным"
                         {
                             grid.GetIndexes(pathWithInternodes[i], out k, out l);
-                            tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(l - _upBorderLimitingRectangle, k - _leftBorderLimitingRectangle));
+                            tracks[grid.CurrentIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                         }
                     }
 
@@ -126,7 +126,7 @@ namespace TracProg.Calculation.Algoriths
                                 Point p = grid.GetCoordCell(track.Value[i].Item1, track.Value[i].Item2);
 
                                 GridElement el = _newGrid[track.Value[i].Item1, track.Value[i].Item2];
-                                el.ViewElement = new Pin(p.y + p0.x, p.x + p0.y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
+                                el.ViewElement = new Pin(p.x + p0.x, p.y + p0.y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
                                 _newGrid[track.Value[i].Item1, track.Value[i].Item2] = el;
 
                                 _newGrid.SetValue(track.Value[i].Item1, track.Value[i].Item2, GridValue.PIN);
@@ -140,6 +140,20 @@ namespace TracProg.Calculation.Algoriths
                     int[,] penaltyMatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
                     int startKoeff = Math.Max(_newGrid.CountColumn, _newGrid.CountRows);
                     FormPenaltyMatrix(ref grid, startKoeff, ref penaltyMatrix, ref tracks);
+
+                    //////////////
+                    List<string> lines = new List<string>();
+                    for (int i = 0; i < _newGrid.CountRows; i++)
+                    {
+                        string str = "";
+                        for (int j = 0; j < _newGrid.CountColumn; j++)
+                        {
+                            str += penaltyMatrix[i, j].ToString();
+                        }
+                        lines.Add(str);
+                    }
+                    File.WriteAllLines("testPenltyMatrix.txt", lines);
+                    ///////////////
 
                     // сосчитать сумарный штраф для каждой трассы реализованной и нет (как считать, если в пути указаны узлы, как реальные так и виртуальные? дополнять до полной(реальная + виртуальная) трассы уже реализованные)
                     Dictionary<int, int> penalty = new Dictionary<int, int>();
@@ -246,7 +260,7 @@ namespace TracProg.Calculation.Algoriths
             {
                 fineMmatrix[tracks[grid.CurrentIDMetalTrack][item].Item1,
                             tracks[grid.CurrentIDMetalTrack][item].Item2] = startKoeff;
-                _set.Add(tracks[grid.CurrentIDMetalTrack][item].Item1 * _newGrid.CountColumn + tracks[grid.CurrentIDMetalTrack][item].Item2, startKoeff);
+                _set.Add(_newGrid.GetNum(tracks[grid.CurrentIDMetalTrack][item].Item1, tracks[grid.CurrentIDMetalTrack][item].Item2), startKoeff);
             }
 
             startKoeff--;
@@ -262,8 +276,7 @@ namespace TracProg.Calculation.Algoriths
                 countAdded = 0;
                 for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
                 {
-                    j = (int)Math.Floor((double)(_set[index + elEdded].NumCell) % _newGrid.CountColumn);
-                    i = ((_set[index + elEdded].NumCell) - j) / _newGrid.CountColumn;
+                    _newGrid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
 
                     if (_set[index].NumLevel == startKoeff + 1)
                     {
@@ -313,28 +326,28 @@ namespace TracProg.Calculation.Algoriths
             {
                 if (newJ - 1 == -1) // left
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldJ - 2, oldI].MetalID)
+                    if (newGrid[newI, newJ].MetalID == grid[oldI, oldJ - 2].MetalID)
                     {
                         return true;
                     }
                 }
                 if (newJ + 1 == newGrid.CountColumn) // right
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldJ + 2, oldI].MetalID)
+                    if (newGrid[newI, newJ].MetalID == grid[oldI, oldJ + 2].MetalID)
                     {
                         return true;
                     }
                 }
                 if (newI - 1 == -1) // up
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldJ, oldI - 2].MetalID)
+                    if (newGrid[newI, newJ].MetalID == grid[oldI - 2, oldJ].MetalID)
                     {
                         return true;
                     }
                 }
                 if (newI + 1 == newGrid.CountRows) // down
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldJ, oldI + 2].MetalID)
+                    if (newGrid[newI, newJ].MetalID == grid[oldI + 2, oldJ].MetalID)
                     {
                         return true;
                     }
@@ -350,11 +363,45 @@ namespace TracProg.Calculation.Algoriths
         private void GetCoordLimitingRectangle(ref Grid grid, ref List<int> path, int additLeftParam, int additUpParam, int additRightParam, int additDownParam)
         {
             // 1. нужно найти корректные() minItem и maxItem
-            int minItem = path.Min();
-            int maxItem = path.Max();
+            //int minItem = path.Min();
+            //int maxItem = path.Max();
 
-            grid.GetIndexes(minItem, out _leftBorderLimitingRectangle, out _upBorderLimitingRectangle);
-            grid.GetIndexes(maxItem, out _rightBorderLimitingRectangle, out _downBorderLimitingRectangle);
+
+            //grid.GetIndexes(minItem, out _upBorderLimitingRectangle, out _leftBorderLimitingRectangle);
+            //grid.GetIndexes(maxItem, out _downBorderLimitingRectangle, out _rightBorderLimitingRectangle);
+
+            // min j -> left
+            // max j -> right
+            // min i -> up
+            // max i -> down
+
+            _leftBorderLimitingRectangle = int.MaxValue;
+            _upBorderLimitingRectangle = int.MaxValue;
+            for (int node = 0; node < path.Count; node++) 
+            {
+                int i, j;
+                grid.GetIndexes(path[node], out i, out j);
+
+                if (j < _leftBorderLimitingRectangle) // left
+                {
+                    _leftBorderLimitingRectangle = j;
+                }
+
+                if (_rightBorderLimitingRectangle < j) // right
+                {
+                    _rightBorderLimitingRectangle = j;
+                }
+
+                if (i < _upBorderLimitingRectangle) // up
+                {
+                    _upBorderLimitingRectangle = i;
+                }
+
+                if (_downBorderLimitingRectangle < i) // down
+                {
+                    _downBorderLimitingRectangle = i;
+                }
+            }
 
             if (_leftBorderLimitingRectangle % 2 == 1) _leftBorderLimitingRectangle++;
             if (_upBorderLimitingRectangle % 2 == 1) _upBorderLimitingRectangle++;

@@ -327,7 +327,7 @@ namespace TracProg.Calculation
                 {
                     throw new OverflowException("Индекс j находился вне границ сетки.");
                 }
-                return _grid[i + j * CountRows];
+                return _grid[i * CountColumn + j];
             }
             set
             {
@@ -339,7 +339,7 @@ namespace TracProg.Calculation
                 {
                     throw new OverflowException("Индекс j находился вне границ сетки.");
                 }
-                _grid[i + j * CountRows] = value;
+                _grid[i * CountColumn + j] = value;
             }
         }
 
@@ -382,8 +382,8 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            i = (int)Math.Floor((double)num % CountRows);
-            j = (num - i) / CountRows;
+            j = (int)Math.Floor((double)num % CountColumn);
+            i = (num - j) / CountColumn;
         }
 
         /// <summary>
@@ -406,8 +406,8 @@ namespace TracProg.Calculation
                 throw new OverflowException("Координата y находилась вне границ сетки.");
             }
 
-            i = ((x - X) / Koeff) * 2;
-            j = ((y - Y) / Koeff) * 2;
+            j = ((x - X) / Koeff) * 2;
+            i = ((y - Y) / Koeff) * 2;
         }
 
         /// <summary>
@@ -427,7 +427,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            return i + j * CountRows;
+            return i * CountColumn + j;
         }
 
         /// <summary>
@@ -618,7 +618,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            return new Point(X + (Koeff * (i / 2)), Y + (Koeff * (j / 2)));
+            return new Point(X + (Koeff * (j / 2)), Y + (Koeff * (i / 2)));
         }
 
         public Point GetCoordCell(int num)
@@ -729,7 +729,7 @@ namespace TracProg.Calculation
                     j+=2;
                 }
 
-                indexes = Tuple.Create(i, j);
+                indexes = Tuple.Create(j, i);
                 return true;
             }
             catch (Exception ex)
