@@ -25,17 +25,22 @@ namespace TracProg.Calculation
     [Serializable]
     public class Grid : IElement
     {
-        public int CurrentIDMetalTrack { get; private set; }
+        private int _maxIDMetalTrack;
+        public int MaxIDMetalTrack 
+        {
+            get
+            {
+                return _maxIDMetalTrack + 1;
+            }
+            private set
+            {
+                _maxIDMetalTrack = value;
+            }
+        }
 
         private Point[] _nodes;
         //private List<IElement> _elements;
         private GridElement[] _grid;
-
-        public List<List<List<int>>> MetTrack { get; private set; }
-
-        private List<IElement> _metalizedTracks;
-
-        public event Action Metalize;
 
         /// <summary>
         /// Конструтор
@@ -50,12 +55,10 @@ namespace TracProg.Calculation
 
         public Grid(GridElement[] grid, int x0, int y0, int width, int height, int koeff)
         {
-            MetTrack = new List<List<List<int>>>();
-            _metalizedTracks = new List<IElement>();
             _grid = new GridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);
 
-            CurrentIDMetalTrack = 1;
+            MaxIDMetalTrack = 1;
 
             X = x0;
             Y = y0;
@@ -101,9 +104,7 @@ namespace TracProg.Calculation
 
         private void Init(int x, int y, int width, int height, int koeff)
         {
-            MetTrack = new List<List<List<int>>>();
-            _metalizedTracks = new List<IElement>();
-            CurrentIDMetalTrack = 1;
+            MaxIDMetalTrack = 1;
             
             GenerateCoord(width, height, koeff);
 
@@ -231,18 +232,25 @@ namespace TracProg.Calculation
 
         public void Draw(ref Graphics graphics)
         {
+            Random rand = new Random();
+            Color[] colors = new Color[MaxIDMetalTrack + 1];
+            for (int i = 1; i <= MaxIDMetalTrack; i++)
+            {
+                colors[i] = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
+            }
+
             for (int i = 0; i < _nodes.Length; ++i)
             {
                 graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
-            for (int i = 0; i < _metalizedTracks.Count; i++)
+            for (int i = 0; i < _grid.Length; ++i)
             {
-                _metalizedTracks[i].Draw(ref graphics);
-            }
-
-            for (int i = _grid.Length - 1; i >= 0; --i)
-            {
+                if (_grid[i].MetalID != 0 && !(_grid[i].ViewElement is Pin))
+                {
+                    Point p = GetCoordCell(i);
+                    _grid[i].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, colors[_grid[i].MetalID]);
+                }
                 if (_grid[i].ViewElement != null)
                 {
                     _grid[i].ViewElement.Draw(ref graphics);
@@ -250,33 +258,32 @@ namespace TracProg.Calculation
             }
         }
 
-        public void MetallizeTrack(List<List<int>> track, float widthMetal)
+        public void MetallizeTrack(List<List<int>> track, float widthMetal, int metalID)
         {
             if (track != null && track.Count != 0 && track[0][0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
-                MetTrack.Add(track);
                 for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
                 {
                     UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
-                    _grid[track[numSubPath][0]].MetalID = CurrentIDMetalTrack;
+                    _grid[track[numSubPath][0]].MetalID = metalID;
                     _grid[track[numSubPath][0]].WidthMetal = widthMetal;
 
                     for (int node = 1; node < track[numSubPath].Count; ++node)
                     {
-                        // 1. Добавялем элемент метал откуда куда (track[i - 1] - track[i])                     
-                        Point pFrom = GetCoordCell(track[numSubPath][node - 1]);
-                        Point pIn = GetCoordCell(track[numSubPath][node]);
-                        _metalizedTracks.Add(new Metal(new Rectangle(pFrom.x, pFrom.y, 1 * Koeff, 1 * Koeff), new Rectangle(pIn.x, pIn.y, 1 * Koeff, 1 * Koeff), widthMetal));
-
-                        // 2. У ячеек которые металлизируем, значение свой метал поменять на чужой
-                        SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
-                        _grid[track[numSubPath][node]].MetalID = CurrentIDMetalTrack;
-                        _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                        if (!IsPin(track[numSubPath][node]))
+                        {
+                            SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
+                            _grid[track[numSubPath][node]].ViewElement = null;
+                            _grid[track[numSubPath][node]].MetalID = metalID;
+                            _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                        }
+                        else
+                        {
+                            UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
+                            _grid[track[numSubPath][node]].MetalID = metalID;
+                            _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                        }
                     }
-                }
-                if (Metalize != null)
-                {
-                    Metalize.Invoke();
                 }
             }
             else // трасса не построена
@@ -290,13 +297,9 @@ namespace TracProg.Calculation
                     }
                     catch (NullReferenceException) { }   
                 }
-
-                if (Metalize != null)
-                {
-                    Metalize.Invoke();
-                }
             }
-            CurrentIDMetalTrack++;
+            if (MaxIDMetalTrack < metalID)
+                MaxIDMetalTrack = metalID;
         }
 
         public int Compare(IElement x, IElement y)

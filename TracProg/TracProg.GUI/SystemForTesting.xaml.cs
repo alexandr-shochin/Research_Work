@@ -185,13 +185,19 @@ namespace TracProg.GUI
                         for (int i = 0; i < _testSettings.CountRuns; ++i)
                         {
                             config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
-                            li = new Li(config.Grid, config.Net);
+                            li = new Li(config.Grid);
                             Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             g = Graphics.FromImage(bmp);
 
-                            List<List<List<int>>> nets;
-                            long time = li.FindPath(out nets)[0];
-
+                            long time = 0;
+                            for (int numNet = 0; numNet < config.Net.Length; numNet++)
+	                        {
+                                long localTime;
+                                List<List<int>> track;
+                                bool res = li.FindPath(config.Net[numNet], out track, out localTime);
+                                config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
+                                time += localTime;
+	                        }                          
                             config.Grid.Draw(ref g);
 
                             string path = _testSettings.FileOutPath + "\\test_" + i + ".bmp";
@@ -223,13 +229,44 @@ namespace TracProg.GUI
             else
             {
                 config.ReadFromFile(_filePathImport);
-                li = new Li(config.Grid, config.Net);
+                li = new Li(config.Grid);
                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                 g = Graphics.FromImage(bmp);
-                List<List<List<int>>> nets;
-                li.FindPath(out nets);
-                config.Grid.Draw(ref g);
-                bmp.Save("SingleTest.bmp");
+                long time = 0;
+                List<List<int>> nonRealizeadTracks = new List<List<int>>();
+                for (int numNet = 0; numNet < config.Net.Length; numNet++)
+                {
+                    long localTime;
+                    List<List<int>> track;
+                    if (!li.FindPath(config.Net[numNet], out track, out localTime))
+                    {
+                        nonRealizeadTracks.Add(track[0]);
+                    }
+                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
+                    time += localTime;
+                }
+
+                //config.Grid.Draw(ref g);
+                //bmp.Save("SingleTest.bmp");
+
+                for (int track = 0; track < nonRealizeadTracks.Count; track++)
+                {
+                    for (int pin = 0; pin < nonRealizeadTracks[track].Count - 1; pin++)
+                    {
+                        Alg alg = new Alg(config.Grid);
+                        int finish = nonRealizeadTracks[track][pin];
+                        int start = nonRealizeadTracks[track][pin + 1];
+                        if (alg.FindPath(start, finish))
+                        {
+                            bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                            g = Graphics.FromImage(bmp);
+                            config.Grid.Draw(ref g);
+                            bmp.Save("SingleTest.bmp");
+                        }
+                    }
+                }
+
+                
             }
         }
 

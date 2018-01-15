@@ -10,15 +10,11 @@ namespace TracProg.Calculation.Algoriths
     public class Li
     {
         private Grid _grid;
-        private Net[] _net;
         private Set _set;
 
-        public event Action CalculateIsComplete;
-
-        public Li(Grid grid, Net[] net)
+        public Li(Grid grid)
         {
             _grid = grid;
-            _net = net;
 
             _set = new Set();
         }
@@ -28,61 +24,45 @@ namespace TracProg.Calculation.Algoriths
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns>Время, затраченное на работу алгоритма</returns>
-        public long[] FindPath(out List<List<List<int>>> nets)
+        public bool FindPath(Net net, out List<List<int>> path, out long time)
         {
-            nets = new List<List<List<int>>>();
-            List<long> times = new List<long>();
-            for (int numNet = 0; numNet < _net.Length; ++numNet)
+            _set.Clear();
+
+            time = 0;
+            path = new List<List<int>>();
+
+            Stopwatch sw = new Stopwatch();
+            sw.Reset();
+            sw.Start();
+            for (int numEl = 1; numEl < net.Count; numEl++)
             {
-                List<List<int>> path = new List<List<int>>();
+                List<int> subPath = new List<int>();
 
-                Stopwatch sw = new Stopwatch();
-                sw.Reset();
-                sw.Start();
-                for (int numEl = 1; numEl < _net[numNet].Count; numEl++)
+                int start = net[numEl];
+                int finish = net[numEl - 1];
+
+                if (WavePropagation(start, finish) == true)
                 {
-                    List<int> subPath = new List<int>();
-
-                    int start = _net[numNet][numEl];
-                    int finish = _net[numNet][numEl - 1];
-
-                    if (WavePropagation(start, finish) == true)
-                    {
-                        RestorationPath(ref subPath);
-                    }
-                    else //если какие-то подтрассы нашли и какую-то не смогли реализовать
-                    {
-                        _grid.WriteToFile("matrixTest.txt");
-                        Alg alg = new Alg();
-                        alg.FindPath(ref _grid, start, finish);
-                    }
+                    RestorationPath(ref subPath);
                     _set.Clear();
-                    if (subPath.Count != 0)
-                    {
-                        path.Add(subPath);
-                    }
-                    else // если не можем реализовать трассу
-                    {
-                        subPath.Add(-1); // индикатор того, что трасса не реализована
-                        for (int i = 0; i < _net[numNet].Count; ++i)
-                        {
-                            subPath.Add(_net[numNet][i]);
-                        }
-                        path.Add(subPath);
-                        break;
-                    }
+                    path.Add(subPath);
                 }
-                sw.Stop();
-                times.Add(sw.ElapsedMilliseconds);
-                _grid.MetallizeTrack(path, (numNet + 1));
-
-                nets.Add(path);
+                else //если какую-то не смогли реализовать
+                {
+                    _set.Clear();
+                    subPath.Add(-1); // индикатор того, что трасса не реализована
+                    for (int i = 0; i < net.Count; ++i)
+                    {
+                        subPath.Add(net[i]);
+                    }
+                    path.Add(subPath);
+                    return false;
+                }
             }
-
-            if (CalculateIsComplete != null)
-                CalculateIsComplete.Invoke();
-
-            return times.ToArray();
+            sw.Stop();
+            time = sw.ElapsedMilliseconds;
+            return true;
+            
         }
 
         /// <summary>
