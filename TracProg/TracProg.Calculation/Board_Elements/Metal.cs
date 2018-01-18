@@ -100,7 +100,7 @@ namespace TracProg.Calculation
             return this._rect.IntersectsWith(new Rectangle(pin.X, pin.Y, pin.Width, pin.Height));
         }
 
-        public void Draw(ref Graphics graphics)
+        public void Draw(Graphics graphics)
         {
             graphics.FillRectangle(new SolidBrush(_Color), (X + 0.5f) + (((Width - 1) - ((Width - 1) / 2.0f))) / 2.0f, (Y + 0.5f) + (((Height - 1) - ((Height - 1) / 2.0f))) / 2.0f, (Width - 1) / 2.0f, (Height - 1) / 2.0f);
         }

@@ -100,7 +100,7 @@ namespace TracProg.Calculation
             return this._rect.IntersectsWith(new Rectangle(prohibitionZone.X, prohibitionZone.Y, prohibitionZone.Width, prohibitionZone.Height));
         }
 
-        public void Draw(ref Graphics graphics)
+        public void Draw(Graphics graphics)
         {
             graphics.FillRectangle(new SolidBrush(_Color), X + 1, Y + 1, Width - 1, Height - 1);
         }

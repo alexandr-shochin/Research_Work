@@ -104,11 +104,8 @@ namespace TracProg.Calculation.Algoriths
                 // добавляем узлы из трассы с междоузлием    
                 for (int i = 0; i < pathWithInternodes.Count; i++)
                 {
-                    //if (!(i % 2 == 1)) // будем это учитывать при подсчтёте штрафа делается для того чтобы подсчёт штрафа для каждой трассы был "честным"
-                    {
-                        _oldGrid.GetIndexes(pathWithInternodes[i], out k, out l);
-                        tracks[_oldGrid.MaxIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
-                    }
+                    _oldGrid.GetIndexes(pathWithInternodes[i], out k, out l);
+                    tracks[_oldGrid.MaxIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 }
 
                 // граничные узлы делаем pin'ами и запоминаем какие узлы мы сделали 
@@ -166,41 +163,46 @@ namespace TracProg.Calculation.Algoriths
                 }
 
                 // перетрассировать в порядке убывания, начиная с самой дорогой
-                Retracing(ref _newGrid, futurePins, penalty);
-
-                // превратить те узлы что стали пинами обртано в просто узлы
-                for (int i = 0; i < _pinnedNodes.Count; i++)
+                if (Retracing(ref _newGrid, futurePins, penalty))
                 {
-                    GridElement el = _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2];
-                    el.ViewElement = null;
-                    _newGrid.UnsetValue(_pinnedNodes[i].Item1, _pinnedNodes[i].Item2, GridValue.PIN);
-                    _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2] = el;
-                }
-
-                // копируем матрицу обратно
-                numElement = 0;
-                for (int i = _upBorderLimitingRectangle; i <= _downBorderLimitingRectangle; ++i)
-                {
-                    for (int j = _leftBorderLimitingRectangle; j <= _rightBorderLimitingRectangle; ++j)
+                    // превратить те узлы что стали пинами обртано в просто узлы
+                    for (int i = 0; i < _pinnedNodes.Count; i++)
                     {
-                        _oldGrid[i, j] = _newGrid[numElement];
-                        numElement++;
+                        GridElement el = _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2];
+                        el.ViewElement = null;
+                        _newGrid.UnsetValue(_pinnedNodes[i].Item1, _pinnedNodes[i].Item2, GridValue.PIN);
+                        _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2] = el;
                     }
+
+                    // копируем матрицу обратно
+                    numElement = 0;
+                    for (int i = _upBorderLimitingRectangle; i <= _downBorderLimitingRectangle; ++i)
+                    {
+                        for (int j = _leftBorderLimitingRectangle; j <= _rightBorderLimitingRectangle; ++j)
+                        {
+                            _oldGrid[i, j] = _newGrid[numElement];
+                            numElement++;
+                        }
+                    }
+
+                    _newGrid.WriteToFile("matrixTest.txt");
+                    Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
+                    Graphics g = Graphics.FromImage(bmp);
+                    g.TranslateTransform(-p0.x, -p0.y);
+
+                    _newGrid.Draw(g);
+
+                    _oldGrid.WriteToFile("mainMatrixAfterAlg.txt");
+
+                    string pathStr = "AlgTest.bmp";
+                    bmp.Save(pathStr);
+
+                    return true;
                 }
-
-                _newGrid.WriteToFile("matrixTest.txt");
-                Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
-                Graphics g = Graphics.FromImage(bmp);
-                g.TranslateTransform(-p0.x, -p0.y);
-
-                _newGrid.Draw(ref g);
-
-                _oldGrid.WriteToFile("mainMatrixAfterAlg.txt");
-
-                string pathStr = "AlgTest.bmp";
-                bmp.Save(pathStr);
-
-                return true;
+                else
+                {
+                    return false;
+                }
             }
             else
             {
@@ -259,18 +261,35 @@ namespace TracProg.Calculation.Algoriths
                         MetalID = track.Key;
                     }
                 }
-                penalty.Remove(MetalID);
-
-                List<int> netList = new List<int>();
-                foreach (var pin in futurePins[MetalID])
+                if (MetalID != 0)
                 {
-                    netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                    penalty.Remove(MetalID);
+
+                    List<int> netList = new List<int>();
+                    foreach (var pin in futurePins[MetalID])
+                    {
+                        netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                    }
+                    Li li = new Li(grid);
+                    long time;
+                    List<List<int>> trackList;
+                    if (li.FindPath(new Net(netList.ToArray()), out trackList, out time))
+                    {
+                        if (trackList.Count != 0)
+                        {
+                            grid.MetallizeTrack(trackList, 1.0f, MetalID);
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
-                Li li = new Li(grid);
-                long time;
-                List<List<int>> trackList;
-                bool res =  li.FindPath(new Net(netList.ToArray()), out trackList, out time);
-                grid.MetallizeTrack(trackList, 1.0f, MetalID);
+                else
+                {
+                    penalty.Clear();
+                    break;
+                }
             }
             return true;
         }

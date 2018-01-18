@@ -143,7 +143,7 @@ namespace TracProg.Calculation
                     }
                     return ErrorCode.NO_ERROR;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     return ErrorCode.ADD_ERROR;
                 }
@@ -230,7 +230,7 @@ namespace TracProg.Calculation
             }
         }
 
-        public void Draw(ref Graphics graphics)
+        public void Draw(Graphics graphics)
         {
             Random rand = new Random();
             Color[] colors = new Color[MaxIDMetalTrack + 1];
@@ -253,7 +253,7 @@ namespace TracProg.Calculation
                 }
                 if (_grid[i].ViewElement != null)
                 {
-                    _grid[i].ViewElement.Draw(ref graphics);
+                    _grid[i].ViewElement.Draw(graphics);
                 }
             }
         }

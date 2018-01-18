@@ -59,7 +59,6 @@ namespace TracProg.GUI
         }
 
         private TestSettings _testSettings;
-        private Configuration config;
         private Thread _thread;
 
         private int _id;
@@ -91,7 +90,7 @@ namespace TracProg.GUI
             _testStartButton.Click += _testStartButton_Click;
             _testStopButton.Click += _testStopButton_Click;
 
-            config = new Configuration(); 
+            
         }
 
         void _importButton_Click(object sender, RoutedEventArgs e)
@@ -164,7 +163,10 @@ namespace TracProg.GUI
 
         private void _testStartButton_Click(object sender, RoutedEventArgs e)
         {
-            Graphics g;
+            Configuration config = new Configuration();
+
+            Graphics old_g;
+            Graphics new_g;
             Li li;
 
             if (!_isSingleMode)
@@ -186,25 +188,63 @@ namespace TracProg.GUI
                         {
                             config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
                             li = new Li(config.Grid);
-                            Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                            g = Graphics.FromImage(bmp);
+                            
+                            
+                            
+                            
 
                             long time = 0;
+                            Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
                             for (int numNet = 0; numNet < config.Net.Length; numNet++)
-	                        {
+                            {
                                 long localTime;
                                 List<List<int>> track;
-                                bool res = li.FindPath(config.Net[numNet], out track, out localTime);
-                                config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
-                                time += localTime;
-	                        }                          
-                            config.Grid.Draw(ref g);
+                                if (!li.FindPath(config.Net[numNet], out track, out localTime))
+                                {
+                                    nonRealized.Add(numNet + 1, config.Net[numNet]);
+                                }
+                                else
+                                {
+                                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
+                                    time += localTime;
+                                }
+                            }
+                            Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                            old_g = Graphics.FromImage(old_bmp);
+                            //config.Grid.Draw(old_g);
+                            string path = _testSettings.FileOutPath + "\\test_old.bmp";
+                            //old_bmp.Save(path);
 
-                            string path = _testSettings.FileOutPath + "\\test_" + i + ".bmp";
-                            bmp.Save(path);
+                            Bitmap new_bmp;
+                            Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
+
+                            while (true)
+                            {
+                                foreach (var net in nonRealized)
+                                {
+                                    Alg alg = new Alg(config.Grid);
+                                    if (alg.FindPath(net.Value[0], net.Value[1]))
+                                    {
+                                        goodRetracing.Add(net.Key, net.Value);
+                                    }
+                                }
+                                foreach (var goodNet in goodRetracing)
+                                {
+                                    nonRealized.Remove(goodNet.Key);
+                                }
+                                goodRetracing.Clear();
+                            }
+                            new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                            new_g = Graphics.FromImage(new_bmp);
+                            
+                            config.Grid.Draw(new_g);
+                            path = _testSettings.FileOutPath + "\\test_new.bmp";
+                            new_bmp.Save(path);
+                            new_bmp = null;
+                            new_g = null;
 
                             AddRow(time);
-                            g = null;
+                            old_g = null;
 
                             Dispatcher.Invoke(delegate() { _progressBar.Value = i + 1; });
                         }
@@ -231,7 +271,7 @@ namespace TracProg.GUI
                 config.ReadFromFile(_filePathImport);
                 li = new Li(config.Grid);
                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                g = Graphics.FromImage(bmp);
+                old_g = Graphics.FromImage(bmp);
                 long time = 0;
                 List<List<int>> nonRealizeadTracks = new List<List<int>>();
                 for (int numNet = 0; numNet < config.Net.Length; numNet++)
@@ -259,8 +299,8 @@ namespace TracProg.GUI
                         if (alg.FindPath(start, finish))
                         {
                             bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                            g = Graphics.FromImage(bmp);
-                            config.Grid.Draw(ref g);
+                            old_g = Graphics.FromImage(bmp);
+                            config.Grid.Draw(old_g);
                             bmp.Save("SingleTest.bmp");
                         }
                     }
