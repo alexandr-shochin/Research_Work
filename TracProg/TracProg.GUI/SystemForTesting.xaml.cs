@@ -218,21 +218,13 @@ namespace TracProg.GUI
                             Bitmap new_bmp;
                             Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
 
-                            while (true)
+                            foreach (var net in nonRealized)
                             {
-                                foreach (var net in nonRealized)
+                                Alg alg = new Alg(config.Grid);
+                                if (alg.FindPath(net.Value[0], net.Value[1]))
                                 {
-                                    Alg alg = new Alg(config.Grid);
-                                    if (alg.FindPath(net.Value[0], net.Value[1]))
-                                    {
-                                        goodRetracing.Add(net.Key, net.Value);
-                                    }
+                                    goodRetracing.Add(net.Key, net.Value);
                                 }
-                                foreach (var goodNet in goodRetracing)
-                                {
-                                    nonRealized.Remove(goodNet.Key);
-                                }
-                                goodRetracing.Clear();
                             }
                             new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             new_g = Graphics.FromImage(new_bmp);

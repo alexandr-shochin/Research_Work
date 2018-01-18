@@ -226,8 +226,8 @@ namespace TracProg.Calculation
             {
                 try
                 {
-                    Tuple<int, int> pair_i = Tuple.Create(rand.Next(1, n - 1), rand.Next(1, m - 1));
-                    Tuple<int, int> pair_j = Tuple.Create(rand.Next(1, n - 1), rand.Next(1, m - 1));
+                    Tuple<int, int> pair_i = Tuple.Create(rand.Next(0, n - 1), rand.Next(0, m - 1));
+                    Tuple<int, int> pair_j = Tuple.Create(rand.Next(0, n - 1), rand.Next(0, m - 1));
                     if (pairs.FindIndex(x => x.Item1 == pair_i.Item1 && x.Item2 == pair_i.Item2) == -1 &&
                         pairs.FindIndex(x => x.Item1 == pair_j.Item1 && x.Item2 == pair_j.Item2) == -1)
                     {

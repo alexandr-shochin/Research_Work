@@ -162,6 +162,13 @@ namespace TracProg.Calculation.Algoriths
                     _newGrid.UnsetValue(i, GridValue.OWN_METAL);
                 }
 
+
+                Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
+                Graphics g = Graphics.FromImage(bmp);
+                g.TranslateTransform(-p0.x, -p0.y);
+                _newGrid.Draw(g);
+                bmp.Save("AlgTest.bmp");
+
                 // перетрассировать в порядке убывания, начиная с самой дорогой
                 if (Retracing(ref _newGrid, futurePins, penalty))
                 {
@@ -185,22 +192,16 @@ namespace TracProg.Calculation.Algoriths
                         }
                     }
 
-                    _newGrid.WriteToFile("matrixTest.txt");
-                    Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
-                    Graphics g = Graphics.FromImage(bmp);
-                    g.TranslateTransform(-p0.x, -p0.y);
-
                     _newGrid.Draw(g);
-
-                    _oldGrid.WriteToFile("mainMatrixAfterAlg.txt");
-
-                    string pathStr = "AlgTest.bmp";
-                    bmp.Save(pathStr);
+                    bmp.Save("AlgTest.bmp");
 
                     return true;
                 }
                 else
                 {
+                    _newGrid.Draw(g);
+                    bmp.Save("algtest.bmp");
+
                     return false;
                 }
             }
@@ -287,7 +288,6 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else
                 {
-                    penalty.Clear();
                     break;
                 }
             }
