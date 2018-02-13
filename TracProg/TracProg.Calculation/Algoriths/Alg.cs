@@ -31,6 +31,8 @@ namespace TracProg.Calculation.Algoriths
             _virtualSet = new Set();
         }
 
+        Point p0;
+
         public bool FindPath(int start, int finish)
         {
             if (!WavePropagation(ref _oldGrid, start, finish) == true && VirtualWavePropagation(ref _oldGrid, start, finish) == true) // нашли трассу через междоузлие
@@ -60,7 +62,7 @@ namespace TracProg.Calculation.Algoriths
                     }
                 }
 
-                Point p0 = _oldGrid.GetCoordCell(_upBorderLimitingRectangle, _leftBorderLimitingRectangle); // координата смещения
+                p0 = _oldGrid.GetCoordCell(_upBorderLimitingRectangle, _leftBorderLimitingRectangle); // координата смещения
 
                 _newGrid = new Grid(gridElements, p0.x, p0.y,
                     (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
@@ -153,24 +155,22 @@ namespace TracProg.Calculation.Algoriths
                 CalculatePenalty(_oldGrid, tracks, penaltyMatrix, ref penalty);
 
                 // обнуляем весь метал
-                for (int i = 0; i < _newGrid.Count; i++)
-                {
-                    GridElement el = _newGrid[i];
-                    el.MetalID = 0;
-                    _newGrid[i] = el;
-                    _newGrid.UnsetValue(i, GridValue.FOREIGN_METAL);
-                    _newGrid.UnsetValue(i, GridValue.OWN_METAL);
-                }
+                //for (int i = 0; i < _newGrid.Count; i++)
+                //{
+                //    GridElement el = _newGrid[i];
+                //    el.MetalID = 0;
+                //    _newGrid[i] = el;
+                //    _newGrid.UnsetValue(i, GridValue.FOREIGN_METAL);
+                //    _newGrid.UnsetValue(i, GridValue.OWN_METAL);
+                //}
 
 
                 Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
                 Graphics g = Graphics.FromImage(bmp);
                 g.TranslateTransform(-p0.x, -p0.y);
-                _newGrid.Draw(g);
-                bmp.Save("AlgTest.bmp");
 
                 // перетрассировать в порядке убывания, начиная с самой дорогой
-                if (Retracing(ref _newGrid, futurePins, penalty))
+                if (Retracing(ref _newGrid, tracks, futurePins, penalty))
                 {
                     // превратить те узлы что стали пинами обртано в просто узлы
                     for (int i = 0; i < _pinnedNodes.Count; i++)
@@ -192,15 +192,15 @@ namespace TracProg.Calculation.Algoriths
                         }
                     }
 
-                    _newGrid.Draw(g);
-                    bmp.Save("AlgTest.bmp");
+                    //_newGrid.Draw(g);
+                    //bmp.Save("AlgTest.bmp");
 
                     return true;
                 }
                 else
                 {
-                    _newGrid.Draw(g);
-                    bmp.Save("algtest.bmp");
+                    //_newGrid.Draw(g);
+                    //bmp.Save("algtest.bmp");
 
                     return false;
                 }
@@ -228,30 +228,34 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else
                 {
-                    int sum = 0;
-                    for (int item = 0; item < track.Value.Count; ++item)
-                    {
-                        if (!(item % 2 == 1)) // будем это учитывать при подсчтёте штрафа делается для того чтобы подсчёт штрафа для каждой трассы был "честным"
-                        {
-                            int i = track.Value[item].Item1;
-                            int j = track.Value[item].Item2;
-                            sum += penaltyMatrix[i, j];
-                        }
-                    }
-                    penalty.Add(track.Key, sum);
+                    //int sum = 0;
+                    //for (int item = 0; item < track.Value.Count; ++item)
+                    //{
+                    //    if (!(item % 2 == 1)) // будем это учитывать при подсчтёте штрафа делается для того чтобы подсчёт штрафа для каждой трассы был "честным"
+                    //    {
+                    //        int i = track.Value[item].Item1;
+                    //        int j = track.Value[item].Item2;
+                    //        sum += penaltyMatrix[i, j];
+                    //    }
+                    //}
+                    //penalty.Add(track.Key, sum);
                 }
             }
         }
 
-        private bool Retracing(ref Grid grid, Dictionary<int, List<Tuple<int, int>>> futurePins, Dictionary<int, int> penalty)
+        private bool Retracing(ref Grid grid, Dictionary<int, List<Tuple<int, int>>> tracks, Dictionary<int, List<Tuple<int, int>>> futurePins, Dictionary<int, int> penalty)
         {
-            // очередёность - penalty
-            // сетка - на чём будем  - _newGrid
-            // стартовые и финишные вершины - tracks
+            // сценарий 
+            // 1. снимаем трассу с максимальным штрафом
+            // 2. перетрассируем трассу с максимальным штрафом (i)
+            // 3. перетрассируем трассу которую не могли реализовть (j)
+            // 4. если не удалось перетрассировать i, перетрассируем  i = i + 1
+            // 5. перетрассируем j
+            // 6. цикл с пункта 4
 
             while (penalty.Count != 0)
             {
-                // ищем максимальный штраф
+                // 0. ищем максимальный штраф
                 int MetalID = 0;
                 int max = 0;
                 foreach (var track in penalty)
@@ -264,34 +268,116 @@ namespace TracProg.Calculation.Algoriths
                 }
                 if (MetalID != 0)
                 {
+                    // 1. снимаем трассу с максимальным штрафом
+                    foreach (var item in tracks[MetalID])
+                    {
+                        GridElement el = _newGrid[item.Item1, item.Item2];
+
+                        el.MetalID = 0;
+                        _newGrid[item.Item1, item.Item2] = el;
+                        _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
+                        _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.OWN_METAL);
+                    }
+
+                    Li li = new Li(grid);
+                    long time;
+
+
+
+                    // 2. перетрассируем трассу с максимальным штрафом (i)
                     penalty.Remove(MetalID);
 
                     List<int> netList = new List<int>();
+                    List<List<int>> trackList;
+
                     foreach (var pin in futurePins[MetalID])
                     {
                         netList.Add(grid.GetNum(pin.Item1, pin.Item2));
                     }
-                    Li li = new Li(grid);
-                    long time;
-                    List<List<int>> trackList;
+
                     if (li.FindPath(new Net(netList.ToArray()), out trackList, out time))
                     {
                         if (trackList.Count != 0)
                         {
                             grid.MetallizeTrack(trackList, 1.0f, MetalID);
+
+                            // 3. перетрассируем трассу которую не могли реализовать(j)
+                            List<int> _netList = new List<int>();
+                            List<List<int>> _trackList;
+
+                            foreach (var pin in futurePins[_oldGrid.MaxIDMetalTrack])
+                            {
+                                _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                            }
+                            if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
+                            {
+                                if (_trackList.Count != 0)
+                                {
+                                    grid.MetallizeTrack(_trackList, 1.0f, _oldGrid.MaxIDMetalTrack);
+                                }
+
+                                return true;
+                            }
+                            else
+                            {
+                                // снимаем трассу trackList
+                                foreach (var track in trackList)
+                                {
+                                    foreach (var item in track)
+                                    {
+                                        GridElement el = _newGrid[item];
+
+                                        el.MetalID = 0;
+                                        _newGrid[item] = el;
+                                        _newGrid.UnsetValue(item, GridValue.FOREIGN_METAL);
+                                        _newGrid.UnsetValue(item, GridValue.OWN_METAL);
+                                    }
+                                }
+
+                                // восстанавливаем снятую трассу
+                                foreach (var item in tracks[MetalID])
+                                {
+                                    GridElement el = _newGrid[item.Item1, item.Item2];
+
+                                    el.MetalID = MetalID;
+                                    _newGrid[item.Item1, item.Item2] = el;
+                                    _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            // восстанавливаем снятую трассу
+                            foreach (var item in tracks[MetalID])
+                            {
+                                GridElement el = _newGrid[item.Item1, item.Item2];
+
+                                el.MetalID = MetalID;
+                                _newGrid[item.Item1, item.Item2] = el;
+                                _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
+                            }
                         }
                     }
                     else
                     {
-                        return false;
+                        // восстанавливаем снятую трассу
+                        foreach (var item in tracks[MetalID])
+                        {
+                            GridElement el = _newGrid[item.Item1, item.Item2];
+
+                            el.MetalID = MetalID;
+                            _newGrid[item.Item1, item.Item2] = el;
+                            _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
+                        }
                     }
                 }
                 else
                 {
-                    break;
+                    return false;
                 }
             }
-            return true;
+            return false;
         }
 
         private void FormPenaltyMatrix(ref Grid grid, int startKoeff, ref int[,] fineMmatrix, ref Dictionary<int, List<Tuple<int, int>>> tracks)

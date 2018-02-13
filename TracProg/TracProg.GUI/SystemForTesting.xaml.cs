@@ -188,10 +188,6 @@ namespace TracProg.GUI
                         {
                             config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
                             li = new Li(config.Grid);
-                            
-                            
-                            
-                            
 
                             long time = 0;
                             Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
@@ -278,8 +274,8 @@ namespace TracProg.GUI
                     time += localTime;
                 }
 
-                //config.Grid.Draw(ref g);
-                //bmp.Save("SingleTest.bmp");
+                config.Grid.Draw(old_g);
+                bmp.Save("SingleTest.bmp");
 
                 for (int track = 0; track < nonRealizeadTracks.Count; track++)
                 {
