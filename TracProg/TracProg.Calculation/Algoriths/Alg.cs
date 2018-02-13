@@ -58,7 +58,7 @@ namespace TracProg.Calculation.Algoriths
                     for (int j = _leftBorderLimitingRectangle; j <= _rightBorderLimitingRectangle; ++j)
                     {
                         gridElements[numElement] = _oldGrid[i, j];
-                        numElement++;
+                        numElement++; ///////lbhvgvjgghc
                     }
                 }
 
