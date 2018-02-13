@@ -330,7 +330,7 @@ namespace TracProg.Calculation.Algoriths
                                         el.MetalID = 0;
                                         _newGrid[item] = el;
                                         _newGrid.UnsetValue(item, GridValue.FOREIGN_METAL);
-                                        _newGrid.UnsetValue(item, GridValue.OWN_METAL);
+                                        _newGrid.UnsetValue(item, GridValue.OWN_METAL);    ////cgfhhccfc
                                     }
                                 }
 
