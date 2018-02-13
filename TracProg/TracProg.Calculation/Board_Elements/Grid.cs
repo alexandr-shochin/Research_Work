@@ -32,7 +32,7 @@ namespace TracProg.Calculation
             {
                 return _maxIDMetalTrack + 1;
             }
-            private set
+            set
             {
                 _maxIDMetalTrack = value;
             }
@@ -233,8 +233,8 @@ namespace TracProg.Calculation
         public void Draw(Graphics graphics)
         {
             Random rand = new Random();
-            Color[] colors = new Color[MaxIDMetalTrack + 1];
-            for (int i = 1; i <= MaxIDMetalTrack; i++)
+            Color[] colors = new Color[100000]; /// TODO
+            for (int i = 1; i <= colors.Length - 1; i++)
             {
                 colors[i] = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
             }
