@@ -198,6 +198,7 @@ namespace TracProg.GUI
                                 if (!li.FindPath(config.Net[numNet], out track, out localTime))
                                 {
                                     nonRealized.Add(numNet + 1, config.Net[numNet]);
+                                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
                                 }
                                 else
                                 {
@@ -207,24 +208,38 @@ namespace TracProg.GUI
                             }
                             Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             old_g = Graphics.FromImage(old_bmp);
-                            //config.Grid.Draw(old_g);
+                            old_g.Clear(System.Drawing.Color.Empty);
+                            config.Grid.Draw(old_g);
                             string path = _testSettings.FileOutPath + "\\test_old.bmp";
-                            //old_bmp.Save(path);
+                            old_bmp.Save(path);
 
                             Bitmap new_bmp;
                             Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
 
-                            foreach (var net in nonRealized)
+                            int countIter = 10;
+                            for (int curIter = 0; curIter < countIter; curIter++)
                             {
-                                Alg alg = new Alg(config.Grid);
-                                if (alg.FindPath(net.Value[0], net.Value[1]))
+                                foreach (var net in nonRealized)
                                 {
-                                    goodRetracing.Add(net.Key, net.Value);
+                                    Alg alg = new Alg(config.Grid, config.Net.Length, net.Key);
+                                    if (alg.FindPath(net.Value[0], net.Value[1]))
+                                    {
+                                        goodRetracing.Add(net.Key, net.Value);
+                                    }
+                                }
+                                foreach (var item in goodRetracing)
+                                {
+                                    if (nonRealized.ContainsKey(item.Key))
+                                    {
+                                        nonRealized.Remove(item.Key);
+                                    }
                                 }
                             }
+
                             new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             new_g = Graphics.FromImage(new_bmp);
-                            
+                            new_g.Clear(System.Drawing.Color.Empty);
+
                             config.Grid.Draw(new_g);
                             path = _testSettings.FileOutPath + "\\test_new.bmp";
                             new_bmp.Save(path);
@@ -256,45 +271,62 @@ namespace TracProg.GUI
             }
             else
             {
+                // FOR DEBUG
+
                 config.ReadFromFile(_filePathImport);
                 li = new Li(config.Grid);
                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                 old_g = Graphics.FromImage(bmp);
+
                 long time = 0;
-                List<List<int>> nonRealizeadTracks = new List<List<int>>();
+                Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
                 for (int numNet = 0; numNet < config.Net.Length; numNet++)
                 {
                     long localTime;
                     List<List<int>> track;
                     if (!li.FindPath(config.Net[numNet], out track, out localTime))
                     {
-                        nonRealizeadTracks.Add(track[0]);
+                        nonRealized.Add(numNet + 1, config.Net[numNet]);
                     }
-                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
-                    time += localTime;
-                }
-
-                config.Grid.Draw(old_g);
-                bmp.Save("SingleTest.bmp");
-
-                for (int track = 0; track < nonRealizeadTracks.Count; track++)
-                {
-                    for (int pin = 0; pin < nonRealizeadTracks[track].Count - 1; pin++)
+                    else
                     {
-                        Alg alg = new Alg(config.Grid);
-                        int finish = nonRealizeadTracks[track][pin];
-                        int start = nonRealizeadTracks[track][pin + 1];
-                        if (alg.FindPath(start, finish))
+                        config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
+                        time += localTime;
+                    }
+                }
+                Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                old_g = Graphics.FromImage(old_bmp);
+                old_g.Clear(System.Drawing.Color.Empty);
+                config.Grid.Draw(old_g);
+                string path = "\\test_old.bmp";
+                old_bmp.Save(path);
+
+                Bitmap new_bmp;
+                Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
+
+                foreach (var net in nonRealized)
+                {
+                    for (int pin = 0; pin < net.Value.Count - 1; pin++)
+                    {
+                        Alg alg = new Alg(config.Grid, config.Net.Length, net.Key);
+                        if (alg.FindPath(net.Value[pin], net.Value[pin + 1]))
                         {
-                            bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                            old_g = Graphics.FromImage(bmp);
-                            config.Grid.Draw(old_g);
-                            bmp.Save("SingleTest.bmp");
+                            goodRetracing.Add(net.Key, net.Value);
                         }
                     }
                 }
+                new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                new_g = Graphics.FromImage(new_bmp);
+                new_g.Clear(System.Drawing.Color.Empty);
 
-                
+                config.Grid.Draw(new_g);
+                path = "\\test_new.bmp";
+                new_bmp.Save(path);
+                new_bmp = null;
+                new_g = null;
+
+                AddRow(time);
+                old_g = null;
             }
         }
 

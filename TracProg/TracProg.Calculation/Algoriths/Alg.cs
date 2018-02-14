@@ -24,11 +24,17 @@ namespace TracProg.Calculation.Algoriths
         private Grid _oldGrid;
         private Grid _newGrid;
 
-        public Alg(Grid oldGrid)
+        private int _maxIDMetalTrack;
+        private int _nonRealizedMetalID;
+
+        public Alg(Grid oldGrid, int maxIDMetalTrack, int nonRealizedMetalID)
         {
             _oldGrid = oldGrid;
             _set = new Set();
             _virtualSet = new Set();
+
+            _maxIDMetalTrack = maxIDMetalTrack;
+            _nonRealizedMetalID = nonRealizedMetalID;
         }
 
         Point p0;
@@ -46,16 +52,16 @@ namespace TracProg.Calculation.Algoriths
                 RestorationPath(ref _oldGrid, ref pathWithInternodes);
 
                 // получаем координаты ограничивающего прямоугольника
-                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 1, 2, 1, 1);
+                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 1, 1, 1, 1);
 
                 // копируем нужные элементы сетки и создаём новую
                 GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
                 Dictionary<int, List<Tuple<int, int>>> futurePins = new Dictionary<int, List<Tuple<int, int>>>(); //<MetalID, список с Pin или граничным узлом>
                 Dictionary<int, List<Tuple<int, int>>> tracks = new Dictionary<int, List<Tuple<int, int>>>(); // реализованные трассы в прямоугольнике в том числе с междоузлие
-                for (int i = 0; i < _oldGrid.MaxIDMetalTrack; i++)
+                for (int i = 1; i <= _maxIDMetalTrack; i++)
                 {
-                    futurePins.Add(i + 1, new List<Tuple<int, int>>());
-                    tracks.Add(i + 1, new List<Tuple<int, int>>());
+                    futurePins.Add(i, new List<Tuple<int, int>>());
+                    tracks.Add(i, new List<Tuple<int, int>>());
                 }
                 int numElement = 0;
                 for (int i = _upBorderLimitingRectangle; i <= _downBorderLimitingRectangle; ++i)
@@ -73,7 +79,6 @@ namespace TracProg.Calculation.Algoriths
                     (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     _oldGrid.Koeff);
-                _newGrid.MaxIDMetalTrack = _oldGrid.MaxIDMetalTrack;
 
                 Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
                 Graphics g = Graphics.FromImage(bmp);
@@ -108,15 +113,15 @@ namespace TracProg.Calculation.Algoriths
                 // добаявлем start и finish
                 int k, l;
                 _oldGrid.GetIndexes(start, out k, out l);
-                futurePins[_oldGrid.MaxIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 _oldGrid.GetIndexes(finish, out k, out l);
-                futurePins[_oldGrid.MaxIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
 
                 // добавляем узлы из трассы с междоузлием    
                 for (int i = 0; i < pathWithInternodes.Count; i++)
                 {
                     _oldGrid.GetIndexes(pathWithInternodes[i], out k, out l);
-                    tracks[_oldGrid.MaxIDMetalTrack].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    tracks[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 }
 
                 // граничные узлы делаем pin'ами и запоминаем какие узлы мы сделали 
@@ -175,10 +180,7 @@ namespace TracProg.Calculation.Algoriths
                 //    _newGrid.UnsetValue(i, GridValue.OWN_METAL);
                 //}
 
-
-                
-
-                // перетрассировать в порядке убывания, начиная с самой дорогой
+                // перетрассировать 
                 if (Retracing(ref _newGrid, tracks, futurePins, penalty))
                 {
                     // превратить те узлы что стали пинами обртано в просто узлы
@@ -218,7 +220,7 @@ namespace TracProg.Calculation.Algoriths
         {
             foreach (var track in tracks)
             {
-                if (track.Key != grid.MaxIDMetalTrack)
+                if (track.Key != _nonRealizedMetalID)
                 {
                     int sum = 0;
                     for (int item = 0; item < track.Value.Count; ++item)
@@ -248,19 +250,14 @@ namespace TracProg.Calculation.Algoriths
 
         private bool Retracing(ref Grid grid, Dictionary<int, List<Tuple<int, int>>> tracks, Dictionary<int, List<Tuple<int, int>>> futurePins, Dictionary<int, int> penalty)
         {
-            // сценарий 
-            // 1. снимаем трассу с максимальным штрафом
-            // 2. перетрассируем трассу с максимальным штрафом (i)
-            // 3. перетрассируем трассу которую не могли реализовть (j)
-            // 4. если не удалось перетрассировать i, перетрассируем  i = i + 1
-            // 5. перетрассируем j
-            // 6. цикл с пункта 4
+            Li li = new Li(grid);
+            long time;
 
             Bitmap bmp = new Bitmap(grid.Width, grid.Height);
             Graphics g = Graphics.FromImage(bmp);
             g.TranslateTransform(-p0.x, -p0.y);
 
-            g.Clear(Color.White);
+            g.Clear(Color.Empty);
             grid.Draw(g);
             bmp.Save("AlgTest.bmp");
 
@@ -282,50 +279,24 @@ namespace TracProg.Calculation.Algoriths
                     penalty.Remove(MetalID);
 
                     // 1. снимаем трассу с максимальным штрафом
-
-                    List<GridElement> _netMax = new List<GridElement>();
-                    for (int i = 0; i < grid.Count; i++)
+                    for (int i = 0; i < _newGrid.Count; i++)
                     {
                         if (grid[i].MetalID == MetalID)
                         {
-                            GridElement el = new GridElement();
-                            el.ByteInfo = 0;
+                            GridElement el = _newGrid[i];
                             el.MetalID = 0;
 
-                            if (grid[i].ViewElement is Pin)
-                            {
-                                el.ViewElement = grid[i].ViewElement;
-                                grid[i] = el;
-                                grid.SetValue(i, GridValue.PIN);
-                            }
-                            else if (grid[i].ViewElement is Metal)
-                            {
-                                el.ViewElement = null;
-                                grid[i] = el;
-                            }
+                            _newGrid[i] = el;
+                            _newGrid.UnsetValue(i, GridValue.FOREIGN_METAL);
+                            _newGrid.UnsetValue(i, GridValue.OWN_METAL);
                         }
                     }
 
-                    //foreach (var item in tracks[MetalID])
-                    //{
-                    //    GridElement el = _newGrid[item.Item1, item.Item2];
-
-                    //    el.MetalID = 0;
-                    //    _newGrid[item.Item1, item.Item2] = el;
-                    //    _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
-                    //    _newGrid.UnsetValue(item.Item1, item.Item2, GridValue.OWN_METAL);
-                    //}
-
-                    g.Clear(Color.White);
+                    g.Clear(Color.Empty);
                     grid.Draw(g);
                     bmp.Save("AlgTest.bmp");
 
-                    Li li = new Li(grid);
-                    long time;                    
-
                     // 2. перетрассируем трассу с максимальным штрафом (i)
-                    
-
                     List<int> netList = new List<int>();
                     List<List<int>> trackList;
 
@@ -340,7 +311,7 @@ namespace TracProg.Calculation.Algoriths
                         {
                             grid.MetallizeTrack(trackList, 1.0f, MetalID);
 
-                            g.Clear(Color.White);
+                            g.Clear(Color.Empty);
                             grid.Draw(g);
                             bmp.Save("AlgTest.bmp");
 
@@ -348,16 +319,20 @@ namespace TracProg.Calculation.Algoriths
                             List<int> _netList = new List<int>();
                             List<List<int>> _trackList;
 
-                            foreach (var pin in futurePins[_oldGrid.MaxIDMetalTrack])
+                            foreach (var pin in futurePins[_nonRealizedMetalID])
                             {
                                 _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
                             }
                             if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
                             {
-                                if (_trackList.Count != 0) 
+                                if (_trackList.Count != 0)
                                 {
-                                    grid.MetallizeTrack(_trackList, 1.0f, _oldGrid.MaxIDMetalTrack); // не _oldGrid.MaxIDMetalTrack а тот что не можем перетрассировать
+                                    grid.MetallizeTrack(_trackList, 1.0f, _nonRealizedMetalID);
                                 }
+
+                                g.Clear(Color.Empty);
+                                grid.Draw(g);
+                                bmp.Save("AlgTest.bmp");
 
                                 return true;
                             }
@@ -370,48 +345,35 @@ namespace TracProg.Calculation.Algoriths
                                     {
                                         if (grid[item].MetalID == MetalID)
                                         {
-                                            GridElement el = new GridElement();
-                                            el.ByteInfo = 0;
+                                            GridElement el = _newGrid[item];
                                             el.MetalID = 0;
-
-                                            if (grid[item].ViewElement is Pin)
-                                            {
-                                                el.ViewElement = grid[item].ViewElement;
-                                                grid[item] = el;
-                                                grid.SetValue(item, GridValue.PIN);
-                                            }
-                                            else if (grid[item].ViewElement is Metal)
+                                            if (_newGrid[item].ViewElement is Metal)
                                             {
                                                 el.ViewElement = null;
-                                                grid[item] = el;
-                                                grid.UnsetValue(item, GridValue.FOREIGN_METAL);
                                             }
+
+                                            _newGrid[item] = el;
+                                            _newGrid.UnsetValue(item, GridValue.FOREIGN_METAL);
+                                            _newGrid.UnsetValue(item, GridValue.OWN_METAL);
                                         }
                                     }
                                 }
 
-                                g.Clear(Color.White);
+                                g.Clear(Color.Empty);
                                 grid.Draw(g);
                                 bmp.Save("AlgTest.bmp");
 
                                 // восстанавливаем снятую трассу
+                                List<List<int>> list_track = new List<List<int>>();
+                                List<int> list = new List<int>();
                                 foreach (var item in tracks[MetalID])
                                 {
-                                    GridElement el = grid[item.Item1, item.Item2];
-                                    el.MetalID = MetalID;
-                                    grid[item.Item1, item.Item2] = el;
-
-                                    if (el.ViewElement is Metal)
-                                    {
-                                        grid.SetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
-                                    }
-                                    else if (el.ViewElement is Pin)
-                                    {
-                                        grid.UnsetValue(item.Item1, item.Item2, GridValue.OWN_METAL);
-                                    }
+                                    list.Add(grid.GetNum(item.Item1, item.Item2));
                                 }
+                                list_track.Add(list);
+                                grid.MetallizeTrack(list_track, 1.0f, MetalID);
 
-                                g.Clear(Color.White);
+                                g.Clear(Color.Empty);
                                 grid.Draw(g);
                                 bmp.Save("AlgTest.bmp");
                             }
@@ -419,29 +381,35 @@ namespace TracProg.Calculation.Algoriths
                         else
                         {
                             // восстанавливаем снятую трассу
+                            List<List<int>> list_track = new List<List<int>>();
+                            List<int> list = new List<int>();
                             foreach (var item in tracks[MetalID])
                             {
-                                GridElement el = grid[item.Item1, item.Item2];
-
-                                el.MetalID = MetalID;
-                                grid[item.Item1, item.Item2] = el;
-                                grid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
-                                grid.UnsetValue(item.Item1, item.Item2, GridValue.OWN_METAL);
+                                list.Add(grid.GetNum(item.Item1, item.Item2));
                             }
+                            list_track.Add(list);
+                            grid.MetallizeTrack(list_track, 1.0f, MetalID);
+
+                            g.Clear(Color.Empty);
+                            grid.Draw(g);
+                            bmp.Save("AlgTest.bmp");
                         }
                     }
                     else
                     {
                         // восстанавливаем снятую трассу
+                        List<List<int>> list_track = new List<List<int>>();
+                        List<int> list = new List<int>();
                         foreach (var item in tracks[MetalID])
                         {
-                            GridElement el = grid[item.Item1, item.Item2];
-
-                            el.MetalID = MetalID;
-                            grid[item.Item1, item.Item2] = el;
-                            grid.UnsetValue(item.Item1, item.Item2, GridValue.FOREIGN_METAL);
-                            grid.UnsetValue(item.Item1, item.Item2, GridValue.OWN_METAL);
+                            list.Add(grid.GetNum(item.Item1, item.Item2));
                         }
+                        list_track.Add(list);
+                        grid.MetallizeTrack(list_track, 1.0f, MetalID);
+
+                        g.Clear(Color.Empty);
+                        grid.Draw(g);
+                        bmp.Save("AlgTest.bmp");
                     }
                 }
                 else
@@ -456,11 +424,11 @@ namespace TracProg.Calculation.Algoriths
         {
             _set.Clear();
             
-            for (int item = 0; item < tracks[grid.MaxIDMetalTrack].Count; item++)
+            for (int item = 0; item < tracks[_nonRealizedMetalID].Count; item++)
             {
-                fineMmatrix[tracks[grid.MaxIDMetalTrack][item].Item1,
-                            tracks[grid.MaxIDMetalTrack][item].Item2] = startKoeff;
-                _set.Add(_newGrid.GetNum(tracks[grid.MaxIDMetalTrack][item].Item1, tracks[grid.MaxIDMetalTrack][item].Item2), startKoeff);
+                fineMmatrix[tracks[_nonRealizedMetalID][item].Item1,
+                            tracks[_nonRealizedMetalID][item].Item2] = startKoeff;
+                _set.Add(_newGrid.GetNum(tracks[_nonRealizedMetalID][item].Item1, tracks[_nonRealizedMetalID][item].Item2), startKoeff);
             }
 
             startKoeff--;

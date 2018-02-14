@@ -25,19 +25,6 @@ namespace TracProg.Calculation
     [Serializable]
     public class Grid : IElement
     {
-        private int _maxIDMetalTrack;
-        public int MaxIDMetalTrack 
-        {
-            get
-            {
-                return _maxIDMetalTrack + 1;
-            }
-            set
-            {
-                _maxIDMetalTrack = value;
-            }
-        }
-
         private Point[] _nodes;
         //private List<IElement> _elements;
         private GridElement[] _grid;
@@ -57,8 +44,6 @@ namespace TracProg.Calculation
         {
             _grid = new GridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);
-
-            MaxIDMetalTrack = 1;
 
             X = x0;
             Y = y0;
@@ -104,8 +89,6 @@ namespace TracProg.Calculation
 
         private void Init(int x, int y, int width, int height, int koeff)
         {
-            MaxIDMetalTrack = 1;
-            
             GenerateCoord(width, height, koeff);
 
             CountColumn = (width / Koeff) * 2 - 1;
@@ -260,46 +243,47 @@ namespace TracProg.Calculation
 
         public void MetallizeTrack(List<List<int>> track, float widthMetal, int metalID)
         {
-            if (track != null && track.Count != 0 && track[0][0] != -1) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
+            if (track != null && track.Count != 0) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
             {
-                for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
+                if (track[0][0] != -1)
                 {
-                    UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
-                    _grid[track[numSubPath][0]].MetalID = metalID;
-                    _grid[track[numSubPath][0]].WidthMetal = widthMetal;
+                    for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
+                    {
+                        UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
+                        _grid[track[numSubPath][0]].MetalID = metalID;
+                        _grid[track[numSubPath][0]].WidthMetal = widthMetal;
 
-                    for (int node = 1; node < track[numSubPath].Count; ++node)
-                    {
-                        if (!IsPin(track[numSubPath][node]))
+                        for (int node = 1; node < track[numSubPath].Count; ++node)
                         {
-                            SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
-                            _grid[track[numSubPath][node]].ViewElement = null;
-                            _grid[track[numSubPath][node]].MetalID = metalID;
-                            _grid[track[numSubPath][node]].WidthMetal = widthMetal;
-                        }
-                        else
-                        {
-                            UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
-                            _grid[track[numSubPath][node]].MetalID = metalID;
-                            _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                            if (!IsPin(track[numSubPath][node]))
+                            {
+                                SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
+                                _grid[track[numSubPath][node]].ViewElement = null;
+                                _grid[track[numSubPath][node]].MetalID = metalID;
+                                _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                            }
+                            else
+                            {
+                                UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
+                                _grid[track[numSubPath][node]].MetalID = metalID;
+                                _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                            }
                         }
                     }
                 }
-            }
-            else // трасса не построена
-            {
-                for (int node = 1; node < track[0].Count; ++node)
+                else // трасса не построена
                 {
-                    Point p = GetCoordCell(track[0][node]);
-                    try
+                    for (int node = 1; node < track[0].Count; ++node)
                     {
-                        _grid[track[0][node]].ViewElement._Color = Color.Red;
+                        Point p = GetCoordCell(track[0][node]);
+                        try
+                        {
+                            _grid[track[0][node]].ViewElement._Color = Color.Red;
+                        }
+                        catch (NullReferenceException) { }
                     }
-                    catch (NullReferenceException) { }   
                 }
             }
-            if (MaxIDMetalTrack < metalID)
-                MaxIDMetalTrack = metalID;
         }
 
         public int Compare(IElement x, IElement y)
