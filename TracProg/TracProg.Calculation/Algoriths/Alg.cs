@@ -354,7 +354,7 @@ namespace TracProg.Calculation.Algoriths
                             }
                             if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
                             {
-                                if (_trackList.Count != 0)
+                                if (_trackList.Count != 0) 
                                 {
                                     grid.MetallizeTrack(_trackList, 1.0f, _oldGrid.MaxIDMetalTrack); // не _oldGrid.MaxIDMetalTrack а тот что не можем перетрассировать
                                 }
