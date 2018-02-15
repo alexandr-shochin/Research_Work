@@ -184,6 +184,7 @@ namespace TracProg.GUI
                         int countIter = 10;
                         Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
                         Dispatcher.Invoke(delegate() { _progressBar.Maximum = countIter; });
+                        Dispatcher.Invoke(delegate () { _progressBar.Value = 0; });
 
                         for (int i = 0; i < _testSettings.CountRuns; ++i)
                         {
