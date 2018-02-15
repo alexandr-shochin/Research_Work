@@ -181,8 +181,9 @@ namespace TracProg.GUI
 
                         int koeff = 4;
 
+                        int countIter = 10;
                         Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
-                        Dispatcher.Invoke(delegate() { _progressBar.Maximum = _testSettings.CountRuns; });
+                        Dispatcher.Invoke(delegate() { _progressBar.Maximum = countIter; });
 
                         for (int i = 0; i < _testSettings.CountRuns; ++i)
                         {
@@ -216,7 +217,7 @@ namespace TracProg.GUI
                             Bitmap new_bmp;
                             Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
 
-                            int countIter = 10;
+                            
                             for (int curIter = 0; curIter < countIter; curIter++)
                             {
                                 foreach (var net in nonRealized)
@@ -224,6 +225,9 @@ namespace TracProg.GUI
                                     Alg alg = new Alg(config.Grid, config.Net.Length, net.Key);
                                     if (alg.FindPath(net.Value[0], net.Value[1]))
                                     {
+                                        config.Grid[net.Value[0]].ViewElement._Color = System.Drawing.Color.FromArgb(0, 100, 0);
+                                        config.Grid[net.Value[1]].ViewElement._Color = System.Drawing.Color.FromArgb(0, 100, 0);
+
                                         goodRetracing.Add(net.Key, net.Value);
                                     }
                                 }
@@ -234,6 +238,8 @@ namespace TracProg.GUI
                                         nonRealized.Remove(item.Key);
                                     }
                                 }
+
+                                Dispatcher.Invoke(delegate () { _progressBar.Value = curIter + 1; });
                             }
 
                             new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
@@ -248,8 +254,6 @@ namespace TracProg.GUI
 
                             AddRow(time);
                             old_g = null;
-
-                            Dispatcher.Invoke(delegate() { _progressBar.Value = i + 1; });
                         }
 
                         if (_lists.Count > 0)
@@ -298,20 +302,20 @@ namespace TracProg.GUI
                 old_g = Graphics.FromImage(old_bmp);
                 old_g.Clear(System.Drawing.Color.Empty);
                 config.Grid.Draw(old_g);
-                string path = "\\test_old.bmp";
+                string path = "test_old.bmp";
                 old_bmp.Save(path);
 
                 Bitmap new_bmp;
                 Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
 
-                foreach (var net in nonRealized)
+                //foreach (var net in nonRealized)
                 {
-                    for (int pin = 0; pin < net.Value.Count - 1; pin++)
+                    //for (int pin = 0; pin < net.Value.Count - 1; pin++)
                     {
-                        Alg alg = new Alg(config.Grid, config.Net.Length, net.Key);
-                        if (alg.FindPath(net.Value[pin], net.Value[pin + 1]))
+                        Alg alg = new Alg(config.Grid, config.Net.Length, nonRealized.ElementAt(0).Key);
+                        if (alg.FindPath(nonRealized.ElementAt(0).Value[0], nonRealized.ElementAt(0).Value[1]))
                         {
-                            goodRetracing.Add(net.Key, net.Value);
+                            goodRetracing.Add(nonRealized.ElementAt(0).Key, nonRealized.ElementAt(0).Value);
                         }
                     }
                 }
@@ -320,7 +324,7 @@ namespace TracProg.GUI
                 new_g.Clear(System.Drawing.Color.Empty);
 
                 config.Grid.Draw(new_g);
-                path = "\\test_new.bmp";
+                path = "test_new.bmp";
                 new_bmp.Save(path);
                 new_bmp = null;
                 new_g = null;

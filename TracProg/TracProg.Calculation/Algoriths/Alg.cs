@@ -257,9 +257,9 @@ namespace TracProg.Calculation.Algoriths
             Graphics g = Graphics.FromImage(bmp);
             g.TranslateTransform(-p0.x, -p0.y);
 
-            g.Clear(Color.Empty);
-            grid.Draw(g);
-            bmp.Save("AlgTest.bmp");
+            //g.Clear(Color.Empty);
+            //grid.Draw(g);
+            //bmp.Save("AlgTest.bmp");
 
             while (penalty.Count != 0)
             {
@@ -285,65 +285,185 @@ namespace TracProg.Calculation.Algoriths
                         {
                             GridElement el = _newGrid[i];
                             el.MetalID = 0;
+                            if (_newGrid[i].ViewElement is Metal)
+                            {
+                                el.ViewElement = null;
+                            }
 
                             _newGrid[i] = el;
                             _newGrid.UnsetValue(i, GridValue.FOREIGN_METAL);
                             _newGrid.UnsetValue(i, GridValue.OWN_METAL);
+
+
                         }
                     }
 
-                    g.Clear(Color.Empty);
-                    grid.Draw(g);
-                    bmp.Save("AlgTest.bmp");
+                    //g.Clear(Color.Empty);
+                    //grid.Draw(g);
+                    //bmp.Save("AlgTest.bmp");
 
-                    // 2. перетрассируем трассу с максимальным штрафом (i)
-                    List<int> netList = new List<int>();
-                    List<List<int>> trackList;
+                    //// 2. перетрассируем трассу с максимальным штрафом (i)
+                    //List<int> netList = new List<int>();
+                    //List<List<int>> trackList;
 
-                    foreach (var pin in futurePins[MetalID])
+                    //foreach (var pin in futurePins[MetalID])
+                    //{
+                    //    netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                    //}
+
+                    //if (li.FindPath(new Net(netList.ToArray()), out trackList, out time))
+                    //{
+                    //    if (trackList.Count != 0)
+                    //    {
+                    //        grid.MetallizeTrack(trackList, 1.0f, MetalID);
+
+                    //        g.Clear(Color.Empty);
+                    //        grid.Draw(g);
+                    //        bmp.Save("AlgTest.bmp");
+
+                    //        // 3. перетрассируем трассу которую не могли реализовать(j)
+                    //        List<int> _netList = new List<int>();
+                    //        List<List<int>> _trackList;
+
+                    //        foreach (var pin in futurePins[_nonRealizedMetalID])
+                    //        {
+                    //            _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                    //        }
+                    //        if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
+                    //        {
+                    //            if (_trackList.Count != 0)
+                    //            {
+                    //                grid.MetallizeTrack(_trackList, 1.0f, _nonRealizedMetalID);
+                    //            }
+
+                    //            g.Clear(Color.Empty);
+                    //            grid.Draw(g);
+                    //            bmp.Save("AlgTest.bmp");
+
+                    //            return true;
+                    //        }
+                    //        else
+                    //        {
+                    //            // снимаем трассу trackList
+                    //            foreach (var track in trackList)
+                    //            {
+                    //                foreach (var item in track)
+                    //                {
+                    //                    if (grid[item].MetalID == MetalID)
+                    //                    {
+                    //                        GridElement el = _newGrid[item];
+                    //                        el.MetalID = 0;
+                    //                        if (_newGrid[item].ViewElement is Metal)
+                    //                        {
+                    //                            el.ViewElement = null;
+                    //                        }
+
+                    //                        _newGrid[item] = el;
+                    //                        _newGrid.UnsetValue(item, GridValue.FOREIGN_METAL);
+                    //                        _newGrid.UnsetValue(item, GridValue.OWN_METAL);
+                    //                    }
+                    //                }
+                    //            }
+
+                    //            g.Clear(Color.Empty);
+                    //            grid.Draw(g);
+                    //            bmp.Save("AlgTest.bmp");
+
+                    //            // восстанавливаем снятую трассу
+                    //            List<List<int>> list_track = new List<List<int>>();
+                    //            List<int> list = new List<int>();
+                    //            foreach (var item in tracks[MetalID])
+                    //            {
+                    //                list.Add(grid.GetNum(item.Item1, item.Item2));
+                    //            }
+                    //            list_track.Add(list);
+                    //            grid.MetallizeTrack(list_track, 1.0f, MetalID);
+
+                    //            g.Clear(Color.Empty);
+                    //            grid.Draw(g);
+                    //            bmp.Save("AlgTest.bmp");
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        // восстанавливаем снятую трассу
+                    //        List<List<int>> list_track = new List<List<int>>();
+                    //        List<int> list = new List<int>();
+                    //        foreach (var item in tracks[MetalID])
+                    //        {
+                    //            list.Add(grid.GetNum(item.Item1, item.Item2));
+                    //        }
+                    //        list_track.Add(list);
+                    //        grid.MetallizeTrack(list_track, 1.0f, MetalID);
+
+                    //        g.Clear(Color.Empty);
+                    //        grid.Draw(g);
+                    //        bmp.Save("AlgTest.bmp");
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    // восстанавливаем снятую трассу
+                    //    List<List<int>> list_track = new List<List<int>>();
+                    //    List<int> list = new List<int>();
+                    //    foreach (var item in tracks[MetalID])
+                    //    {
+                    //        list.Add(grid.GetNum(item.Item1, item.Item2));
+                    //    }
+                    //    list_track.Add(list);
+                    //    grid.MetallizeTrack(list_track, 1.0f, MetalID);
+
+                    //    g.Clear(Color.Empty);
+                    //    grid.Draw(g);
+                    //    bmp.Save("AlgTest.bmp");
+                    //}
+
+
+                    // 2. перетрассирум трассу которую не смогли
+                    List<int> _netList = new List<int>();
+                    List<List<int>> _trackList;
+                    foreach (var pin in futurePins[_nonRealizedMetalID])
                     {
-                        netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                        _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
                     }
-
-                    if (li.FindPath(new Net(netList.ToArray()), out trackList, out time))
+                    if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
                     {
-                        if (trackList.Count != 0)
+                        if (_trackList.Count != 0)
                         {
-                            grid.MetallizeTrack(trackList, 1.0f, MetalID);
+                            grid.MetallizeTrack(_trackList, 1.0f, _nonRealizedMetalID);
+                        }
 
-                            g.Clear(Color.Empty);
-                            grid.Draw(g);
-                            bmp.Save("AlgTest.bmp");
+                        //g.Clear(Color.Empty);
+                        //grid.Draw(g);
+                        //bmp.Save("AlgTest.bmp");
 
-                            // 3. перетрассируем трассу которую не могли реализовать(j)
-                            List<int> _netList = new List<int>();
-                            List<List<int>> _trackList;
-
-                            foreach (var pin in futurePins[_nonRealizedMetalID])
+                        // 3. перетрассируем трассу с максимальным штрафом
+                        List<int> netList = new List<int>();
+                        List<List<int>> trackList;
+                        foreach (var pin in futurePins[MetalID])
+                        {
+                            netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                        }
+                        if (li.FindPath(new Net(netList.ToArray()), out trackList, out time))
+                        {
+                            if (trackList.Count != 0)
                             {
-                                _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
-                            }
-                            if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
-                            {
-                                if (_trackList.Count != 0)
-                                {
-                                    grid.MetallizeTrack(_trackList, 1.0f, _nonRealizedMetalID);
-                                }
+                                grid.MetallizeTrack(trackList, 1.0f, MetalID);
 
-                                g.Clear(Color.Empty);
-                                grid.Draw(g);
-                                bmp.Save("AlgTest.bmp");
+                                //g.Clear(Color.Empty);
+                                //grid.Draw(g);
+                                //bmp.Save("AlgTest.bmp");
 
                                 return true;
                             }
                             else
                             {
-                                // снимаем трассу trackList
-                                foreach (var track in trackList)
+                                // снимаем трассу с non_realized
+                                foreach (var track in _trackList)
                                 {
                                     foreach (var item in track)
                                     {
-                                        if (grid[item].MetalID == MetalID)
+                                        if (grid[item].MetalID == _nonRealizedMetalID)
                                         {
                                             GridElement el = _newGrid[item];
                                             el.MetalID = 0;
@@ -359,11 +479,11 @@ namespace TracProg.Calculation.Algoriths
                                     }
                                 }
 
-                                g.Clear(Color.Empty);
-                                grid.Draw(g);
-                                bmp.Save("AlgTest.bmp");
+                                //g.Clear(Color.Empty);
+                                //grid.Draw(g);
+                                //bmp.Save("AlgTest.bmp");
 
-                                // восстанавливаем снятую трассу
+                                // восстановить снятую трассу max_penalty
                                 List<List<int>> list_track = new List<List<int>>();
                                 List<int> list = new List<int>();
                                 foreach (var item in tracks[MetalID])
@@ -373,14 +493,39 @@ namespace TracProg.Calculation.Algoriths
                                 list_track.Add(list);
                                 grid.MetallizeTrack(list_track, 1.0f, MetalID);
 
-                                g.Clear(Color.Empty);
-                                grid.Draw(g);
-                                bmp.Save("AlgTest.bmp");
+                                //g.Clear(Color.Empty);
+                                //grid.Draw(g);
+                                //bmp.Save("AlgTest.bmp");
                             }
                         }
                         else
                         {
-                            // восстанавливаем снятую трассу
+                            // снимаем трассу с non_realized
+                            foreach (var track in _trackList)
+                            {
+                                foreach (var item in track)
+                                {
+                                    if (grid[item].MetalID == _nonRealizedMetalID)
+                                    {
+                                        GridElement el = _newGrid[item];
+                                        el.MetalID = 0;
+                                        if (_newGrid[item].ViewElement is Metal)
+                                        {
+                                            el.ViewElement = null;
+                                        }
+
+                                        _newGrid[item] = el;
+                                        _newGrid.UnsetValue(item, GridValue.FOREIGN_METAL);
+                                        _newGrid.UnsetValue(item, GridValue.OWN_METAL);
+                                    }
+                                }
+                            }
+
+                            //g.Clear(Color.Empty);
+                            //grid.Draw(g);
+                            //bmp.Save("AlgTest.bmp");
+
+                            // восстановить снятую трассу max_penalty
                             List<List<int>> list_track = new List<List<int>>();
                             List<int> list = new List<int>();
                             foreach (var item in tracks[MetalID])
@@ -390,9 +535,9 @@ namespace TracProg.Calculation.Algoriths
                             list_track.Add(list);
                             grid.MetallizeTrack(list_track, 1.0f, MetalID);
 
-                            g.Clear(Color.Empty);
-                            grid.Draw(g);
-                            bmp.Save("AlgTest.bmp");
+                            //g.Clear(Color.Empty);
+                            //grid.Draw(g);
+                            //bmp.Save("AlgTest.bmp");
                         }
                     }
                     else
@@ -407,9 +552,9 @@ namespace TracProg.Calculation.Algoriths
                         list_track.Add(list);
                         grid.MetallizeTrack(list_track, 1.0f, MetalID);
 
-                        g.Clear(Color.Empty);
-                        grid.Draw(g);
-                        bmp.Save("AlgTest.bmp");
+                        //g.Clear(Color.Empty);
+                        //grid.Draw(g);
+                        //bmp.Save("AlgTest.bmp");
                     }
                 }
                 else
