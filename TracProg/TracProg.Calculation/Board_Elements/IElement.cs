@@ -36,7 +36,7 @@ namespace TracProg.Calculation
         /// <returns>ErrorCode</returns>
         ErrorCode Contains(IElement el);
 
-        void Draw(ref Graphics graphics);
+        void Draw(Graphics graphics);
 
         #endregion
 

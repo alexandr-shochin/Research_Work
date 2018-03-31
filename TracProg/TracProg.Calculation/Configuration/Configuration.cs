@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -83,12 +84,10 @@ namespace TracProg.Calculation
                                     {
                                         try
                                         {
-                                            x = int.Parse(lineSplit[1]);
-                                            y = int.Parse(lineSplit[2]);
-                                            w = int.Parse(lineSplit[3]);
-                                            h = int.Parse(lineSplit[4]);
+                                            w = int.Parse(lineSplit[1]);
+                                            h = int.Parse(lineSplit[2]);
 
-                                            _config.Grid = new Grid(x * koeff, y * koeff, w * koeff, h * koeff, koeff);
+                                            _config.Grid = new Grid(w * koeff, h * koeff, koeff);
                                             break;
                                         }
                                         catch (Exception ex)
@@ -210,52 +209,77 @@ namespace TracProg.Calculation
         /// <param name="n">Высота сетки</param>
         /// <param name="m">Ширина сетки</param>
         /// <param name="koeff">Коэфициент масштабирования</param>
-        public void GenerateRandomConfig(int x, int y, int n, int m, int countPins, int countProhibitionZone, int countNets, int koeff = 4)
+        public void GenerateRandomConfig(int n, int m, int countPairPins, int countProhibitionZone, int countNets, int koeff = 4)
         {
-            _config.Grid = new Grid(x * koeff, y * koeff, n * koeff, m * koeff, koeff);
+            _config.Grid = new Grid(n * koeff, m * koeff, koeff);
+
+            int radius = 25;
 
             Dictionary<string, IElement> gridElements = new Dictionary<string, IElement>();
 
             Random rand = new Random();
 
             //Генерация Pins
-            for (int i = 0; i < countPins; )
+            List<Tuple<int, int>> pairs = new List<Tuple<int, int>>();
+            List<Net> nets = new List<Net>();
+            int countp = 0;
+            int j = 0;
+            while(true)
             {
                 try
                 {
-                    gridElements.Add(i.ToString() + "_pin", new Pin(rand.Next(x, n - 1) * koeff, rand.Next(y, m - 1) * koeff, koeff, koeff));
-                    i++;
+                    Tuple<int, int> pair_i = Tuple.Create(rand.Next(0, n - 1), rand.Next(0, m - 1));
 
+                    int pair_j_1 = pair_i.Item1 + rand.Next(0, radius);
+                    int pair_j_2 = pair_i.Item2 + rand.Next(0, radius);
+                    pair_j_1 = pair_j_1 <= n - 1 ? pair_j_1 : n - 1;
+                    pair_j_2 = pair_j_2 <= n - 1 ? pair_j_2 : m - 1;
+
+                    Tuple<int, int> pair_j = Tuple.Create(pair_j_1, pair_j_2);
+                    if (pairs.FindIndex(x => x.Item1 == pair_i.Item1 && x.Item2 == pair_i.Item2) == -1 &&
+                        pairs.FindIndex(x => x.Item1 == pair_j.Item1 && x.Item2 == pair_j.Item2) == -1)
+                    {
+                        gridElements.Add(countp.ToString() + "_pin", new Pin(pair_i.Item1 * koeff, pair_i.Item2 * koeff, koeff, koeff));
+                        gridElements.Add((countp + 1).ToString() + "_pin", new Pin(pair_j.Item1 * koeff, pair_j.Item2 * koeff, koeff, koeff));
+                        j++;
+                        countp += 2;
+
+                        // генерация nets
+                        int[] nums = new int[2];
+                        int l, k;
+                        _config.Grid.GetIndexes(pair_i.Item1 * koeff, pair_i.Item2 * koeff, out l, out k);
+                        nums[0] = _config.Grid.GetNum(l, k);
+                        _config.Grid.GetIndexes(pair_j.Item1 * koeff, pair_j.Item2 * koeff, out l, out k);
+                        nums[1] = _config.Grid.GetNum(l, k);
+                        nets.Add(new Net(nums));
+                        
+                    }
+                    if (j == countPairPins) break;
                     
                 }
                 catch (ArgumentException) { }
+                
             }
+            _config.Nets = nets.ToArray();
+
+            
 
             //Генерация ProhibitionZone           
             for (int i = 0; i < countProhibitionZone; )
             {
                 try
                 {
-                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(rand.Next(x, n - 1) * koeff, rand.Next(y, m - 1) * koeff, koeff, koeff));
+                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(rand.Next(0, n - 1) * koeff, rand.Next(0, m - 1) * koeff, koeff, koeff));
                     i++;
                 }
                 catch (ArgumentException) { }
             }
 
+            // добавление элементов в сетку
             foreach (var el in gridElements)
             {
                 _config.Grid.Add(el.Value);
             }
-            _config.Nets = new Net[1];
-            int[] net = new int[countPins];
-            for (int i = 0; i < countPins; ++i)
-            {
-                IElement el = gridElements.ElementAt(i).Value;
-                int j, k;
-                _config.Grid.GetIndexes(el.X, el.Y, out j, out k);
-                net[i] = _config.Grid.GetNum(j, k);
-            }
-            _config.Nets[0] = new Net(net);
         }
 
         public ErrorCode Serialize(string path)

@@ -13,7 +13,7 @@ namespace TracProg_Calculation_Tests
         public void Init()
         {
             int step = 5;
-            _grid = new Grid(-5 * step, 5 * step, 10 * step, 10 * step, 5);
+            _grid = new Grid(10 * step, 10 * step, 5);
         }
 
         [TestMethod]
@@ -165,7 +165,7 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_Count_Grid_count_0_return_0()
         {
-            Grid grid = new Grid(0, 0, 0, 0, 1);
+            Grid grid = new Grid(0, 0, 1);
 
             int expected = 0;
             int actual = grid.Count;
@@ -212,23 +212,26 @@ namespace TracProg_Calculation_Tests
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_GetCoords_invalid_num_one_retun_exception()
         {
-            Tuple<int, int> p =  _grid.GetIndexes(-1);
+            int i, j;
+            _grid.GetIndexes(-1, out i, out j);
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_GetCoords_invalid_num_two_retun_exception()
         {
-            Tuple<int, int> p = _grid.GetIndexes(_grid.Count);
+            int i, j;
+            _grid.GetIndexes(_grid.Count, out i, out j);
         }
 
         [TestMethod]
         public void TestMethod_GetCoords_num_9_retun_9_0()
         {
-            Tuple<int, int> p = _grid.GetIndexes(9);
+            int i, j;
+            _grid.GetIndexes(9, out i, out j);
 
             bool expected = true;
-            bool actual = p.Item1 == 9 && p.Item2 == 0;
+            bool actual = i == 9 && j == 0;
 
             Assert.AreEqual(expected, actual);
         }
@@ -236,10 +239,11 @@ namespace TracProg_Calculation_Tests
         [TestMethod]
         public void TestMethod_GetCoords_num_14_retun_4_1()
         {
-            Tuple<int, int> p = _grid.GetIndexes(14);
+            int i, j;
+            _grid.GetIndexes(14, out i, out j);
 
             bool expected = true;
-            bool actual = p.Item1 == 4 && p.Item2 == 1;
+            bool actual = i == 4 && j == 1;
 
             Assert.AreEqual(expected, actual);
         }
@@ -296,7 +300,7 @@ namespace TracProg_Calculation_Tests
             _grid.SetValue(_grid.GetNum(0, 0), GridValue.OWN_METAL);
 
             byte expected = 1;
-            byte actual = _grid[0, 0];
+            byte actual = _grid[0, 0].ByteInfo;
 
             Assert.AreEqual(expected, actual);
         }
@@ -305,28 +309,28 @@ namespace TracProg_Calculation_Tests
         [ExpectedException(typeof(OverflowException), "Индекс i находился вне границ сетки.")]
         public void TestMethod_GetItem_int_int_invalid_i_one_return_exception()
         {
-            byte actual = _grid[-1, 0];
+            byte actual = _grid[-1, 0].ByteInfo;
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Индекс i находился вне границ сетки.")]
         public void TestMethod_GetItem_int_int_invalid_i_two_return_exception()
         {
-            byte actual = _grid[_grid.Width, 0];
+            byte actual = _grid[_grid.Width, 0].ByteInfo;
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Индекс j находился вне границ сетки.")]
         public void TestMethod_GetItem_int_int_invalid_j_one_return_exception()
         {
-            byte actual = _grid[0, -1];
+            byte actual = _grid[0, -1].ByteInfo;
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Индекс j находился вне границ сетки.")]
         public void TestMethod_GetItem_int_int_invalid_j_two_return_exception()
         {
-            byte actual = _grid[0, _grid.Height];
+            byte actual = _grid[0, _grid.Height].ByteInfo;
         }
 
         [TestMethod]
@@ -335,7 +339,7 @@ namespace TracProg_Calculation_Tests
             _grid.SetValue(0, GridValue.OWN_METAL);
 
             byte expected = 1;
-            byte actual = _grid[0];
+            byte actual = _grid[0].ByteInfo;
 
             Assert.AreEqual(expected, actual);
         }
@@ -344,14 +348,14 @@ namespace TracProg_Calculation_Tests
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_GetItem_int_invalid_one_return_exception()
         {
-            byte actual = _grid[-1];
+            byte actual = _grid[-1].ByteInfo;
         }
 
         [TestMethod]
         [ExpectedException(typeof(OverflowException), "Номер ячейки находился вне границ.")]
         public void TestMethod_GetItem_int_invalid_two_return_exception()
         {
-            byte actual = _grid[_grid.Count];
+            byte actual = _grid[_grid.Count].ByteInfo;
         }
     }
 }

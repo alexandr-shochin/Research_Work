@@ -136,14 +136,14 @@ namespace TracProg.Calculation
             return Compare(this, other);
         }
 
-        public void Draw(ref Graphics graphics)
+        public void Draw(Graphics graphics)
         {
             graphics.FillRectangle(new SolidBrush(_Color), X, Y, Width, Height); // сначала отрисовываем сам компонент
 
             // отрисовываем pin'ы
             foreach (var pin in _pins)
             {
-                pin.Draw(ref graphics);
+                pin.Draw(graphics);
             }
         }
 

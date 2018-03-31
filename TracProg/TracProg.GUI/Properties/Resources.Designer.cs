@@ -61,6 +61,16 @@ namespace TracProg.GUI.Properties {
         }
         
         /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Icon, аналогичного (Значок).
+        /// </summary>
+        internal static System.Drawing.Icon icons8___48 {
+            get {
+                object obj = ResourceManager.GetObject("icons8___48", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap icons8_Добавить_файл_64 {
@@ -103,9 +113,39 @@ namespace TracProg.GUI.Properties {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap icons8_Микроскоп_64 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Микроскоп_64", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icons8_Настройки_64 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Настройки_64", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap icons8_Новый_файл_64 {
             get {
                 object obj = ResourceManager.GetObject("icons8_Новый_файл_64", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icons8_Панель_запуска_64 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Панель_запуска_64", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -136,6 +176,16 @@ namespace TracProg.GUI.Properties {
         internal static System.Drawing.Bitmap icons8_Сахарные_Кубики_48 {
             get {
                 object obj = ResourceManager.GetObject("icons8_Сахарные_Кубики_48", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icons8_Стоп_64 {
+            get {
+                object obj = ResourceManager.GetObject("icons8_Стоп_64", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

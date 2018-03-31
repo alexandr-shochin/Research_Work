@@ -9,107 +9,12 @@ namespace TracProg.Calculation.Algoriths
 {
     public class Li
     {
-        private class Set
-        {
-            public class ElementSet : IEquatable<ElementSet>
-            {
-                public int NumCell { get; set; }
-                public int NumLevel { get; set; }
-
-                public override string ToString()
-                {
-                    return "Value: " + NumCell + " Level: " + NumLevel;
-                }
-
-                /// <summary>
-                /// Указывает, равен ли текущий объект другому объекту того же типа.
-                /// </summary>
-                /// <param name="other">Объект, который требуется сравнить с данным объектом.</param>
-                /// <returns>true , если текущий объект равен параметру other, в противном случае — false.</returns>
-                public bool Equals(ElementSet other)
-                {
-                    return other.NumCell == this.NumCell ? true : false;
-                }
-            }
-
-            private Dictionary<int, int> _set;
-            private List<int> _list;
-
-            public Set()
-            {
-                _set = new Dictionary<int, int>();
-                _list = new List<int>();
-            }
-
-            public bool Add(int item, int numLevel)
-            {
-                if (!ContainsNumCell(item))
-                {
-                    _set.Add(item, numLevel);
-                    _list.Add(item);
-                    return true;
-                }
-                return false;
-            }
-
-            public bool ContainsNumCell(int item)
-            {
-                return _set.ContainsKey(item);
-            }
-
-            public int GetNumLevel(int numCell)
-            {
-                return _set[numCell];
-            }
-
-            public void Clear()
-            {
-                _set.Clear();
-                _list.Clear();
-            }
-
-            public ElementSet this[int index]
-            {
-                get
-                {
-                    if (_set == null || index < 0 || index >= _set.Count)
-                        throw new OverflowException("Индекс находился вне границ массива.");
-
-                    return new ElementSet() { NumCell = _list[index], NumLevel = _set[_list[index]] };
-                }
-            }
-
-            public int Count
-            {
-                get
-                {
-                    if (_set.Count == 0)
-                    {
-                        return 0;
-                    }
-                    else
-                    {
-                        return _set.Count;
-                    }
-                }
-            }
-
-            public override string ToString()
-            {
-                return "Count = " + Count;
-            }
-        }
-
         private Grid _grid;
-        private Net[] _net;
         private Set _set;
 
-        public event Action CalculateIsComplete;
-
-        public Li(Grid grid, Net[] net)
+        public Li(Grid grid)
         {
             _grid = grid;
-            _net = net;
 
             _set = new Set();
         }
@@ -118,58 +23,46 @@ namespace TracProg.Calculation.Algoriths
         /// Найти трассу
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
-        /// <returns></returns>
-        public bool FindPath()
+        /// <returns>Время, затраченное на работу алгоритма</returns>
+        public bool FindPath(Net net, out List<List<int>> path, out long time)
         {
-            List<int> path = new List<int>();
-            for (int numNet = 0; numNet < _net.Length; ++numNet)
+            _set.Clear();
+
+            time = 0;
+            path = new List<List<int>>();
+
+            Stopwatch sw = new Stopwatch();
+            sw.Reset();
+            sw.Start();
+            for (int numEl = 1; numEl < net.Count; numEl++)
             {
-                Stopwatch sw = new Stopwatch();
-                sw.Reset();
-                sw.Start();
-                for (int numEl = 1; numEl < _net[numNet].Count; numEl++)
+                List<int> subPath = new List<int>();
+
+                int start = net[numEl];
+                int finish = net[numEl - 1];
+
+                if (WavePropagation(start, finish) == true)
                 {
-                    int start = _net[numNet][numEl];
-                    int finish = _net[numNet][numEl - 1];
-
-                    if (WavePropagation(start, finish) == true)
-                    {
-                        RestorationPath(ref path);
-                    }
-                    else //если какие-то подтрассы нашли и какую-то не смогли реализовать
-                    {
-                        path.Clear();
-                        path.Add(-1); // индикатор того, что трасса не реализована
-                        for (int i = 0; i < _net[numNet].Count; ++i)
-                        {
-                            path.Add(_net[numNet][i]);
-                        }
-                        break;
-                    }
+                    RestorationPath(ref subPath);
                     _set.Clear();
-                    if (path.Count != 0)
-                    {
-                        path.Add(-1); // добавляем -1, чтобы разделить трассы
-                    }
-                    else // если не можем реализовать трассу
-                    {
-                        path.Add(-1); // индикатор того, что трасса не реализована
-                        for (int i = 0; i < _net[numNet].Count; ++i)
-                        {
-                            path.Add(_net[numNet][i]);
-                        }
-                        break;
-                    }
+                    path.Add(subPath);
                 }
-                sw.Stop();
-                _grid.MetallizeTrack(path);
-                path.Clear();
+                else //если какую-то не смогли реализовать
+                {
+                    _set.Clear();
+                    subPath.Add(-1); // индикатор того, что трасса не реализована
+                    for (int i = 0; i < net.Count; ++i)
+                    {
+                        subPath.Add(net[i]);
+                    }
+                    path.Add(subPath);
+                    return false;
+                }
             }
-
-            if (CalculateIsComplete != null)
-                CalculateIsComplete.Invoke();
-
+            sw.Stop();
+            time = sw.ElapsedMilliseconds;
             return true;
+            
         }
 
         /// <summary>
@@ -201,22 +94,22 @@ namespace TracProg.Calculation.Algoriths
 
                     if (_set[index].NumLevel == numLevel - 1)
                     {
-                        if (i - 1 >= 0 && CheckCell(i - 1, j, numLevel, finish, ref countAdded)) // left
+                        if (j - 2 >= 0 && CheckCell(i, j - 2, numLevel, finish, ref countAdded)) // left
                         {
                             isFoundFinish = true;
                             break;
                         }
-                        if (i + 1 < _grid.CountRows && CheckCell(i + 1, j, numLevel, finish, ref countAdded)) // right
+                        if (j + 2 < _grid.CountColumn && CheckCell(i, j + 2, numLevel, finish, ref countAdded)) // right
                         {
                             isFoundFinish = true;
                             break;
                         }
-                        if (j - 1 >= 0 && CheckCell(i, j - 1, numLevel, finish, ref countAdded)) // up
+                        if (i - 2 >= 0 && CheckCell(i - 2, j, numLevel, finish, ref countAdded)) // up
                         {
                             isFoundFinish = true;
                             break;
                         }
-                        if (j + 1 < _grid.CountColumn && CheckCell(i, j + 1, numLevel, finish, ref countAdded)) // down
+                        if (i + 2 < _grid.CountRows && CheckCell(i + 2, j, numLevel, finish, ref countAdded)) // down
                         {
                             isFoundFinish = true;
                             break;
@@ -297,19 +190,19 @@ namespace TracProg.Calculation.Algoriths
                 currentLevel--;
 
                 _grid.GetIndexes(currentNumCell, out i, out j);
-                if (i - 1 >= 0 && SetMetalCell(_grid.GetNum(i - 1, j), currentLevel, ref currentNumCell, ref path)) // left
+                if (j - 2 >= 0 && SetMetalCell(_grid.GetNum(i, j - 2), currentLevel, ref currentNumCell, ref path)) // left
                 {
                     continue;
                 }
-                if (i + 1 < _grid.CountRows && SetMetalCell(_grid.GetNum(i + 1, j), currentLevel, ref currentNumCell, ref path)) // right
+                if (j + 2 < _grid.CountColumn && SetMetalCell(_grid.GetNum(i, j + 2), currentLevel, ref currentNumCell, ref path)) // right
                 {
                     continue;
                 }
-                if (j - 1 >= 0 && SetMetalCell(_grid.GetNum(i, j - 1), currentLevel, ref currentNumCell, ref path)) // up
+                if (i - 2 >= 0 && SetMetalCell(_grid.GetNum(i - 2, j), currentLevel, ref currentNumCell, ref path)) // uo
                 {
                     continue;
                 }
-                if (j + 1 < _grid.CountColumn && SetMetalCell(_grid.GetNum(i, j + 1), currentLevel, ref currentNumCell, ref path)) // down
+                if (i + 2 < _grid.CountRows && SetMetalCell(_grid.GetNum(i + 2, j), currentLevel, ref currentNumCell, ref path)) // down
                 {
                     continue;
                 }

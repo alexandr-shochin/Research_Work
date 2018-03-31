@@ -24,135 +24,17 @@ namespace TracProg.GUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        Configuration config;
-        Graphics g;
-        Bitmap bmp;
-
         public MainWindow()
         {
             InitializeComponent();
+
+            _experimentSystem.Click += _experimentSystem_Click;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        void _experimentSystem_Click(object sender, RoutedEventArgs e)
         {
-            Dispatcher.Invoke(delegate
-            {
-                _loadConfiguration.IsEnabled = false;
-
-                _getSolutionButton.IsEnabled = false;
-                _clearSolutionButton.IsEnabled = false;
-
-                _getSolutionItem.IsEnabled = false;
-                _clearSolutionItem.IsEnabled = false;
-            });
-
-            config = new Configuration();
-            config.ReadFromFile(@"D:\Program Files\Dropbox\Research_Work\TracProg\config.mydeflef");
-            config.Grid.Metalize += Grid_Metalize;
-
-            
-
-            Li li = new Li(config.Grid, config.Net);
-            li.CalculateIsComplete += li_CalculateIsComplete;
-
-            Thread thread = new Thread(delegate()
-            {
-                li.FindPath();
-            });
-            thread.IsBackground = true;
-            thread.Start();
-        }
-
-        void li_CalculateIsComplete()
-        {
-            Dispatcher.Invoke(delegate
-            {
-                _loadConfiguration.IsEnabled = true;
-
-                _getSolutionButton.IsEnabled = true;
-                _clearSolutionButton.IsEnabled = true;
-
-                _getSolutionItem.IsEnabled = true;
-                _clearSolutionItem.IsEnabled = true;
-            });
-        }
-
-        void Grid_Metalize()
-        {
-            try
-            {
-                Dispatcher.Invoke(delegate
-                    {
-                        config.Grid.Draw(ref g);
-                        //System.Windows.Media.Imaging.BitmapSource b =
-                        //System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                        //       bmp.GetHbitmap(),
-                        //       IntPtr.Zero,
-                        //       Int32Rect.Empty,
-                        //       BitmapSizeOptions.FromEmptyOptions());
-                        //_image.Source = b;
-                        bmp.Save("test.bmp");
-                    });
-            }
-            catch (System.Runtime.InteropServices.ExternalException) { }
-        }
-
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-            config = null;
-            g = null;
-            bmp = null;
-            _image.Source = null;
-        }
-
-        private void _newConfiguration_Click(object sender, RoutedEventArgs e)
-        {
-            int x = 0;
-            int y = 0;
-
-            int n = 1000;
-            int m = 1000;
-
-            int countPins = 1000;
-            int countProhibitionZone = 10000;
-            int countNets = 1000;
-
-            int koeff = 10;
-
-            config = new Configuration();
-            config.GenerateRandomConfig(x, y, n, m, countPins, countProhibitionZone, countNets, koeff);
-            config.Grid.Metalize += Grid_Metalize;
-
-            bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-
-            g = Graphics.FromImage(bmp);
-
-            Li li = new Li(config.Grid, config.Net);
-            li.CalculateIsComplete += li_CalculateIsComplete;
-
-            Thread thread = new Thread(delegate()
-            {
-                li.FindPath();
-            });
-            thread.IsBackground = true;
-            thread.Start();
-
-        //    try
-        //    {
-        //        Dispatcher.Invoke(delegate
-        //        {
-        //            config.Grid.Draw(ref g);
-        //            System.Windows.Media.Imaging.BitmapSource b =
-        //            System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-        //                   bmp.GetHbitmap(),
-        //                   IntPtr.Zero,
-        //                   Int32Rect.Empty,
-        //                   BitmapSizeOptions.FromEmptyOptions());
-        //            _image.Source = b;
-        //            bmp.Save("test.bmp");
-        //        });
-        //    }
-        //    catch (System.Runtime.InteropServices.ExternalException) { }
+            SystemForTesting _systemForTesting = new SystemForTesting();
+            _systemForTesting.Show();
         }
     }
 }
