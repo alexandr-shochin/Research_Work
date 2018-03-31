@@ -213,6 +213,8 @@ namespace TracProg.Calculation
         {
             _config.Grid = new Grid(n * koeff, m * koeff, koeff);
 
+            int radius = 25;
+
             Dictionary<string, IElement> gridElements = new Dictionary<string, IElement>();
 
             Random rand = new Random();
@@ -227,7 +229,13 @@ namespace TracProg.Calculation
                 try
                 {
                     Tuple<int, int> pair_i = Tuple.Create(rand.Next(0, n - 1), rand.Next(0, m - 1));
-                    Tuple<int, int> pair_j = Tuple.Create(rand.Next(0, n - 1), rand.Next(0, m - 1));
+
+                    int pair_j_1 = pair_i.Item1 + rand.Next(0, radius);
+                    int pair_j_2 = pair_i.Item2 + rand.Next(0, radius);
+                    pair_j_1 = pair_j_1 <= n - 1 ? pair_j_1 : n - 1;
+                    pair_j_2 = pair_j_2 <= n - 1 ? pair_j_2 : m - 1;
+
+                    Tuple<int, int> pair_j = Tuple.Create(pair_j_1, pair_j_2);
                     if (pairs.FindIndex(x => x.Item1 == pair_i.Item1 && x.Item2 == pair_i.Item2) == -1 &&
                         pairs.FindIndex(x => x.Item1 == pair_j.Item1 && x.Item2 == pair_j.Item2) == -1)
                     {

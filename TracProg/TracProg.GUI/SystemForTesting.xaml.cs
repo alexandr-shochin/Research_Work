@@ -25,16 +25,23 @@ namespace TracProg.GUI
     {
         private class RowTest
         {
-            public RowTest(int id, long time)
+            public RowTest(int id, long time, int allNets, int countNonRealizedNetsBefore, int countNonRealizedNetsAfter)
             {
                 ID = id;
                 Time = time;
+                AllNets = allNets;
+                CountNonRealizedNetsBefore = countNonRealizedNetsBefore;
+                CountNonRealizedNetsAfter = countNonRealizedNetsAfter;
             }
 
             /// <summary>
             /// Номер эксперимента
             /// </summary>
             public int ID { get; private set; }
+
+            public int AllNets { get; private set; }
+            public int CountNonRealizedNetsBefore { get; private set; }
+            public int CountNonRealizedNetsAfter { get; private set; }
 
             /// <summary>
             /// Время выполнения
@@ -49,9 +56,21 @@ namespace TracProg.GUI
                         {
                             return "№";
                         }
+                    case "AllNets":
+                        {
+                            return "Всего трасс";
+                        }
+                    case "CountNonRealizedNetsBefore":
+                        {
+                            return "Не реализованных до ";
+                        }
+                    case "CountNonRealizedNetsAfter":
+                        {
+                            return "Не реализованных после";
+                        }
                     case "Time":
                         {
-                            return "Время работы алгоритма (ms)";
+                            return "Время (ms)";
                         }
                     default: return "";
                 }
@@ -191,7 +210,7 @@ namespace TracProg.GUI
                             config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountPins, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff);
                             li = new Li(config.Grid);
 
-                            long time = 0;
+                            
                             Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
                             for (int numNet = 0; numNet < config.Net.Length; numNet++)
                             {
@@ -205,22 +224,26 @@ namespace TracProg.GUI
                                 else
                                 {
                                     config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
-                                    time += localTime;
+                                    //time += localTime;
                                 }
                             }
                             Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             old_g = Graphics.FromImage(old_bmp);
-                            old_g.Clear(System.Drawing.Color.Empty);
+                            old_g.Clear(System.Drawing.Color.Black);
                             config.Grid.Draw(old_g);
-                            string path = _testSettings.FileOutPath + "\\test_old.bmp";
+                            string path = _testSettings.FileOutPath + "\\test_old_" + i + ".bmp";
                             old_bmp.Save(path);
 
                             Bitmap new_bmp;
                             Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
 
-                            
+                            long time = 0;
+                            Stopwatch sw = new Stopwatch();
+                            int countNonRealizedNetsBefore = nonRealized.Count;
                             for (int curIter = 0; curIter < countIter; curIter++)
                             {
+                                sw.Reset();
+                                sw.Start();
                                 foreach (var net in nonRealized)
                                 {
                                     Alg alg = new Alg(config.Grid, config.Net.Length, net.Key);
@@ -232,6 +255,9 @@ namespace TracProg.GUI
                                         goodRetracing.Add(net.Key, net.Value);
                                     }
                                 }
+                                sw.Stop();
+                                time += sw.ElapsedMilliseconds;
+
                                 foreach (var item in goodRetracing)
                                 {
                                     if (nonRealized.ContainsKey(item.Key))
@@ -245,15 +271,15 @@ namespace TracProg.GUI
 
                             new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                             new_g = Graphics.FromImage(new_bmp);
-                            new_g.Clear(System.Drawing.Color.Empty);
+                            new_g.Clear(System.Drawing.Color.Black);
 
                             config.Grid.Draw(new_g);
-                            path = _testSettings.FileOutPath + "\\test_new.bmp";
+                            path = _testSettings.FileOutPath + "\\test_new_" + i + ".bmp";
                             new_bmp.Save(path);
                             new_bmp = null;
                             new_g = null;
 
-                            AddRow(time);
+                            AddRow(time, config.Net.Length, countNonRealizedNetsBefore, nonRealized.Count);
                             old_g = null;
                         }
 
@@ -267,6 +293,8 @@ namespace TracProg.GUI
                             average = average / _lists.Count;
                             Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms"; });
                         }
+
+                        DataRowsToExel(_testSettings.FileOutPath);
 
                         UnlockInterface();
                     }
@@ -306,6 +334,7 @@ namespace TracProg.GUI
                 string path = "test_old.bmp";
                 old_bmp.Save(path);
 
+                int countNonRealizedNetsBefore = nonRealized.Count;
                 Bitmap new_bmp;
                 Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
 
@@ -330,7 +359,7 @@ namespace TracProg.GUI
                 new_bmp = null;
                 new_g = null;
 
-                AddRow(time);
+                AddRow(time, config.Net.Length, countNonRealizedNetsBefore, nonRealized.Count);
                 old_g = null;
             }
         }
@@ -340,11 +369,22 @@ namespace TracProg.GUI
             e.Column.Header = RowTest.GetRussianNameField(e.PropertyName);
         }
 
-        private void AddRow(long time)
+        private void DataRowsToExel(string filePath)
+        {
+            var csv = new StringBuilder();
+            foreach (RowTest row in _lists)
+            {
+                var newLine = string.Format("{0}\t{1}\t{2}\t{3}\t{4}", row.ID, row.AllNets, row.CountNonRealizedNetsBefore, row.CountNonRealizedNetsAfter, row.Time);
+                csv.AppendLine(newLine);
+            }
+            File.WriteAllText(filePath + @"\test.scv", csv.ToString());
+        }
+
+        private void AddRow(long time, int allNets, int countNonRealizedNetsBefore, int countNonRealizedNetsAfter)
         {
             Dispatcher.Invoke(delegate()
             {
-                _lists.Add(new RowTest(_id++, time));
+                _lists.Add(new RowTest(_id++, time, allNets, countNonRealizedNetsBefore, countNonRealizedNetsAfter));
                 _dataGrid.Items.Refresh();
             });
         }
