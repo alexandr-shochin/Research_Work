@@ -59,9 +59,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Algoriths\Alg.cs" />
-    <Compile Include="Algoriths\Li.cs" />
-    <Compile Include="Algoriths\Set.cs" />
+    <Compile Include="Algorithms\RetraceAlgScheme.cs" />
+    <Compile Include="Algorithms\RetraceAlgNet.cs" />
+    <Compile Include="Algorithms\WaveTraceAlgScheme.cs" />
+    <Compile Include="Algorithms\Set.cs" />
     <Compile Include="Board_Elements\Component.cs" />
     <Compile Include="Board_Elements\Grid.cs" />
     <Compile Include="Board_Elements\IElement.cs" />

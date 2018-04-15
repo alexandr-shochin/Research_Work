@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace TracProg.Calculation.Algoriths
 {
-    public class Li
+    public class WaveTraceAlgScheme
     {
         private Grid _grid;
         private Set _set;
 
-        public Li(Grid grid)
+        public WaveTraceAlgScheme(Grid grid)
         {
             _grid = grid;
 

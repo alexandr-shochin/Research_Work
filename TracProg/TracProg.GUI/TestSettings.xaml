@@ -21,12 +21,12 @@
         </GroupBox>
         <GroupBox Header="Настройка элементов сетки" Margin="10,4,12,0" VerticalAlignment="Top" Height="102" Grid.Row="1">
             <Grid Margin="0,0,0,-2">
-                <Label Content="Количество пар pin'ов:" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top"/>
-                <TextBox Name="_gridСountNets" HorizontalAlignment="Left" Margin="175,3,0,0" TextWrapping="Wrap" Text="" Width="50" TextAlignment="Center" Height="23" VerticalAlignment="Top"/>
+                <Label Content="Количество трасс:" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top"/>
+                <TextBox Name="_gridСountNets" HorizontalAlignment="Left" Margin="187,3,0,0" TextWrapping="Wrap" Text="" Width="50" TextAlignment="Center" Height="23" VerticalAlignment="Top"/>
                 <Label Content="Количество зон запрета:" HorizontalAlignment="Left" Margin="0,27,0,0" VerticalAlignment="Top"/>
-                <TextBox Name="_gridСountProhibitionZone" HorizontalAlignment="Left" Margin="175,30,0,0" TextWrapping="Wrap" Text="" Width="50" TextAlignment="Center" Height="23" VerticalAlignment="Top"/>
-                <Label Content="Количество элементов в сети:" HorizontalAlignment="Left" Margin="0,54,0,0" VerticalAlignment="Top"/>
-                <TextBox Name="_gridСountNodesInNet" HorizontalAlignment="Left" Margin="175,57,0,0" TextWrapping="Wrap" Text="" Width="50" TextAlignment="Center" Height="23" VerticalAlignment="Top"/>
+                <TextBox Name="_gridСountProhibitionZone" HorizontalAlignment="Left" Margin="187,30,0,0" TextWrapping="Wrap" Text="" Width="50" TextAlignment="Center" Height="23" VerticalAlignment="Top"/>
+                <Label Content="Количество элементов в трассе:" HorizontalAlignment="Left" Margin="0,54,0,0" VerticalAlignment="Top"/>
+                <TextBox Name="_gridСountNodesInNet" HorizontalAlignment="Left" Margin="187,57,0,0" TextWrapping="Wrap" Text="" Width="50" TextAlignment="Center" Height="23" VerticalAlignment="Top"/>
             </Grid>
         </GroupBox>
         <GroupBox Header="Настройка папки для выходных элементов эксперимента" Margin="10,0,12,5" Grid.Row="2">
@@ -38,14 +38,6 @@
                 <TextBox Name="_outFilesPathTextBox" Height="23" Margin="4,3,5,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
                 <Button Name="_outFilesPath" Content="Обзор..." Margin="0,3,0,0" HorizontalAlignment="Right" Width="49" Grid.Column="1" Height="22" VerticalAlignment="Top"/>
 
-            </Grid>
-        </GroupBox>
-        <GroupBox Header="Настройка алгоритма" Margin="10,0,12,2" Grid.Row="3">
-            <Grid>
-                <ComboBox Name="_typeOfAlgorithm" HorizontalAlignment="Left" Margin="4,6,0,0" VerticalAlignment="Top" Width="184" SelectedIndex="0" Height="25">
-                    <ComboBoxItem Content="Волновой алгоритм Ли">
-                    </ComboBoxItem>
-                </ComboBox>
             </Grid>
         </GroupBox>
         <Separator Margin="10,3,10,0" Grid.Row="4" Height="1" VerticalAlignment="Top"/>

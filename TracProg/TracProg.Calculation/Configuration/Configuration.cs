@@ -20,26 +20,13 @@ namespace TracProg.Calculation
             public Grid Grid { get; set; }
 
             /// <summary>
-            /// Сети печатной платы
+            /// Трассы печатной платы
             /// </summary>
             public Net[] Nets { get; set; }
         }
 
-        private ConfigGrid _config;
+        private ConfigGrid _config = new ConfigGrid();
 
-        /// <summary>
-        /// Конструктор
-        /// </summary>
-        /// <param name="pathConfigFile">Путь к файлу конфигурации с расширением *.mydeflef</param>
-        public Configuration()
-        {
-            _config = new ConfigGrid();
-        }
-
-        /// <summary>
-        /// Прочитать из файла
-        /// </summary>
-        /// <param name="pathConfigFile">Абсолютный путь до файла конфигурации</param>
         public void ReadFromFile(string pathConfigFile)
         {
             int koeff = 0;
@@ -203,17 +190,9 @@ namespace TracProg.Calculation
             }
         }
 
-        /// <summary>
-        /// Генерация случайной конфигурации
-        /// </summary>
-        /// <param name="n">Высота сетки</param>
-        /// <param name="m">Ширина сетки</param>
-        /// <param name="koeff">Коэфициент масштабирования</param>
-        public void GenerateRandomConfig(int n, int m, int countPairPins, int countProhibitionZone, int countNets, int koeff = 4)
+        public void GenerateRandomConfig(int n, int m, int countNets, int countProhibitionZone, int countPinsInNet, int koeff = 4, int radius = 25)
         {
             _config.Grid = new Grid(n * koeff, m * koeff, koeff);
-
-            int radius = 25;
 
             Dictionary<string, IElement> gridElements = new Dictionary<string, IElement>();
 
@@ -254,7 +233,7 @@ namespace TracProg.Calculation
                         nets.Add(new Net(nums));
                         
                     }
-                    if (j == countPairPins) break;
+                    if (j == countNets) break;
                     
                 }
                 catch (ArgumentException) { }
@@ -280,16 +259,6 @@ namespace TracProg.Calculation
             {
                 _config.Grid.Add(el.Value);
             }
-        }
-
-        public ErrorCode Serialize(string path)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ErrorCode Deserialize(string path)
-        {
-            throw new NotImplementedException();
         }
 
         #region Properties
