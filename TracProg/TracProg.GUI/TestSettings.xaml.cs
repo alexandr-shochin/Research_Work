@@ -60,8 +60,8 @@ namespace TracProg.GUI
                 return;
             }
 
-            int countPins;
-            if (!int.TryParse(_gridСountNets.Text, out countPins))
+            int countNets;
+            if (!int.TryParse(_gridСountNets.Text, out countNets))
             {
                 System.Windows.MessageBox.Show("Значение количества элементов имеет неверный формат.", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
@@ -87,14 +87,14 @@ namespace TracProg.GUI
                 return;
             }
 
-            switch (this._typeOfAlgorithm.SelectedIndex)
-            {
-                case 0:
-                    {
-                        typeOfAlgorithm = TypeOfAlgorithm.li;
-                        break;
-                    }
-            }
+            //switch (this._typeOfAlgorithm.SelectedIndex)
+            //{
+            //    case 0:
+            //        {
+            //            typeOfAlgorithm = TypeOfAlgorithm.li;
+            //            break;
+            //        }
+            //}
 
             int countRuns;
             if (!int.TryParse(_countRuns.Text, out countRuns))
@@ -105,7 +105,7 @@ namespace TracProg.GUI
 
             M = width;
             N = height;
-            CountPins = countPins;
+            CountNets = countNets;
             CountProhibitionZones = countProhibitionZones;
             CountPinsInNet = countPinsInNet;
             FileOutPath = _outFilesPathTextBox.Text;
@@ -132,9 +132,9 @@ namespace TracProg.GUI
         public int N { get; private set; }
 
         /// <summary>
-        /// Количество элементов
+        /// Количество трасс
         /// </summary>
-        public int CountPins { get; private set; }
+        public int CountNets { get; private set; }
 
         /// <summary>
         /// Количество зон запрета
