@@ -198,60 +198,68 @@ namespace TracProg.Calculation
 
             Random rand = new Random();
 
+            List<Point> points = new List<Point>();
+
             //Генерация Pins
-            List<Tuple<int, int>> pairs = new List<Tuple<int, int>>();
             List<Net> nets = new List<Net>();
-            int countp = 0;
-            int j = 0;
+            int currentNumPin = 0;
+            int _countNets = 0;
             while(true)
             {
-                try
+                Point p_1 = new Point(rand.Next(0, n - 1), rand.Next(0, m - 1));
+
+                currentNumPin++;
+                gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(p_1.x * koeff, p_1.y * koeff, koeff, koeff));
+
+                List<int> net = new List<int>();
+                if (!points.Contains(p_1))
                 {
-                    Tuple<int, int> pair_i = Tuple.Create(rand.Next(0, n - 1), rand.Next(0, m - 1));
+                    points.Add(p_1);
 
-                    int pair_j_1 = pair_i.Item1 + rand.Next(0, radius);
-                    int pair_j_2 = pair_i.Item2 + rand.Next(0, radius);
-                    pair_j_1 = pair_j_1 <= n - 1 ? pair_j_1 : n - 1;
-                    pair_j_2 = pair_j_2 <= n - 1 ? pair_j_2 : m - 1;
+                    int l, k;
+                    _config.Grid.GetIndexes(p_1.x * koeff, p_1.y * koeff, out l, out k);
+                    net.Add(_config.Grid.GetNum(l, k));
 
-                    Tuple<int, int> pair_j = Tuple.Create(pair_j_1, pair_j_2);
-                    if (pairs.FindIndex(x => x.Item1 == pair_i.Item1 && x.Item2 == pair_i.Item2) == -1 &&
-                        pairs.FindIndex(x => x.Item1 == pair_j.Item1 && x.Item2 == pair_j.Item2) == -1)
+                    int _countPinsInNet = 1;
+                    while (true)
                     {
-                        gridElements.Add(countp.ToString() + "_pin", new Pin(pair_i.Item1 * koeff, pair_i.Item2 * koeff, koeff, koeff));
-                        gridElements.Add((countp + 1).ToString() + "_pin", new Pin(pair_j.Item1 * koeff, pair_j.Item2 * koeff, koeff, koeff));
-                        j++;
-                        countp += 2;
+                        int x = p_1.x + rand.Next(0, n - 1);
+                        int y = p_1.y + rand.Next(0, m - 1);
+                        Point p_i = new Point(x <= n - 1 ? x : n - 1,
+                                              y <= m - 1 ? y : m - 1);
 
-                        // генерация nets
-                        int[] nums = new int[2];
-                        int l, k;
-                        _config.Grid.GetIndexes(pair_i.Item1 * koeff, pair_i.Item2 * koeff, out l, out k);
-                        nums[0] = _config.Grid.GetNum(l, k);
-                        _config.Grid.GetIndexes(pair_j.Item1 * koeff, pair_j.Item2 * koeff, out l, out k);
-                        nums[1] = _config.Grid.GetNum(l, k);
-                        nets.Add(new Net(nums));
-                        
+                        if (!points.Contains(p_i))
+                        {
+                            points.Add(p_i);
+
+                            currentNumPin++;
+                            gridElements.Add((currentNumPin).ToString() + "_pin", new Pin(p_i.x * koeff, p_i.y * koeff, koeff, koeff));
+
+                            _config.Grid.GetIndexes(p_i.x * koeff, p_i.y * koeff, out l, out k);
+                            net.Add(_config.Grid.GetNum(l, k));
+                            _countPinsInNet++;
+                        }
+                        if (_countPinsInNet == countPinsInNet) break;
                     }
-                    if (j == countNets) break;
-                    
+                    nets.Add(new Net(net.ToArray()));
+                    _countNets++;
                 }
-                catch (ArgumentException) { }
-                
+
+                if (_countNets == countNets) break;
             }
             _config.Nets = nets.ToArray();
 
-            
-
-            //Генерация ProhibitionZone           
-            for (int i = 0; i < countProhibitionZone; )
+            //Генерация ProhibitionZone
+            for (int i = 1; i <= countProhibitionZone; i++)
             {
-                try
+                Point pZ = new Point(rand.Next(0, n - 1), rand.Next(0, m - 1));
+
+                if (!points.Contains(pZ))
                 {
-                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(rand.Next(0, n - 1) * koeff, rand.Next(0, m - 1) * koeff, koeff, koeff));
-                    i++;
+                    points.Add(pZ);
+
+                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(pZ.x * koeff, pZ.y * koeff, koeff, koeff));
                 }
-                catch (ArgumentException) { }
             }
 
             // добавление элементов в сетку

@@ -249,24 +249,39 @@ namespace TracProg.Calculation
                 {
                     for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
                     {
-                        UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
-                        _grid[track[numSubPath][0]].MetalID = metalID;
-                        _grid[track[numSubPath][0]].WidthMetal = widthMetal;
-
-                        for (int node = 1; node < track[numSubPath].Count; ++node)
+                        if (track[numSubPath][0] != -1)
                         {
-                            if (!IsPin(track[numSubPath][node]))
+                            UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
+                            _grid[track[numSubPath][0]].MetalID = metalID;
+                            _grid[track[numSubPath][0]].WidthMetal = widthMetal;
+
+                            for (int node = 1; node < track[numSubPath].Count; ++node)
                             {
-                                SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
-                                _grid[track[numSubPath][node]].ViewElement = null;
-                                _grid[track[numSubPath][node]].MetalID = metalID;
-                                _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                                if (!IsPin(track[numSubPath][node]))
+                                {
+                                    SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
+                                    _grid[track[numSubPath][node]].ViewElement = null;
+                                    _grid[track[numSubPath][node]].MetalID = metalID;
+                                    _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                                }
+                                else
+                                {
+                                    UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
+                                    _grid[track[numSubPath][node]].MetalID = metalID;
+                                    _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                                }
                             }
-                            else
+                        }
+                        else
+                        {
+                            for (int node = 1; node < track[numSubPath].Count; ++node)
                             {
-                                UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
-                                _grid[track[numSubPath][node]].MetalID = metalID;
-                                _grid[track[numSubPath][node]].WidthMetal = widthMetal;
+                                Point p = GetCoordCell(track[numSubPath][node]);
+                                try
+                                {
+                                    _grid[track[numSubPath][node]].ViewElement._Color = Color.Red;
+                                }
+                                catch (NullReferenceException) { }
                             }
                         }
                     }

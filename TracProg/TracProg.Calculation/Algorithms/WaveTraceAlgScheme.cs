@@ -24,8 +24,10 @@ namespace TracProg.Calculation.Algoriths
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns>Время, затраченное на работу алгоритма</returns>
-        public bool FindPath(Net net, out List<List<int>> path, out long time)
+        public bool FindPath(Net net, out List<List<int>> path, out Dictionary<int, Tuple<int, int>> nonRealized, out long time)
         {
+            nonRealized = new Dictionary<int, Tuple<int, int>>();
+
             _set.Clear();
 
             time = 0;
@@ -49,14 +51,15 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else //если какую-то не смогли реализовать
                 {
-                    _set.Clear();
-                    subPath.Add(-1); // индикатор того, что трасса не реализована
-                    for (int i = 0; i < net.Count; ++i)
-                    {
-                        subPath.Add(net[i]);
-                    }
-                    path.Add(subPath);
-                    return false;
+                    //_set.Clear();
+                    //subPath.Add(-1); // индикатор того, что трасса не реализована
+                    //for (int i = 0; i < net.Count; ++i)
+                    //{
+                    //    subPath.Add(net[i]);
+                    //}
+                    //path.Add(subPath);
+                    //return false;
+                    nonRealized.Add(Tuple.Create(start, finish));
                 }
             }
             sw.Stop();

@@ -254,7 +254,9 @@ namespace TracProg.Calculation.Algoriths
                     {
                         _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
                     }
-                    if (li.FindPath(new Net(_netList.ToArray()), out _trackList, out time))
+                    List<Tuple<int, int>> nonRealized;
+                    li.FindPath(new Net(_netList.ToArray()), out _trackList, out nonRealized, out time);
+                    if (nonRealized.Count == 0)
                     {
                         if (_trackList.Count != 0)
                         {
@@ -268,7 +270,8 @@ namespace TracProg.Calculation.Algoriths
                         {
                             netList.Add(grid.GetNum(pin.Item1, pin.Item2));
                         }
-                        if (li.FindPath(new Net(netList.ToArray()), out trackList, out time))
+                        li.FindPath(new Net(netList.ToArray()), out trackList, out nonRealized, out time);
+                        if (nonRealized.Count == 0)
                         {
                             if (trackList.Count != 0)
                             {

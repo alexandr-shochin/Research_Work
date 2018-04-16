@@ -219,15 +219,17 @@ namespace TracProg.GUI
                             li = new WaveTraceAlgScheme(config.Grid);
 
                             
-                            Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
+                            Dictionary<int, List<Tuple<int, int>>> nonRealized = new Dictionary<int,List<Tuple<int,int>>>();
                             for (int numNet = 0; numNet < config.Net.Length; numNet++)
                             {
                                 long localTime;
                                 List<List<int>> track;
-                                if (!li.FindPath(config.Net[numNet], out track, out localTime))
+                                //List<Tuple<int, int>> nonRealized;
+                                li.FindPath(numNet + 1, config.Net[numNet], out track, out nonRealized, out localTime);
+                                if ()
                                 {
-                                    nonRealized.Add(numNet + 1, config.Net[numNet]);
-                                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
+                                    //nonRealized.Add(numNet + 1, config.Net[numNet]);
+                                    //config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
                                 }
                                 else
                                 {
@@ -310,6 +312,7 @@ namespace TracProg.GUI
                 {
                     long localTime;
                     List<List<int>> track;
+                    List<Tuple<int, int>> nonRealized;
                     if (!li.FindPath(config.Net[numNet], out track, out localTime))
                     {
                         nonRealized.Add(numNet + 1, config.Net[numNet]);

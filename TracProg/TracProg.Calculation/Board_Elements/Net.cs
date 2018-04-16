@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace TracProg.Calculation
 {
     [Serializable]
-    public class Net
+    public class Net : IEquatable<Net>
     {
         private int[] _netElements;
 
@@ -40,7 +40,7 @@ namespace TracProg.Calculation
 
         public override string ToString()
         {
-            return "Count = " + _netElements.Length;
+            return string.Join(", ", _netElements);
         }
 
         public int Count
@@ -56,6 +56,22 @@ namespace TracProg.Calculation
                     return _netElements.Length;
                 }
             }
+        }
+
+        public bool Equals(Net other)
+        {
+            bool[] isEqual = new bool[other.Count];
+            for (int i = 0; i < other.Count; i++)
+            {
+                isEqual[i] = this.Contains(other[i]);
+            }
+
+            return Array.IndexOf(isEqual, false) != -1 ? true : false;
+        }
+
+        public bool Contains(int el)
+        {
+            return Array.IndexOf(this._netElements, el) != -1 ? true : false;
         }
     }
 }

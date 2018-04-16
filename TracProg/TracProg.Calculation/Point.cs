@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace TracProg.Calculation
 {
     [Serializable]
-    public class Point
+    public class Point : IEquatable<Point>
     {
         /// <summary>
         /// Координата по оси X
@@ -32,6 +32,11 @@ namespace TracProg.Calculation
         public override string ToString()
         {
             return x + ", " + y;
+        }
+
+        public bool Equals(Point other)
+        {
+            return this.x == other.x && this.y == other.y;
         }
     }
 }
