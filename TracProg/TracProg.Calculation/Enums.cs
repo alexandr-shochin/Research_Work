@@ -27,28 +27,4 @@ namespace TracProg.Calculation
         PROHIBITION_ZONE_WAS_FOUND = 12,
         PROHIBITION_ZONE_WAS_NOT_FOUND = 13
     }
-
-    public enum GridValue
-    { 
-        /// <summary>
-        /// Свободная ячейка
-        /// </summary>
-        FREE = 0,
-        /// <summary>
-        /// Свой метал
-        /// </summary>
-        OWN_METAL = 1,
-        /// <summary>
-        /// Чужой метал
-        /// </summary>
-        FOREIGN_METAL = 2,
-        /// <summary>
-        /// Pin элемент
-        /// </summary>
-        PIN = 3,
-        /// <summary>
-        /// Элемент зоны запрета
-        /// </summary>
-        PROHIBITION_ZONE = 4
-    }
 }

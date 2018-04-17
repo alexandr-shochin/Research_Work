@@ -12,18 +12,17 @@ namespace TracProg.Calculation
     public struct GridElement
     {
         public IElement ViewElement { get; set; }
-        public int MetalID { get; set; }
+        public string MetalID { get; set; }
         public float WidthMetal { get; set; }
-        public byte ByteInfo { get; set; }
 
         public override string ToString()
         {
-            return MetalID.ToString();
+            return !string.IsNullOrEmpty(MetalID) ? MetalID : string.Empty;
         }
     }
 
     [Serializable]
-    public class Grid : IElement
+    public class Grid //: IElement
     {
         private Point[] _nodes;
         //private List<IElement> _elements;
@@ -110,20 +109,8 @@ namespace TracProg.Calculation
             {
                 try
                 {
-                    //_elements.Add(el);
                     _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
-                    if (el is Pin)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.PIN);
-                    }
-                    else if (el is ProhibitionZone)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
-                    }
-                    else if (el is Metal)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
-                    }
+
                     return ErrorCode.NO_ERROR;
                 }
                 catch (Exception ex)
@@ -137,89 +124,13 @@ namespace TracProg.Calculation
             }
         }
 
-        /// <summary>
-        /// Удаляет элемент из сетки
-        /// </summary>
-        /// <param name="el">Удаляемый элемент</param>
-        /// <returns>Код ошибки</returns>
-        public ErrorCode Remove(IElement el) // TODO
-        {
-            Tuple<int, int> indexes;
-            if (GetIndexesRowCol(el.X, el.Y, out indexes))
-            {
-                try
-                {
-                    if (el is Pin)
-                    {
-                        UnsetValue(indexes.Item1, indexes.Item2, GridValue.PIN);
-                    }
-                    else if (el is ProhibitionZone)
-                    {
-                        UnsetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
-                    }
-                    else if (el is Metal)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
-                    }
-                    return ErrorCode.NO_ERROR;
-                }
-                catch (Exception)
-                {
-                    return ErrorCode.REMOVE_ERROR;
-                }
-            }
-            else
-            {
-                return ErrorCode.REMOVE_ERROR;
-            }
-        }
-
-        /// <summary>
-        /// Возвращает значение, указывающее, содержит ли сетка элемент переданный в качестве параметра.
-        /// </summary>
-        /// <param name="el">Элемент для поиска</param>
-        /// <returns></returns>
-        public ErrorCode Contains(IElement el) // TODO
-        {
-            Tuple<int, int> indexes;
-            if (GetIndexesRowCol(el.X, el.Y, out indexes))
-            {
-                try
-                {
-                    if (el is Pin)
-                    {
-                        if (IsPin(indexes.Item1, indexes.Item2))
-                        {
-                            return ErrorCode.PIN_WAS_FOUND;
-                        }
-                    }
-                    else if (el is ProhibitionZone)
-                    {
-                        if (IsPin(indexes.Item1, indexes.Item2))
-                        {
-                            return ErrorCode.PROHIBITION_ZONE_WAS_FOUND;
-                        }
-                    }
-                    return ErrorCode.NO_ERROR;
-                }
-                catch (Exception)
-                {
-                    return ErrorCode.CONTAINS_ERROR;
-                }
-            }
-            else
-            {
-                return ErrorCode.CONTAINS_ERROR;
-            }
-        }
-
-        public void Draw(Graphics graphics)
+        public void Draw(Dictionary<string, Net> nets, Graphics graphics)
         {
             Random rand = new Random();
-            Color[] colors = new Color[100000]; /// TODO
-            for (int i = 1; i <= colors.Length - 1; i++)
+            Dictionary<string, Color> colors = new Dictionary<string, Color>();
+            foreach (var net in nets)
             {
-                colors[i] = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
+                colors[net.Key] = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
             }
 
             for (int i = 0; i < _nodes.Length; ++i)
@@ -227,88 +138,40 @@ namespace TracProg.Calculation
                 graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
-            for (int i = 0; i < _grid.Length; ++i)
+            for (int el = 0; el < _grid.Length; ++el)
             {
-                if (_grid[i].MetalID != 0 && !(_grid[i].ViewElement is Pin))
+                if (!string.IsNullOrEmpty(_grid[el].MetalID) && !(_grid[el].ViewElement is Pin))
                 {
-                    Point p = GetCoordCell(i);
-                    _grid[i].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, colors[_grid[i].MetalID]);
+                    Point p = GetCoordCell(el);
+                    _grid[el].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, colors[_grid[el].MetalID]);
                 }
-                if (_grid[i].ViewElement != null)
+                if (_grid[el].ViewElement != null)
                 {
-                    _grid[i].ViewElement.Draw(graphics);
+                    _grid[el].ViewElement.Draw(graphics);
                 }
             }
         }
 
-        public void MetallizeTrack(List<List<int>> track, float widthMetal, int metalID)
+        public void MetallizeTrack(List<List<int>> tracks, float widthMetal, string metalID)
         {
-            if (track != null && track.Count != 0) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
+            foreach (List<int> track in tracks)
             {
-                if (track[0][0] != -1)
+                foreach (int node in track)
                 {
-                    for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
+                    if (!IsPin(node))
                     {
-                        if (track[numSubPath][0] != -1)
-                        {
-                            UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
-                            _grid[track[numSubPath][0]].MetalID = metalID;
-                            _grid[track[numSubPath][0]].WidthMetal = widthMetal;
-
-                            for (int node = 1; node < track[numSubPath].Count; ++node)
-                            {
-                                if (!IsPin(track[numSubPath][node]))
-                                {
-                                    SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
-                                    _grid[track[numSubPath][node]].ViewElement = null;
-                                    _grid[track[numSubPath][node]].MetalID = metalID;
-                                    _grid[track[numSubPath][node]].WidthMetal = widthMetal;
-                                }
-                                else
-                                {
-                                    UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
-                                    _grid[track[numSubPath][node]].MetalID = metalID;
-                                    _grid[track[numSubPath][node]].WidthMetal = widthMetal;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            for (int node = 1; node < track[numSubPath].Count; ++node)
-                            {
-                                Point p = GetCoordCell(track[numSubPath][node]);
-                                try
-                                {
-                                    _grid[track[numSubPath][node]].ViewElement._Color = Color.Red;
-                                }
-                                catch (NullReferenceException) { }
-                            }
-                        }
+                        Point p = GetCoordCell(node);
+                        _grid[node].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, Color.White);
+                        _grid[node].MetalID = metalID;
+                        _grid[node].WidthMetal = widthMetal;
                     }
-                }
-                else // трасса не построена
-                {
-                    for (int node = 1; node < track[0].Count; ++node)
+                    else
                     {
-                        Point p = GetCoordCell(track[0][node]);
-                        try
-                        {
-                            _grid[track[0][node]].ViewElement._Color = Color.Red;
-                        }
-                        catch (NullReferenceException) { }
+                        _grid[node].MetalID = metalID;
+                        _grid[node].WidthMetal = widthMetal;
                     }
                 }
             }
-        }
-
-        public int Compare(IElement x, IElement y)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int CompareTo(IElement other)
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -433,77 +296,23 @@ namespace TracProg.Calculation
         }
 
         /// <summary>
-        /// Установить значение флага одного из параметров
-        /// </summary>
-        /// <param name="num">Номер ячейки</param>
-        /// <param name="value">Параметр</param>
-        public void SetValue(int num, GridValue value)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            SetBit(ref _grid[num], (int)value, true);
-        }
-
-        /// <summary>
-        /// Установить значение флага одного из параметров
-        /// </summary>
-        /// <param name="i">Номер строки</param>
-        /// <param name="j">Номер столбца</param>
-        /// <param name="value">Параметр</param>
-        public void SetValue(int i, int j, GridValue value)
-        {
-            SetValue(GetNum(i, j), value);
-        }
-
-        /// <summary>
-        /// Снять значение флага одного из параметров
-        /// </summary>
-        /// <param name="num">Номер ячейки</param>
-        /// <param name="value">Параметр</param>
-        public void UnsetValue(int num, GridValue value)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            SetBit(ref _grid[num], (int)value, false);
-        }
-
-        /// <summary>
-        /// Снять значение флага одного из параметров
-        /// </summary>
-        /// <param name="i">Номер строки</param>
-        /// <param name="j">Номер столбца</param>
-        /// <param name="value">Параметр</param>
-        public void UnsetValue(int i, int j, GridValue value)
-        {
-            UnsetValue(GetNum(i, j), value);
-        }
-
-        /// <summary>
         /// Проверка, что данная ячейка является металом
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public bool IsOwnMetal(int num)
+        public bool IsOwnMetal(int num, string metalID)
         {
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-
-
-            return GetBit(_grid[num], (int)GridValue.OWN_METAL);
+            return !string.IsNullOrEmpty(_grid[num].MetalID) && _grid[num].MetalID == metalID;
         }
 
-        public bool IsOwnMetal(int i, int j)
+        public bool IsOwnMetal(int i, int j, string metalID)
         {
-            return IsOwnMetal(GetNum(i, j));
+            return IsOwnMetal(GetNum(i, j), metalID);
         }
 
         /// <summary>
@@ -518,7 +327,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], (int)GridValue.PIN);
+            return _grid[num].ViewElement is Pin;
         }
 
         /// <summary>
@@ -544,7 +353,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], (int)GridValue.PROHIBITION_ZONE);
+            return _grid[num].ViewElement is ProhibitionZone;
         }
 
         public bool IsProhibitionZone(int i, int j)
@@ -561,17 +370,7 @@ namespace TracProg.Calculation
             return IsProhibitionZone(GetNum(i, j));
         }
 
-        public bool IsForeignMetal(int num)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            return GetBit(_grid[num], (int)GridValue.FOREIGN_METAL);
-        }
-
-        public bool IsForeignMetal(int i, int j)
+        public bool IsFreeMetal(int i, int j, string metalID)
         {
             if (i < 0 || i >= CountRows)
             {
@@ -582,25 +381,65 @@ namespace TracProg.Calculation
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            bool result = false;
+            bool result = true;
             if (j > 0 && j < CountColumn - 1)
             {
-                if (this[i, j - 1].MetalID == this[i, j + 1].MetalID && this[i, j - 1].MetalID != 0 && this[i, j + 1].MetalID != 0)
+                if (!string.IsNullOrEmpty(this[i, j - 1].MetalID) && !string.IsNullOrEmpty(this[i, j + 1].MetalID))
                 {
-                    result = true;
+                    if (this[i, j - 1].MetalID == this[i, j + 1].MetalID)
+                    {
+                        result = false;
+                    }
                 }
             }
             if (i > 0 && i < CountRows - 1)
             {
-                if (this[i - 1, j].MetalID == this[i + 1, j].MetalID && this[i - 1, j].MetalID != 0 && this[i + 1, j].MetalID != 0)
+                if (!string.IsNullOrEmpty(this[i - 1, j].MetalID) && !string.IsNullOrEmpty(this[i + 1, j].MetalID))
                 {
-                    result = true;
+                    if (this[i - 1, j].MetalID == this[i + 1, j].MetalID)
+                    {
+                        result = false;
+                    }
                 }
             }
 
-            result |= IsForeignMetal(GetNum(i, j));
+            return !IsProhibitionZone(i, j) && !IsPin(i, j) && string.IsNullOrEmpty(this[i, j].MetalID) && result;
+        }
 
-            return result;
+        public bool IsForeignMetal(int i, int j, string metalID)
+        {
+            if (i < 0 || i >= CountRows)
+            {
+                throw new OverflowException("Индекс i находился вне границ сетки.");
+            }
+            if (j < 0 || j >= CountColumn)
+            {
+                throw new OverflowException("Индекс j находился вне границ сетки.");
+            }
+
+            if (!string.IsNullOrEmpty(this[i, j].MetalID) && this[i, j].MetalID != metalID)
+            {
+                return true;
+            }
+            else
+            {
+                if (j > 0 && j < CountColumn - 1)
+                {
+                    if (this[i, j - 1].MetalID == this[i, j + 1].MetalID && !string.IsNullOrEmpty(this[i, j - 1].MetalID) && !string.IsNullOrEmpty(this[i, j + 1].MetalID))
+                    {
+                        return true;
+                    }
+                }
+                if (i > 0 && i < CountRows - 1)
+                {
+                    if (this[i - 1, j].MetalID == this[i + 1, j].MetalID && !string.IsNullOrEmpty(this[i - 1, j].MetalID) && !string.IsNullOrEmpty(this[i + 1, j].MetalID))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         /// <summary>
@@ -649,7 +488,13 @@ namespace TracProg.Calculation
                 string str = "";
                 for (int j = 0; j < CountColumn; j++)
                 {
-                    str += this[i, j].MetalID.ToString();
+                    string _str = "n0";
+                    if (!string.IsNullOrEmpty(this[i, j].MetalID))
+                    {
+                        _str = this[i, j].MetalID;
+                    }
+
+                    str += _str;
                 }
                 lines.Add(str);
             }
@@ -659,11 +504,6 @@ namespace TracProg.Calculation
         #endregion
 
         #region Private methods
-
-        private void Grid_IsChanged(int numElement)
-        {
-            throw new NotImplementedException();
-        }
 
         private void GenerateCoord(int width, int height, int koeff)
         {
@@ -738,44 +578,6 @@ namespace TracProg.Calculation
             {
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Установить бит в байте
-        /// </summary>
-        /// <param name="el">Байт в котором нужно установить бит</param>
-        /// <param name="numBit">Номер бита</param>
-        /// <param name="value">значение: true - 1, false - 0</param>
-        private void SetBit(ref GridElement el, int numBit, bool value)
-        {
-            byte mask = (byte)(1 << numBit); // 0000100000....
-
-            if (value)
-            {
-                el.ByteInfo = (byte)(el.ByteInfo | mask);// 1 | x = 1
-            }
-            else
-            {
-                el.ByteInfo = (byte)(el.ByteInfo & ~mask); // 0 & x = 0, x = 111110111111..
-            }
-
-        }
-
-        /// <summary>
-        /// Получить значение бита в байте
-        /// </summary>
-        /// <param name="el">Байт в котором нужно получить занчение бита</param>
-        /// <param name="numBit">Номер бита</param>
-        /// <param name="value">значение: true - 1, false - 0</param>
-        private bool GetBit(GridElement el, int numBit)
-        {
-            byte mask = (byte)(1 << numBit); // 0000100000....
-            el.ByteInfo = (byte)(mask & el.ByteInfo);
-            if (el.ByteInfo > 0)
-            {
-                return true;
-            }
-            return false;
         }
 
         #endregion
