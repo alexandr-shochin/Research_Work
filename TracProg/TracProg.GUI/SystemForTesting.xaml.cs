@@ -311,6 +311,10 @@ namespace TracProg.GUI
                 li = new WaveTraceAlgScheme(config.Grid);
                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                 old_g = Graphics.FromImage(bmp);
+                old_g.Clear(System.Drawing.Color.Black);
+                config.Grid.Draw(config.Nets, old_g);
+                string path = "test_clear.bmp";
+                bmp.Save(path);
 
                 long time = 0;
                 Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
@@ -334,19 +338,13 @@ namespace TracProg.GUI
                     {
                         config.Grid.MetallizeTrack(track, 1.0f, net.Key);
                         time += localTime;
-
-                        //Bitmap _bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                        //old_g = Graphics.FromImage(_bmp);
-                        //old_g.Clear(System.Drawing.Color.Black);
-                        //config.Grid.Draw(config.Nets, old_g);
-                        //_bmp.Save(net.Key + "_test_old.bmp");
                     }
                 }
                 Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                 old_g = Graphics.FromImage(old_bmp);
                 old_g.Clear(System.Drawing.Color.Black);
                 config.Grid.Draw(config.Nets, old_g);
-                string path = "test_old.bmp";
+                path = "test_old.bmp";
                 old_bmp.Save(path);
 
                 int countNonRealizedNetsBefore = allNonRealizedTracks.Count;

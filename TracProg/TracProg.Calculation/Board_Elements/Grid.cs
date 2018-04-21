@@ -124,6 +124,39 @@ namespace TracProg.Calculation
             }
         }
 
+        /// <summary>
+        /// Возвращает значение, указывающее, содержит ли сетка элемент переданный в качестве параметра.
+        /// </summary>
+        /// <param name="el">Элемент для поиска</param>
+        /// <returns></returns>
+        public ErrorCode Contains(IElement el) // TODO
+        {
+            Tuple<int, int> indexes;
+            if (GetIndexesRowCol(el.X, el.Y, out indexes))
+            {
+                try
+                {
+                    if (this[indexes.Item1, indexes.Item2].ViewElement == null)
+                    {
+                        return ErrorCode.NO_ERROR;
+                    }
+                    else
+                    {
+                        return ErrorCode.CONTAINS_ERROR;
+                    }
+
+                }
+                catch (Exception)
+                {
+                    return ErrorCode.CONTAINS_ERROR;
+                }
+            }
+            else
+            {
+                return ErrorCode.CONTAINS_ERROR;
+            }
+        }
+
         public void Draw(Dictionary<string, Net> nets, Graphics graphics)
         {
             Random rand = new Random();

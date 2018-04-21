@@ -133,10 +133,18 @@ namespace TracProg.Calculation
                         }
                     }
 
-                    for (int i = 0; i < gridElements.Count; ++i)
-                    {
-                        _config.Grid.Add(gridElements.ElementAt(i).Value);
-                    }
+                    List<string> errorElements = new List<string>();
+                    foreach (var element in gridElements)
+	                {
+                        if (_config.Grid.Contains(element.Value) == ErrorCode.NO_ERROR)
+                        {
+                            _config.Grid.Add(element.Value);
+                        }
+                        else
+                        {
+                            errorElements.Add(element.Key);
+                        }
+	                }
                 }
                 else
                 {

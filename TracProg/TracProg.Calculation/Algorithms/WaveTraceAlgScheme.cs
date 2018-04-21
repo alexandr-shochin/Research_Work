@@ -43,8 +43,8 @@ namespace TracProg.Calculation.Algoriths
             for (int numEl = 0; numEl < _net.Count; numEl++)
             {
                 int start = _net[numEl];
-
                 int finish;
+                
                 if (WavePropagation(start, out finish) == true)
                 {
                     List<int> subPath;
@@ -54,6 +54,8 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else //если какой-то пин не смогли реализовать
                 {
+
+
                     nonRealized.Add(start);
                 }
             }
@@ -185,7 +187,6 @@ namespace TracProg.Calculation.Algoriths
             int j = 0;
 
             // металлизируем
-            //_grid.SetValue(currentNumCell, GridValue.OWN_METAL); 
             GridElement el = _grid[currentNumCell];
             el.MetalID = _netName;
             _grid[currentNumCell] = el;
@@ -220,7 +221,6 @@ namespace TracProg.Calculation.Algoriths
         {
             if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
             {
-                //_grid.SetValue(numCell, GridValue.OWN_METAL);
                 GridElement el = _grid[numCell];
                 el.MetalID = _netName;
                 _grid[numCell] = el;
