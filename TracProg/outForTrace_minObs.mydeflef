@@ -1,8 +1,8 @@
 KOEFF 4
 
-GRID 139 144
+GRID 140 144
 
-COMPONENTS 256
+COMPONENTS 254
 U100na2x1q 91 22 1 1
 U100na2x1b 88 22 1 1
 U100na2x1a 90 21 1 1
@@ -138,7 +138,7 @@ U82inx1q 107 95 1 1
 U83no2x1q 100 102 1 1
 U83no2x1a 98 102 1 1
 U83no2x1b 100 103 1 1
-U84na3i1x2q 60 118 1 1
+U84na3i1x2q 60 119 1 1
 U84na3i1x2b 58 122 1 1
 U84na3i1x2c 56 120 1 1
 U84na3i1x2an 54 121 1 1
@@ -228,7 +228,6 @@ mosi_triitlx1en 8 85 1 1
 mosi_tri_enable_regdfrqx1q 2 112 1 1
 mosi_tri_enable_regdfrqx1d 6 102 1 1
 mosi_tri_enable_regdfrqx1c 2 103 1 1
-sck_regdfrqx1q 0 130 1 1
 sck_regdfrqx1d 4 120 1 1
 sck_regdfrqx1c 0 121 1 1
 state_reg[0]dfrqx1q 88 130 1 1
@@ -237,8 +236,8 @@ state_reg[0]dfrqx1c 88 121 1 1
 state_reg[1]dfrqx1q 64 94 1 1
 state_reg[1]dfrqx1d 68 84 1 1
 state_reg[1]dfrqx1c 64 85 1 1
-_ss 22 143 1 1
-ce 94 143 1 1
+_ss 21 143 1 1
+ce 100 143 1 1
 clk 51 143 1 1
 data_in[0] 0 15 1 1
 data_in[10] 0 13 1 1
@@ -258,7 +257,6 @@ data_in[8] 14 0 1 1
 data_in[9] 110 0 1 1
 mosi 0 85 1 1
 rst 83 143 1 1
-sck 0 130 1 1
 
 PROHIBITION_ZONE 1640
 z0 90 9 1 1
@@ -1902,7 +1900,7 @@ z1637 77 89 1 1
 z1638 77 90 1 1
 z1639 77 91 1 1
 
-NETS 86
+NETS 85
 N148 U88mu2x1q mosi_regdfrqx1d
 N163 U85no2x1q sck_regdfrqx1d
 N166 U86ao211x1q U85no2x1a U72ao21x1c mosi_tri_enable_regdfrqx1d
@@ -1986,6 +1984,5 @@ n94 U101an22x1q U100na2x1b
 n95 U108an22x1q U103na2x1a
 n96 U104an22x1q U103na2x1b
 rst rst U86ao211x1d U84na3i1x2an U83no2x1b U80inx1a U71an211x1d
-sck sck sck_regdfrqx1q
 state[0] U89inx1a U87no2x1a U86ao211x1b state_reg[0]dfrqx1q
 state[1] U114inx1a U90and2x1b U87no2x1b U86ao211x1a U84na3i1x2b state_reg[1]dfrqx1q
