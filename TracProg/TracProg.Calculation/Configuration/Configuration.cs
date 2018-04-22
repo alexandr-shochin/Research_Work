@@ -107,6 +107,7 @@ namespace TracProg.Calculation
                                     {
                                         int countNets = int.Parse(lineSplit[1]);
                                         _config.Nets = new Dictionary<string, Calculation.Net>();
+                                        List<Tuple<string, Net>> nets = new List<Tuple<string, Net>>();
 
                                         index = 0;
                                         while ((line = sr.ReadLine()) != null && index < countNets)
@@ -123,10 +124,24 @@ namespace TracProg.Calculation
                                                     net[i] = _config.Grid.GetNum(j, k);
                                                 }
                                             }
-                                            _config.Nets[lineSplit[0]] = new Net(net);
+                                            nets.Add(Tuple.Create(lineSplit[0], new Net(net)));
+                                            //_config.Nets[lineSplit[0]] = new Net(net);
 
                                             index++;
                                         }
+
+                                        nets.Sort(delegate(Tuple<string, Net> T1, Tuple<string, Net> T2)
+                                        {
+                                            if (T1.Item2.Count > T2.Item2.Count) return 1;
+                                            if (T1.Item2.Count < T2.Item2.Count) return -1;
+                                            return 0;
+                                        });
+
+                                        foreach (var item in nets)
+                                        {
+                                            _config.Nets[item.Item1] = item.Item2;
+                                        }
+
                                         break;
                                     }
                             }
@@ -164,6 +179,7 @@ namespace TracProg.Calculation
 
             //Генерация Pins
             _config.Nets = new Dictionary<string, Calculation.Net>();
+            List<Tuple<string, Net>> nets = new List<Tuple<string, Net>>();
             int currentNumPin = 0;
             int _countNets = 0;
             while(true)
@@ -203,11 +219,23 @@ namespace TracProg.Calculation
                         }
                         if (_countPinsInNet == countPinsInNet) break;
                     }
-                    _config.Nets[_countNets + "_net"] = new Net(net.ToArray());
+
+                    nets.Add(Tuple.Create(_countNets + "_net", new Net(net.ToArray())));
                     _countNets++;
                 }
 
                 if (_countNets == countNets) break;
+            }
+
+            nets.Sort(delegate(Tuple<string, Net> T1, Tuple<string, Net> T2)
+            {
+                if (T1.Item2.Count > T2.Item2.Count) return 1;
+                if (T1.Item2.Count < T2.Item2.Count) return -1;
+                return 0;
+            });
+            foreach (var item in nets)
+            {
+                _config.Nets[item.Item1] = item.Item2;
             }
 
             //Генерация ProhibitionZone
@@ -241,7 +269,6 @@ namespace TracProg.Calculation
         /// Возвращает трассы
         /// </summary>
         public Dictionary<string, Net> Nets { get { return _config.Nets; } }
-
 
         public string LastErr { get; private set; }
 

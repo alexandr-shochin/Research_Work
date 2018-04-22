@@ -25,7 +25,6 @@ namespace TracProg.Calculation
     public class Grid //: IElement
     {
         private Point[] _nodes;
-        //private List<IElement> _elements;
         private GridElement[] _grid;
 
         /// <summary>
@@ -157,52 +156,121 @@ namespace TracProg.Calculation
             }
         }
 
-        public void Draw(Dictionary<string, Net> nets, Graphics graphics)
+        public void Draw(Graphics graphics)
         {
-            Random rand = new Random();
-            Dictionary<string, Color> colors = new Dictionary<string, Color>();
-            foreach (var net in nets)
-            {
-                colors[net.Key] = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
-            }
-
             for (int i = 0; i < _nodes.Length; ++i)
             {
                 graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
-            for (int el = 0; el < _grid.Length; ++el)
+            for (int el = 0; el < _grid.Length; el++)
             {
-                if (!string.IsNullOrEmpty(_grid[el].MetalID) && !(_grid[el].ViewElement is Pin))
+                if (!string.IsNullOrEmpty(_grid[el].MetalID))
                 {
                     Point p = GetCoordCell(el);
-                    _grid[el].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, colors[_grid[el].MetalID]);
-                }
-                if (_grid[el].ViewElement != null)
-                {
-                    _grid[el].ViewElement.Draw(graphics);
+                    graphics.FillRectangle(new SolidBrush(Color.Yellow), (p.x + (p.x + Koeff)) / 2, (p.y + (p.y + Koeff)) / 2, 1, 1);
                 }
             }
+
+            for (int el = 0; el < _grid.Length; el++)
+            {
+                if (_grid[el].ViewElement != null && !string.IsNullOrEmpty(_grid[el].MetalID))
+                {
+                    Point centerP = GetCoordCell(el);
+
+                    Tuple<int, int> pair;
+                    GetIndexesRowCol(centerP.x, centerP.y, out pair);
+                    int i = pair.Item1;
+                    int j = pair.Item2;
+
+                    GridElement center = this[i, j];
+
+                    if (j - 2 >= 0)
+                    {
+                        GridElement up = this[i, j - 2];
+                        if (up.ViewElement != null && center.MetalID == up.MetalID)
+                        {
+                            Point upP = GetCoordCell(i, j - 2);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
+                                new System.Drawing.Point((upP.x + (upP.x + Koeff)) / 2, (upP.y + (upP.y + Koeff)) / 2));
+                        }
+                    }
+
+                    if (j + 2 < this.CountColumn)
+                    {
+                        GridElement down = this[i, j + 2];
+                        if (down.ViewElement != null && center.MetalID == down.MetalID)
+                        {
+                            Point downP = GetCoordCell(i, j + 2);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
+                                new System.Drawing.Point((downP.x + (downP.x + Koeff)) / 2, (downP.y + (downP.y + Koeff)) / 2));
+                        }
+                    }
+
+                    if (i - 2 >= 0)
+                    {
+                        GridElement left = this[i - 2, j];
+                        if (left.ViewElement != null && center.MetalID == left.MetalID)
+                        {
+                            Point leftP = GetCoordCell(i - 2, j);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
+                                new System.Drawing.Point((leftP.x + (leftP.x + Koeff)) / 2, (leftP.y + (leftP.y + Koeff)) / 2));
+                        }
+                    }
+
+                    if (i + 2 < this.CountRows)
+                    {
+                        GridElement right = this[i + 2, j];
+                        if (right.ViewElement != null && center.MetalID == right.MetalID)
+                        {
+                            Point rightP = GetCoordCell(i + 2, j);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
+                                new System.Drawing.Point((rightP.x + (rightP.x + Koeff)) / 2, (rightP.y + (rightP.y + Koeff)) / 2));
+                        }
+                    }
+                }
+            }
+
+            for (int el = 0; el < _grid.Length; el++)
+            {
+                if (_grid[el].ViewElement != null)
+                {
+                    if (_grid[el].ViewElement is Pin || _grid[el].ViewElement is ProhibitionZone)
+                    {
+                        _grid[el].ViewElement.Draw(graphics);
+                    }
+                }
+            }
+
         }
 
         public void MetallizeTrack(List<List<int>> tracks, float widthMetal, string metalID)
         {
             foreach (List<int> track in tracks)
             {
-                foreach (int node in track)
+                InternalMetallizeTrack(track, widthMetal, metalID);
+            }       
+        }
+
+        private void InternalMetallizeTrack(List<int> track, float widthMetal, string metalID)
+        { 
+            foreach (int node in track)
+            {
+                if (!IsPin(node))
                 {
-                    if (!IsPin(node))
-                    {
-                        Point p = GetCoordCell(node);
-                        _grid[node].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, Color.White);
-                        _grid[node].MetalID = metalID;
-                        _grid[node].WidthMetal = widthMetal;
-                    }
-                    else
-                    {
-                        _grid[node].MetalID = metalID;
-                        _grid[node].WidthMetal = widthMetal;
-                    }
+                    Point p = GetCoordCell(node);
+                    _grid[node].ViewElement = new Metal(p.x, p.y, 1, 1, Color.FromArgb(183, 65, 14));
+                    _grid[node].MetalID = metalID;
+                    _grid[node].WidthMetal = widthMetal;
+                }
+                else
+                {
+                    _grid[node].MetalID = metalID;
+                    _grid[node].WidthMetal = widthMetal;
                 }
             }
         }
@@ -666,7 +734,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет для узлов сетки
         /// </summary>
-        public Color _Color { get; set; }
+        public Color _Color { get; private set; }
 
         /// <summary>
         /// Количество ячеек в сетке

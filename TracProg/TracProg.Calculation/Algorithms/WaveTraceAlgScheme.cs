@@ -44,7 +44,7 @@ namespace TracProg.Calculation.Algoriths
             {
                 int start = _net[numEl];
                 int finish;
-                
+
                 if (WavePropagation(start, out finish) == true)
                 {
                     List<int> subPath;
@@ -54,15 +54,15 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else //если какой-то пин не смогли реализовать
                 {
-
-
                     nonRealized.Add(start);
                 }
             }
             sw.Stop();
             time = sw.ElapsedMilliseconds;
+
+            _grid.MetallizeTrack(path, 1.0f, netName);
+
             return true;
-            
         }
 
         /// <summary>

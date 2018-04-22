@@ -19,7 +19,7 @@ namespace TracProg.Calculation.Algoriths
         private int _rightBorderLimitingRectangle;
         private int _downBorderLimitingRectangle;
 
-        private List<Tuple<int, int>> _pinnedNodes;
+        private List<Tuple<int, int, IElement>> _pinnedNodes;
 
         private Grid _oldGrid;
         private Grid _newGrid;
@@ -54,17 +54,13 @@ namespace TracProg.Calculation.Algoriths
                 RestorationPath(ref _oldGrid, ref pathWithInternodes);
 
                 // получаем координаты ограничивающего прямоугольника
-                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 1, 1, 1, 1);
+                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 10, 10, 10, 10);
 
                 // копируем нужные элементы сетки и создаём новую
                 GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
                 Dictionary<string, List<Tuple<int, int>>> futurePins = new Dictionary<string, List<Tuple<int, int>>>(); //<MetalID, список с Pin или граничным узлом>
                 Dictionary<string, List<Tuple<int, int>>> tracks = new Dictionary<string, List<Tuple<int, int>>>(); // реализованные трассы в прямоугольнике в том числе с междоузлие
-                foreach(var net in nets)
-                {
-                    futurePins.Add(net.Key, new List<Tuple<int, int>>());
-                    tracks.Add(net.Key, new List<Tuple<int, int>>());
-                }
+
                 int numElement = 0;
                 for (int i = _upBorderLimitingRectangle; i <= _downBorderLimitingRectangle; ++i)
                 {
@@ -82,8 +78,6 @@ namespace TracProg.Calculation.Algoriths
                     (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     _oldGrid.Koeff);
 
-                //DrawStagesForNewGridDebug("_newGrid", nets);
-
                 // ищем граничные узлы
                 int oldI = _upBorderLimitingRectangle;
                 int oldJ = _leftBorderLimitingRectangle;
@@ -94,14 +88,43 @@ namespace TracProg.Calculation.Algoriths
                     {
                         if (!string.IsNullOrEmpty(_newGrid[newI, newJ].MetalID))
                         {
-                            tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ)); // ищем реализованные трассы в нашем прямоугольнике
+                            // ищем реализованные трассы в нашем прямоугольнике
+                            List<Tuple<int, int>> trackList;
+                            if (!tracks.TryGetValue(_newGrid[newI, newJ].MetalID, out trackList))
+                            {
+                                tracks[_newGrid[newI, newJ].MetalID] = new List<Tuple<int, int>>();
+                                tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ)); 
+                            }
+                            else
+                            {
+                                trackList.Add(Tuple.Create(newI, newJ)); 
+                            }
+
                             if (IsBoardGridElement(ref _oldGrid, ref _newGrid, newI, newJ, oldI, oldJ))
                             {
-                                futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                List<Tuple<int, int>> list;
+                                if (!futurePins.TryGetValue(_newGrid[newI, newJ].MetalID, out list))
+                                {
+                                    futurePins[_newGrid[newI, newJ].MetalID] = new List<Tuple<int, int>>();
+                                    futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                }
+                                else
+                                {
+                                    list.Add(Tuple.Create(newI, newJ));
+                                }
                             }
                             else if (_newGrid.IsPin(newI, newJ))
                             {
-                                futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                List<Tuple<int, int>> list;
+                                if(!futurePins.TryGetValue(_newGrid[newI, newJ].MetalID, out list))
+                                {
+                                    futurePins[_newGrid[newI, newJ].MetalID] = new List<Tuple<int, int>>();
+                                    futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                }
+                                else
+                                {
+                                    list.Add(Tuple.Create(newI, newJ));
+                                }
                             }
                         }
 
@@ -112,38 +135,73 @@ namespace TracProg.Calculation.Algoriths
                 }
                 // добаявлем start и finish
                 int k, l;
+
                 _oldGrid.GetIndexes(start, out k, out l);
-                futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                List<Tuple<int, int>> _listStart;
+                if (!futurePins.TryGetValue(_nonRealizedMetalID, out _listStart))
+                {
+                    futurePins[_nonRealizedMetalID] = new List<Tuple<int,int>>();
+                    futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                }
+                else
+                {
+                    _listStart.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                }
+                _newGrid[k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle].ViewElement._Color = Color.Red;
+
                 _oldGrid.GetIndexes(finish, out k, out l);
-                futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                List<Tuple<int, int>> _listFinish;
+                if (!futurePins.TryGetValue(_nonRealizedMetalID, out _listFinish))
+                {
+                    futurePins[_nonRealizedMetalID] = new List<Tuple<int, int>>();
+                    futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                }
+                else
+                {
+                    _listFinish.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                }
+                _newGrid[k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle].ViewElement._Color = Color.Red;
 
                 // добавляем узлы из трассы с междоузлием    
                 for (int i = 0; i < pathWithInternodes.Count; i++)
                 {
                     _oldGrid.GetIndexes(pathWithInternodes[i], out k, out l);
-                    tracks[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+
+                    List<Tuple<int, int>> trackList;
+                    if(!tracks.TryGetValue(_nonRealizedMetalID, out trackList))
+                    {
+                        tracks[_nonRealizedMetalID] = new List<Tuple<int, int>>();
+                        tracks[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    }
+                    else
+                    {
+                        trackList.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    }
                 }
 
                 // граничные узлы делаем pin'ами и запоминаем какие узлы мы сделали 
-                _pinnedNodes = new List<Tuple<int, int>>();
+                _pinnedNodes = new List<Tuple<int, int, IElement>>();
                 foreach (var track in futurePins)
                 {
                     for (int i = 0; i < track.Value.Count; i++)
                     {
+                        IElement elem = _newGrid[track.Value[i].Item1, track.Value[i].Item2].ViewElement;
                         if (!_newGrid.IsPin(track.Value[i].Item1, track.Value[i].Item2))
                         {
                             Point p = _oldGrid.GetCoordCell(track.Value[i].Item1, track.Value[i].Item2);
 
                             GridElement el = _newGrid[track.Value[i].Item1, track.Value[i].Item2];
+                            IElement prevEl = el.ViewElement;
+
                             el.ViewElement = new Pin(p.x + p0.x, p.y + p0.y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
                             _newGrid[track.Value[i].Item1, track.Value[i].Item2] = el;
 
-                            _pinnedNodes.Add(track.Value[i]);
+                            _pinnedNodes.Add(Tuple.Create(track.Value[i].Item1, track.Value[i].Item2, prevEl));
                         }
                     }
                 }
 
-                //DrawStagesForDebug(nets, "boundingRectangle");
+                
 
                 //формируем матрицу коэфициентов-штрафов
                 int[,] penaltyMatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
@@ -154,14 +212,18 @@ namespace TracProg.Calculation.Algoriths
                 Dictionary<string, int> penalty = new Dictionary<string, int>();
                 CalculatePenalty(_oldGrid, tracks, penaltyMatrix, ref penalty);
 
+                DrawStagesForNewGridDebug(_nonRealizedMetalID + "_" + start + "_" + finish + "_");
+
                 // перетрассировать 
                 if (Retracing(ref _newGrid, tracks, futurePins, penalty))
                 {
+                    DrawStagesForNewGridDebug(_nonRealizedMetalID + "_" + start + "_" + finish + "_afterRetracing_");
+
                     // превратить те узлы что стали пинами обртано в просто узлы
                     for (int i = 0; i < _pinnedNodes.Count; i++)
                     {
                         GridElement el = _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2];
-                        el.ViewElement = new Metal(el.ViewElement.X, el.ViewElement.Y, el.ViewElement.Width, el.ViewElement.Height, el.ViewElement._Color);
+                        el.ViewElement = _pinnedNodes[i].Item3;
                         _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2] = el;
                     }
 
@@ -264,6 +326,8 @@ namespace TracProg.Calculation.Algoriths
                             grid.MetallizeTrack(_trackList, 1.0f, _nonRealizedMetalID);
                         }
 
+                        //DrawStagesForNewGridDebug("AfterNonRealTest_1.bmp");
+
                         // 3. перетрассируем трассу с максимальным штрафом
                         List<int> netList = new List<int>();
                         List<List<int>> trackList;
@@ -277,6 +341,8 @@ namespace TracProg.Calculation.Algoriths
                             if (trackList.Count != 0)
                             {
                                 grid.MetallizeTrack(trackList, 1.0f, MetalID);
+
+                                //DrawStagesForNewGridDebug("AfterNonRealTest_2.bmp");
 
                                 return true;
                             }
@@ -781,22 +847,22 @@ namespace TracProg.Calculation.Algoriths
             return false;
         }
 
-        private void DrawStagesForNewGridDebug(string stageName, Dictionary<string, Net> nets)
+        private void DrawStagesForNewGridDebug(string stageName)
         {
             Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
             Graphics g = Graphics.FromImage(bmp);
             g.TranslateTransform(-p0.x, -p0.y);
             g.Clear(System.Drawing.Color.Black);
-            _newGrid.Draw(nets, g);
+            _newGrid.Draw(g);
             bmp.Save(stageName + "_Stage.bmp");
         }
 
-        private void DrawStagesForOldGridDebug(string stageName, Dictionary<string, Net> nets)
+        private void DrawStagesForOldGridDebug(string stageName)
         {
             Bitmap bmp = new Bitmap(_oldGrid.Width, _oldGrid.Height);
             Graphics g = Graphics.FromImage(bmp);
             g.Clear(System.Drawing.Color.Black);
-            _oldGrid.Draw(nets, g);
+            _oldGrid.Draw(g);
             bmp.Save(stageName + "_Stage.bmp");
         }
     }

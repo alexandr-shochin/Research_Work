@@ -16,15 +16,26 @@ namespace TracProg.Calculation.Algoriths
 
         public event Action<int> IterFinishEvent;
 
+        int countRealizedBefore = 0;
+        int countRealizedAFter = 0;
+
         public RetraceAlgScheme(Configuration config, int countIter, Dictionary<string, Tuple<List<int>, List<int>>> nonRealizedNet)
         {
             _config = config;
             _countIter = countIter;
             _nonRealizedNet = nonRealizedNet;
-        }
+
+            foreach (var kv in nonRealizedNet)
+            {
+                countRealizedBefore += (kv.Value.Item1.Count - kv.Value.Item2.Count);
+            }
+            countRealizedAFter = countRealizedBefore;
+        }   
 
         public long Calculate()
         {
+            
+
             Stopwatch sw = new Stopwatch();
             sw.Reset();
             sw.Start();
@@ -47,19 +58,19 @@ namespace TracProg.Calculation.Algoriths
                             bool isFinishPin;
                             if (alg.FindPath(_config.Nets, nonRealizedPin, out finish, out isFinishPin))
                             {
-                                GridElement gridEl1 = _config.Grid[nonRealizedPin];
-                                IElement el1 = _config.Grid[nonRealizedPin].ViewElement;
-                                gridEl1.ViewElement = new Pin(el1.X, el1.Y, el1.Width, el1.Height);
-                                _config.Grid[nonRealizedPin] = gridEl1;
+                                //GridElement gridEl1 = _config.Grid[nonRealizedPin];
+                                //Point p1 = _config.Grid.GetCoordCell(nonRealizedPin);
+                                //gridEl1.ViewElement = new Pin(p1.x, p1.y, 1 * _config.Grid.Koeff, 1 * _config.Grid.Koeff);
+                                //_config.Grid[nonRealizedPin] = gridEl1;
 
                                 _goodRetracing.Add(nonRealizedPin);
 
                                 if (isFinishPin)
                                 {
-                                    GridElement gridEl2 = _config.Grid[finish];
-                                    IElement el2 = _config.Grid[finish].ViewElement;
-                                    gridEl2.ViewElement = new Pin(el2.X, el2.Y, el2.Width, el2.Height);
-                                    _config.Grid[nonRealizedPin] = gridEl2;
+                                    //GridElement gridEl2 = _config.Grid[finish];
+                                    //Point p2 = _config.Grid.GetCoordCell(finish);
+                                    //gridEl2.ViewElement = new Pin(p2.x, p2.y, 1 * _config.Grid.Koeff, 1 * _config.Grid.Koeff);
+                                    //_config.Grid[nonRealizedPin] = gridEl2;
 
                                     _goodRetracing.Add(finish);
                                 }

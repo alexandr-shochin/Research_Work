@@ -22,7 +22,7 @@ namespace TracProg.Calculation
         public ProhibitionZone(Point location, int width, int height)
         {
             _rect = new Rectangle(location.x, location.y, width, height);
-            _Color = Color.Red;
+            _Color = Color.Green;
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace TracProg.Calculation
         public ProhibitionZone(int x, int y, int width, int height)
         {
             _rect = new Rectangle(x, y, width, height);
-            _Color = Color.Red;
+            _Color = Color.Green;
         }
 
         #endregion
