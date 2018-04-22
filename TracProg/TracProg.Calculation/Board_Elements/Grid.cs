@@ -110,6 +110,11 @@ namespace TracProg.Calculation
                 {
                     _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
 
+                    if (el is Pin)
+                    {
+                        CountPins++;
+                    }
+
                     return ErrorCode.NO_ERROR;
                 }
                 catch (Exception ex)
@@ -763,6 +768,8 @@ namespace TracProg.Calculation
         /// Количество строк в сетке
         /// </summary>
         public int CountRows { get; private set; }
+
+        public int CountPins { get; private set; }
 
         #endregion
     }

@@ -225,15 +225,20 @@ namespace TracProg.GUI
                                 string path = "test_clear.bmp";
                                 bmp.Save(path);
 
+                                int countRealizedPinsBefore = 0;
                                 Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
                                 foreach (var net in config.Nets)
                                 {
+                                    int localCountRealizedPinsBefore = net.Value.Count;
+
                                     long localTime;
                                     List<List<int>> track;
                                     List<int> nonRealized;
                                     bool flag = li.FindPath(net.Key, net.Value, out track, out nonRealized, out localTime);
                                     if (flag && nonRealized.Count != 0)
                                     {
+                                        localCountRealizedPinsBefore -= nonRealized.Count;
+
                                         List<int> allPins = new List<int>();
                                         for (int n = 0; n < net.Value.Count; ++n)
                                         {
@@ -241,7 +246,9 @@ namespace TracProg.GUI
                                         }
 
                                         allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealized);
-                                    }   
+                                    }
+
+                                    countRealizedPinsBefore += localCountRealizedPinsBefore;
                                 }
                                 Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 old_g = Graphics.FromImage(old_bmp);
@@ -252,12 +259,13 @@ namespace TracProg.GUI
 
                                 int countNonRealizedNetsBefore = allNonRealizedTracks.Count;
 
-                                RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, allNonRealizedTracks);
+                                RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
                                 retraceAlgScheme.IterFinishEvent += (numIter) =>
                                     {
                                         Dispatcher.Invoke(delegate() { _progressBar.Value = numIter; });
                                     };
-                                long time = retraceAlgScheme.Calculate();
+                                int countRealizedPinsAfter;
+                                long time = retraceAlgScheme.Calculate(out countRealizedPinsAfter);
 
                                 Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 new_g = Graphics.FromImage(new_bmp);
@@ -269,9 +277,9 @@ namespace TracProg.GUI
                                 new_bmp = null;
                                 new_g = null;
 
-                                float percentageTracingAfter = (float)((100.0 * (config.Nets.Count - allNonRealizedTracks.Count)) / config.Nets.Count);
-                                float percentageTracingBefore = (float)((100.0 * (config.Nets.Count - countNonRealizedNetsBefore)) / config.Nets.Count);
-                                AddRow(time, config.Nets.Count, countNonRealizedNetsBefore, allNonRealizedTracks.Count, percentageTracingBefore, percentageTracingAfter);
+                                float percentageTracingAfter = 100.0f - (float)((100.0 * (config.Grid.CountPins - countRealizedPinsAfter)) / config.Grid.CountPins);
+                                float percentageTracingBefore = 100.0f - (float)((100.0 * (config.Grid.CountPins - countNonRealizedNetsBefore)) / config.Grid.CountPins);
+                                AddRow(time, config.Nets.Count, config.Grid.CountPins - countNonRealizedNetsBefore, config.Grid.CountPins - countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
                                 old_g = null;
                             }
 
@@ -313,15 +321,20 @@ namespace TracProg.GUI
                         string path = "test_clear.bmp";
                         bmp.Save(path);
 
+                        int countRealizedPinsBefore = 0;
                         Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
                         foreach (var net in config.Nets)
                         {
+                            int localCountRealizedPinsBefore = net.Value.Count;
+
                             long localTime;
                             List<List<int>> track;
                             List<int> nonRealized;
                             bool flag = li.FindPath(net.Key, net.Value, out track, out nonRealized, out localTime);
                             if (nonRealized.Count != 0)
                             {
+                                localCountRealizedPinsBefore -= nonRealized.Count;
+
                                 List<int> allPins = new List<int>();
                                 for (int n = 0; n < net.Value.Count; ++n)
                                 {
@@ -329,7 +342,9 @@ namespace TracProg.GUI
                                 }
 
                                 allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealized);
-                            }   
+                            }
+
+                            countRealizedPinsBefore += localCountRealizedPinsBefore;
                         }
                         Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                         old_g = Graphics.FromImage(old_bmp);
@@ -338,13 +353,13 @@ namespace TracProg.GUI
                         path = "test_old.bmp";
                         old_bmp.Save(path);
 
-                        int countNonRealizedNetsBefore = allNonRealizedTracks.Count;
-                        RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, allNonRealizedTracks);
+                        RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
                         retraceAlgScheme.IterFinishEvent += (numIter) =>
                         {
                             Dispatcher.Invoke(delegate() { _progressBar.Value = numIter; });
                         };
-                        long time = retraceAlgScheme.Calculate();
+                        int countRealizedPinsAfter;
+                        long time = retraceAlgScheme.Calculate(out countRealizedPinsAfter);
 
                         Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                         new_g = Graphics.FromImage(new_bmp);
@@ -356,7 +371,9 @@ namespace TracProg.GUI
                         new_bmp = null;
                         new_g = null;
 
-                        AddRow(time, config.Nets.Count, countNonRealizedNetsBefore, allNonRealizedTracks.Count, 0.0f, 0.0f);
+                        float percentageTracingAfter = 100.0f - (float)((100.0 * (config.Grid.CountPins - countRealizedPinsAfter)) / config.Grid.CountPins);
+                        float percentageTracingBefore = 100.0f - (float)((100.0 * (config.Grid.CountPins - countRealizedPinsBefore)) / config.Grid.CountPins);
+                        AddRow(time, config.Grid.CountPins, config.Grid.CountPins - countRealizedPinsBefore, config.Grid.CountPins - countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
                         old_g = null;
                     }
                 });

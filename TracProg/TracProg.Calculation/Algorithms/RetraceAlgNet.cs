@@ -54,7 +54,7 @@ namespace TracProg.Calculation.Algoriths
                 RestorationPath(ref _oldGrid, ref pathWithInternodes);
 
                 // получаем координаты ограничивающего прямоугольника
-                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 10, 10, 10, 10);
+                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 20, 20, 20, 20);
 
                 // копируем нужные элементы сетки и создаём новую
                 GridElement[] gridElements = new GridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
@@ -147,7 +147,6 @@ namespace TracProg.Calculation.Algoriths
                 {
                     _listStart.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 }
-                _newGrid[k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle].ViewElement._Color = Color.Red;
 
                 _oldGrid.GetIndexes(finish, out k, out l);
                 List<Tuple<int, int>> _listFinish;
@@ -160,7 +159,6 @@ namespace TracProg.Calculation.Algoriths
                 {
                     _listFinish.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 }
-                _newGrid[k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle].ViewElement._Color = Color.Red;
 
                 // добавляем узлы из трассы с междоузлием    
                 for (int i = 0; i < pathWithInternodes.Count; i++)
@@ -201,8 +199,6 @@ namespace TracProg.Calculation.Algoriths
                     }
                 }
 
-                
-
                 //формируем матрицу коэфициентов-штрафов
                 int[,] penaltyMatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
                 int startKoeff = Math.Max(_newGrid.CountColumn, _newGrid.CountRows);
@@ -212,12 +208,10 @@ namespace TracProg.Calculation.Algoriths
                 Dictionary<string, int> penalty = new Dictionary<string, int>();
                 CalculatePenalty(_oldGrid, tracks, penaltyMatrix, ref penalty);
 
-                DrawStagesForNewGridDebug(_nonRealizedMetalID + "_" + start + "_" + finish + "_");
-
                 // перетрассировать 
                 if (Retracing(ref _newGrid, tracks, futurePins, penalty))
                 {
-                    DrawStagesForNewGridDebug(_nonRealizedMetalID + "_" + start + "_" + finish + "_afterRetracing_");
+                    DrawStagesForNewGridDebug("retracing_" + _nonRealizedMetalID + "_" + start + "_" + finish + "_");
 
                     // превратить те узлы что стали пинами обртано в просто узлы
                     for (int i = 0; i < _pinnedNodes.Count; i++)
@@ -242,6 +236,8 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else
                 {
+                    //DrawStagesForNewGridDebug("non_retracing_" + _nonRealizedMetalID + "_" + start + "_" + finish + "_");
+
                     return false;
                 }
             }
@@ -455,35 +451,42 @@ namespace TracProg.Calculation.Algoriths
                 countAdded = 0;
                 for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
                 {
-                    _newGrid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
-
-                    if (_set[index].NumLevel == startKoeff + 1)
+                    if (index + elEdded < _set.Count)
                     {
-                        if (i - 1 >= 0 && fineMmatrix[i - 1, j] == 0) // up
+                        _newGrid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
+
+                        if (_set[index].NumLevel == startKoeff + 1)
                         {
-                            fineMmatrix[i - 1, j] = startKoeff;
-                            _set.Add((i - 1) * _newGrid.CountColumn + j, startKoeff);
-                            countAdded++;
+                            if (i - 1 >= 0 && fineMmatrix[i - 1, j] == 0) // up
+                            {
+                                fineMmatrix[i - 1, j] = startKoeff;
+                                _set.Add((i - 1) * _newGrid.CountColumn + j, startKoeff);
+                                countAdded++;
+                            }
+                            if (i + 1 < _newGrid.CountRows && fineMmatrix[i + 1, j] == 0) // down
+                            {
+                                fineMmatrix[i + 1, j] = startKoeff;
+                                _set.Add((i + 1) * _newGrid.CountColumn + j, startKoeff);
+                                countAdded++;
+
+                            }
+                            if (j - 1 >= 0 && fineMmatrix[i, j - 1] == 0) // left
+                            {
+                                fineMmatrix[i, j - 1] = startKoeff;
+                                _set.Add(i * _newGrid.CountColumn + (j - 1), startKoeff);
+                                countAdded++;
+                            }
+                            if (j + 1 < _newGrid.CountColumn && fineMmatrix[i, j + 1] == 0) // right
+                            {
+                                fineMmatrix[i, j + 1] = startKoeff;
+                                _set.Add(i * _newGrid.CountColumn + (j + 1), startKoeff);
+                                countAdded++;
+                            }
                         }
-                        if (i + 1 < _newGrid.CountRows && fineMmatrix[i + 1, j] == 0) // down
-                        {
-                            fineMmatrix[i + 1, j] = startKoeff;
-                            _set.Add((i + 1) * _newGrid.CountColumn + j, startKoeff);
-                            countAdded++;
-                            
-                        }
-                        if (j - 1 >= 0 && fineMmatrix[i, j - 1] == 0) // left
-                        {
-                            fineMmatrix[i, j - 1] = startKoeff;
-                            _set.Add(i * _newGrid.CountColumn + (j - 1), startKoeff);
-                            countAdded++;
-                        }
-                        if (j + 1 < _newGrid.CountColumn && fineMmatrix[i, j + 1] == 0) // right
-                        {
-                            fineMmatrix[i, j + 1] = startKoeff;
-                            _set.Add(i * _newGrid.CountColumn + (j + 1), startKoeff);
-                            countAdded++;
-                        }
+                    }
+                    else
+                    {
+                        return;
                     }
                 }
                 if (countAdded > 0)
@@ -575,16 +578,20 @@ namespace TracProg.Calculation.Algoriths
 
 
             _leftBorderLimitingRectangle -= (2 * additLeftParam);
-            if (_leftBorderLimitingRectangle < 0) _leftBorderLimitingRectangle = 0;
+            if (_leftBorderLimitingRectangle < 0) 
+                _leftBorderLimitingRectangle = 0;
 
             _upBorderLimitingRectangle -= (2 * additUpParam);
-            if (_upBorderLimitingRectangle < 0) _upBorderLimitingRectangle = 0;
+            if (_upBorderLimitingRectangle < 0) 
+                _upBorderLimitingRectangle = 0;
 
             _rightBorderLimitingRectangle += (2 * additRightParam);
-            if (_rightBorderLimitingRectangle > grid.CountColumn) _rightBorderLimitingRectangle = (grid.CountColumn % 2 == 0) ? grid.CountColumn : grid.CountColumn - 1;
+            if (_rightBorderLimitingRectangle > grid.CountColumn) 
+                _rightBorderLimitingRectangle = (grid.CountColumn % 2 == 0) ? grid.CountColumn : grid.CountColumn - 1;
 
             _downBorderLimitingRectangle += (2 * additDownParam);
-            if (_downBorderLimitingRectangle > grid.CountRows) _downBorderLimitingRectangle = (grid.CountRows % 2 == 0) ? grid.CountRows : grid.CountRows - 1;
+            if (_downBorderLimitingRectangle > grid.CountRows) 
+                _downBorderLimitingRectangle = (grid.CountRows % 2 == 0) ? grid.CountRows : grid.CountRows - 1;
         }
 
         private bool WavePropagation(ref Grid grid, int start)
