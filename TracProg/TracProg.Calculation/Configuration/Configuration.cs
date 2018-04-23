@@ -7,10 +7,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using TracProg.Calculation.BoardElements;
+
 namespace TracProg.Calculation
 {
     public class Configuration
     {
+        private string _filePath;
+
         private int _koeff = 0;
 
         private Dictionary<string, IBoardElement> _pins = new Dictionary<string, IBoardElement>();
@@ -28,6 +32,8 @@ namespace TracProg.Calculation
 
             using (StreamReader sr = new StreamReader(pathConfigFile, System.Text.Encoding.UTF8))
             {
+                _filePath = pathConfigFile;
+
                 while ((line = sr.ReadLine()) != null)
                 {
                     string[] lineSplit = line.Split();
@@ -94,7 +100,7 @@ namespace TracProg.Calculation
                         case "NETS":
                             {
                                 int countNets = int.Parse(lineSplit[1]);
-                                _nets = new Dictionary<string, Calculation.Net>();
+                                _nets = new Dictionary<string, Net>();
                                 List<Tuple<string, Net>> nets = new List<Tuple<string, Net>>();
 
                                 index = 0;
@@ -138,7 +144,7 @@ namespace TracProg.Calculation
             List<string> errorElements = new List<string>();
             foreach (var element in gridElements)
 	        {
-                if (_grid.Contains(element.Value) == ErrorCode.NO_ERROR)
+                if (_grid.Contains(element.Value))
                 {
                     if (element.Value is Pin)
                     {
@@ -148,6 +154,7 @@ namespace TracProg.Calculation
                     {
                         _prohibitionZones[element.Key] = element.Value;
                     }
+
                     _grid.Add(element.Value);
                 }
                 else
@@ -168,7 +175,7 @@ namespace TracProg.Calculation
             List<Point> points = new List<Point>();
 
             //Генерация Pins
-            _nets = new Dictionary<string, Calculation.Net>();
+            _nets = new Dictionary<string, Net>();
             List<Tuple<string, Net>> nets = new List<Tuple<string, Net>>();
             int currentNumPin = 0;
             int _countNets = 0;
@@ -177,7 +184,7 @@ namespace TracProg.Calculation
                 Point p_1 = new Point(rand.Next(0, n - 1), rand.Next(0, m - 1));
 
                 currentNumPin++;
-                gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(currentNumPin.ToString() + "_pin", p_1.x * koeff, p_1.y * koeff, koeff, koeff));
+                gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(currentNumPin.ToString() + "_pin", p_1.X * koeff, p_1.Y * koeff, koeff, koeff));
 
                 List<int> net = new List<int>();
                 if (!points.Contains(p_1))
@@ -185,14 +192,14 @@ namespace TracProg.Calculation
                     points.Add(p_1);
 
                     int l, k;
-                    _grid.GetIndexes(p_1.x * koeff, p_1.y * koeff, out l, out k);
+                    _grid.GetIndexes(p_1.X * koeff, p_1.Y * koeff, out l, out k);
                     net.Add(_grid.GetNum(l, k));
 
                     int _countPinsInNet = 1;
                     while (true)
                     {
-                        int x = p_1.x + rand.Next(0, radius);
-                        int y = p_1.y + rand.Next(0, radius);
+                        int x = p_1.X + rand.Next(0, radius);
+                        int y = p_1.Y + rand.Next(0, radius);
                         Point p_i = new Point(x <= n - 1 ? x : n - 1,
                                               y <= m - 1 ? y : m - 1);
 
@@ -201,9 +208,9 @@ namespace TracProg.Calculation
                             points.Add(p_i);
 
                             currentNumPin++;
-                            gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(currentNumPin.ToString() + "_pin", p_i.x * koeff, p_i.y * koeff, koeff, koeff));
+                            gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(currentNumPin.ToString() + "_pin", p_i.X * koeff, p_i.Y * koeff, koeff, koeff));
 
-                            _grid.GetIndexes(p_i.x * koeff, p_i.y * koeff, out l, out k);
+                            _grid.GetIndexes(p_i.X * koeff, p_i.Y * koeff, out l, out k);
                             net.Add(_grid.GetNum(l, k));
                             _countPinsInNet++;
                         }
@@ -237,18 +244,29 @@ namespace TracProg.Calculation
                 {
                     points.Add(pZ);
 
-                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(i.ToString() + "_prZone", pZ.x * koeff, pZ.y * koeff, koeff, koeff));
+                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(i.ToString() + "_prZone", pZ.X * koeff, pZ.Y * koeff, koeff, koeff));
                 }
             }
 
             // добавление элементов в сетку
-            foreach (var el in gridElements)
+            foreach (var element in gridElements)
             {
-                _grid.Add(el.Value);
+                if (element.Value is Pin)
+                {
+                    _pins[element.Key] = element.Value;
+                }
+                else if (element.Value is ProhibitionZone)
+                {
+                    _prohibitionZones[element.Key] = element.Value;
+                }
+
+                _grid.Add(element.Value);
             }
         }
 
         #region Properties
+
+        public string FilePath { get { return _filePath; } }
 
         public int Koeff { get { return _koeff; } }
 

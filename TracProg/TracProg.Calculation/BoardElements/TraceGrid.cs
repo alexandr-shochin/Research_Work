@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TracProg.Calculation
+namespace TracProg.Calculation.BoardElements
 {
-    public class TraceGrid : IBoardElement
+    public class TraceGrid
     {
         public struct TraceGridElement
         {
@@ -23,14 +23,26 @@ namespace TracProg.Calculation
             }
         }
 
-        private Point[] _nodes;
-        private Color _color = Color.Black;
+        private Color _color = Color.White;
 
         private TraceGridElement[] _grid;
 
         public TraceGrid(string ID, int width, int height, int koeff)
         {
-            Init(ID, 0, 0, width, height, koeff);
+            this.ID = ID;
+
+            X = 0;
+            Y = 0;
+
+            Width = width + 1;
+            Height = height + 1;
+
+            Koeff = koeff;
+
+            CountColumn = (Width / Koeff) * 2 - 1;
+            CountRows = (Height / Koeff) * 2 - 1;
+            _grid = new TraceGridElement[CountColumn * CountRows];
+
         }
 
         public TraceGrid(string ID, TraceGridElement[] grid, int x0, int y0, int width, int height, int koeff)
@@ -41,62 +53,24 @@ namespace TracProg.Calculation
 
             X = x0;
             Y = y0;
+
             Width = width + 1;
             Height = height + 1;
+
             Koeff = koeff;
 
-            CountColumn = (width / Koeff) * 2 - 1;
-            CountRows = (height / Koeff) * 2 - 1;
-
-            _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
-
-            int[] xs = new int[((width / Koeff) + 2)];
-            int[] ys = new int[((height / Koeff) + 2)];
-
-            int tmpX = X;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                xs[i] = tmpX;
-                tmpX += koeff;
-            }
-
-            int tmpY = Y;
-            for (int i = 0; i < ys.Length; ++i)
-            {
-                ys[i] = tmpY;
-                tmpY += koeff;
-            }
-
-            int index = 0;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                for (int j = 0; j < ys.Length; ++j)
-                {
-                    _nodes[index] = new Point(xs[i], ys[j]);
-                    index++;
-                }
-            }
+            CountColumn = (Width / Koeff) * 2 - 1;
+            CountRows = (Height / Koeff) * 2 - 1;
         }
 
         #region Public methods
-
-        private void Init(string ID, int x, int y, int width, int height, int koeff)
-        {
-            this.ID = ID;
-
-            GenerateCoord(width, height, koeff);
-
-            CountColumn = (width / Koeff) * 2 - 1;
-            CountRows = (height / Koeff) * 2 - 1;
-            _grid = new TraceGridElement[CountColumn * CountRows];
-        }
 
         /// <summary>
         /// Добавить элемент в сетку
         /// </summary>
         /// <param name="el">Добавляемый элемент</param>
         /// <returns>Код ошибки</returns>
-        public ErrorCode Add(IBoardElement el)
+        public bool Add(IBoardElement el)
         {
             Tuple<int, int> indexes;
             if(GetIndexesRowCol(el.X, el.Y, out indexes))
@@ -105,16 +79,16 @@ namespace TracProg.Calculation
                 {
                     _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
 
-                    return ErrorCode.NO_ERROR;
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    return ErrorCode.ADD_ERROR;
+                    return false;
                 }
             }
             else
             {
-                return ErrorCode.ADD_ERROR;
+                return false;
             }
         }
 
@@ -123,7 +97,7 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="el">Элемент для поиска</param>
         /// <returns></returns>
-        public ErrorCode Contains(IBoardElement el) // TODO
+        public bool Contains(IBoardElement el) // TODO
         {
             Tuple<int, int> indexes;
             if (GetIndexesRowCol(el.X, el.Y, out indexes))
@@ -132,26 +106,26 @@ namespace TracProg.Calculation
                 {
                     if (this[indexes.Item1, indexes.Item2].ViewElement == null)
                     {
-                        return ErrorCode.NO_ERROR;
+                        return true;
                     }
                     else
                     {
-                        return ErrorCode.CONTAINS_ERROR;
+                        return false;
                     }
 
                 }
                 catch (Exception)
                 {
-                    return ErrorCode.CONTAINS_ERROR;
+                    return false;
                 }
             }
             else
             {
-                return ErrorCode.CONTAINS_ERROR;
+                return false;
             }
         }
 
-        public ErrorCode Remove(IBoardElement el)
+        public bool Remove(IBoardElement el)
         {
             throw new NotImplementedException();
         }
@@ -168,17 +142,12 @@ namespace TracProg.Calculation
 
         public void Draw(Graphics graphics)
         {
-            for (int i = 0; i < _nodes.Length; ++i)
-            {
-                graphics.FillRectangle(new SolidBrush(Color), _nodes[i].x, _nodes[i].y, 1, 1);
-            }
-
             for (int el = 0; el < _grid.Length; el++)
             {
                 if (!string.IsNullOrEmpty(_grid[el].MetalID))
                 {
                     Point p = GetCoordCell(el);
-                    graphics.FillRectangle(new SolidBrush(Color.Yellow), (p.x + (p.x + Koeff)) / 2, (p.y + (p.y + Koeff)) / 2, 1, 1);
+                    graphics.FillRectangle(new SolidBrush(Color.Yellow), (p.X + (p.X + Koeff)) / 2, (p.Y + (p.Y + Koeff)) / 2, 1, 1);
                 }
             }
 
@@ -189,7 +158,7 @@ namespace TracProg.Calculation
                     Point centerP = GetCoordCell(el);
 
                     Tuple<int, int> pair;
-                    GetIndexesRowCol(centerP.x, centerP.y, out pair);
+                    GetIndexesRowCol(centerP.X, centerP.Y, out pair);
                     int i = pair.Item1;
                     int j = pair.Item2;
 
@@ -202,8 +171,8 @@ namespace TracProg.Calculation
                         {
                             Point upP = GetCoordCell(i, j - 2);
                             graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
-                                new System.Drawing.Point((upP.x + (upP.x + Koeff)) / 2, (upP.y + (upP.y + Koeff)) / 2));
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((upP.X + (upP.X + Koeff)) / 2, (upP.Y + (upP.Y + Koeff)) / 2));
                         }
                     }
 
@@ -214,8 +183,8 @@ namespace TracProg.Calculation
                         {
                             Point downP = GetCoordCell(i, j + 2);
                             graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
-                                new System.Drawing.Point((downP.x + (downP.x + Koeff)) / 2, (downP.y + (downP.y + Koeff)) / 2));
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((downP.X + (downP.X + Koeff)) / 2, (downP.Y + (downP.Y + Koeff)) / 2));
                         }
                     }
 
@@ -226,8 +195,8 @@ namespace TracProg.Calculation
                         {
                             Point leftP = GetCoordCell(i - 2, j);
                             graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
-                                new System.Drawing.Point((leftP.x + (leftP.x + Koeff)) / 2, (leftP.y + (leftP.y + Koeff)) / 2));
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((leftP.X + (leftP.X + Koeff)) / 2, (leftP.Y + (leftP.Y + Koeff)) / 2));
                         }
                     }
 
@@ -238,8 +207,8 @@ namespace TracProg.Calculation
                         {
                             Point rightP = GetCoordCell(i + 2, j);
                             graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new System.Drawing.Point((centerP.x + (centerP.x + Koeff)) / 2, (centerP.y + (centerP.y + Koeff)) / 2),
-                                new System.Drawing.Point((rightP.x + (rightP.x + Koeff)) / 2, (rightP.y + (rightP.y + Koeff)) / 2));
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((rightP.X + (rightP.X + Koeff)) / 2, (rightP.Y + (rightP.Y + Koeff)) / 2));
                         }
                     }
                 }
@@ -273,7 +242,7 @@ namespace TracProg.Calculation
                 if (!IsPin(node))
                 {
                     Point p = GetCoordCell(node);
-                    _grid[node].ViewElement = new Metal(metalID, p.x, p.y, 1, 1);
+                    _grid[node].ViewElement = new Metal(metalID, p.X, p.Y, 1, 1);
                     _grid[node].MetalID = metalID;
                     _grid[node].WidthMetal = widthMetal;
                 }
@@ -517,42 +486,6 @@ namespace TracProg.Calculation
             return !IsProhibitionZone(i, j) && !IsPin(i, j) && string.IsNullOrEmpty(this[i, j].MetalID) && result;
         }
 
-        public bool IsForeignMetal(int i, int j, string metalID)
-        {
-            if (i < 0 || i >= CountRows)
-            {
-                throw new OverflowException("Индекс i находился вне границ сетки.");
-            }
-            if (j < 0 || j >= CountColumn)
-            {
-                throw new OverflowException("Индекс j находился вне границ сетки.");
-            }
-
-            if (!string.IsNullOrEmpty(this[i, j].MetalID) && this[i, j].MetalID != metalID)
-            {
-                return true;
-            }
-            else
-            {
-                if (j > 0 && j < CountColumn - 1)
-                {
-                    if (this[i, j - 1].MetalID == this[i, j + 1].MetalID && !string.IsNullOrEmpty(this[i, j - 1].MetalID) && !string.IsNullOrEmpty(this[i, j + 1].MetalID))
-                    {
-                        return true;
-                    }
-                }
-                if (i > 0 && i < CountRows - 1)
-                {
-                    if (this[i - 1, j].MetalID == this[i + 1, j].MetalID && !string.IsNullOrEmpty(this[i - 1, j].MetalID) && !string.IsNullOrEmpty(this[i + 1, j].MetalID))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-
         /// <summary>
         /// Получить координаты ячейки по номеру строки и столбца
         /// </summary>
@@ -615,44 +548,6 @@ namespace TracProg.Calculation
         #endregion
 
         #region Private methods
-
-        private void GenerateCoord(int width, int height, int koeff)
-        {
-            X = 0;
-            Y = 0;
-            Width = width + 1;
-            Height = height + 1;
-            Koeff = koeff;
-
-            _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
-
-            int[] xs = new int[((width / Koeff) + 2)];
-            int[] ys = new int[((height / Koeff) + 2)];
-
-            int tmpX = 0;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                xs[i] = tmpX;
-                tmpX += koeff;
-            }
-
-            int tmpY = 0;
-            for (int i = 0; i < ys.Length; ++i)
-            {
-                ys[i] = tmpY;
-                tmpY += koeff;
-            }
-
-            int index = 0;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                for (int j = 0; j < ys.Length; ++j)
-                {
-                    _nodes[index] = new Point(xs[i], ys[j]);
-                    index++;
-                }
-            }
-        }
 
         /// <summary>
         /// Получить значение строки и столбца по координатам ячейки

@@ -4,17 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TracProg.Calculation
+namespace TracProg.Calculation.BoardElements
 {
-    [Serializable]
     public class Net
     {
         private int[] _netElements;
 
-        /// <summary>
-        /// Конструктор.
-        /// </summary>
-        /// <param name="netElements">Массив NetElement'ов</param>
         public Net(int[] netElements)
         {
             _netElements = new int[netElements.Length];
@@ -26,12 +21,6 @@ namespace TracProg.Calculation
             return Array.IndexOf(this._netElements, net) != -1 ? true : false;
         }
 
-        /// <summary>
-        /// Доступ к отдельным элементам Net
-        /// </summary>
-        /// <param name="index">Индекс (начиная 0)</param>
-        /// <returns>Экземпляр NetElement</returns>
-        /// <exception cref="OverflowException">Индекс находился вне границ массива.</exception>
         public int this[int index]
         {
             get

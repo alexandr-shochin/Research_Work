@@ -7,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
+using TracProg.Calculation.BoardElements;
+
 namespace TracProg.Calculation.Algoriths
 {
     public class RetraceAlgNet
@@ -73,7 +76,7 @@ namespace TracProg.Calculation.Algoriths
 
                 p0 = _oldGrid.GetCoordCell(_upBorderLimitingRectangle, _leftBorderLimitingRectangle); // координата смещения
 
-                _newGrid = new TraceGrid("Bounding_box_" + _nonRealizedMetalID, gridElements, p0.x, p0.y,
+                _newGrid = new TraceGrid("Bounding_box_" + _nonRealizedMetalID, gridElements, p0.X, p0.Y,
                     (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     _oldGrid.Koeff);
@@ -191,7 +194,7 @@ namespace TracProg.Calculation.Algoriths
                             TraceGrid.TraceGridElement el = _newGrid[track.Value[i].Item1, track.Value[i].Item2];
                             IBoardElement prevEl = el.ViewElement;
 
-                            el.ViewElement = new Pin(prevEl.ID, p.x + p0.x, p.y + p0.y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
+                            el.ViewElement = new Pin(prevEl.ID, p.X + p0.X, p.Y + p0.Y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
                             _newGrid[track.Value[i].Item1, track.Value[i].Item2] = el;
 
                             _pinnedNodes.Add(Tuple.Create(track.Value[i].Item1, track.Value[i].Item2, prevEl));
@@ -272,7 +275,7 @@ namespace TracProg.Calculation.Algoriths
 
             Bitmap bmp = new Bitmap(grid.Width, grid.Height);
             Graphics g = Graphics.FromImage(bmp);
-            g.TranslateTransform(-p0.x, -p0.y);
+            g.TranslateTransform(-p0.X, -p0.Y);
 
             while (penalty.Count != 0)
             {
@@ -858,7 +861,7 @@ namespace TracProg.Calculation.Algoriths
         {
             Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
             Graphics g = Graphics.FromImage(bmp);
-            g.TranslateTransform(-p0.x, -p0.y);
+            g.TranslateTransform(-p0.X, -p0.Y);
             g.Clear(System.Drawing.Color.Black);
             _newGrid.Draw(g);
             bmp.Save(stageName + "_Stage.bmp");

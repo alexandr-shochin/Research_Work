@@ -6,18 +6,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TracProg.Calculation
+namespace TracProg.Calculation.BoardElements
 {
     /// <summary>
-    /// Элемент печатной платы
+    /// Интерфейс графического элемента
     /// </summary>
     public interface IBoardElement
     {
         #region Public methods
 
-        ErrorCode Add(IBoardElement el);
-        ErrorCode Remove(IBoardElement el);
-        ErrorCode Contains(IBoardElement el);
+        bool Add(IBoardElement el);
+        bool Remove(IBoardElement el);
+        bool Contains(IBoardElement el);
 
         void Draw(Graphics graphics);
 

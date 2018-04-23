@@ -277,7 +277,7 @@ namespace TracProg.GUI
 
                                 float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
                                 float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
-                                AddRow(time, config.Nets.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
+                                AddRow(time, config.Pins.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
                                 old_g = null;
                             }
 
