@@ -64,8 +64,8 @@
     <Compile Include="Algorithms\WaveTraceAlgScheme.cs" />
     <Compile Include="Algorithms\Set.cs" />
     <Compile Include="Board_Elements\Component.cs" />
-    <Compile Include="Board_Elements\Grid.cs" />
-    <Compile Include="Board_Elements\IElement.cs" />
+    <Compile Include="Board_Elements\TraceGrid.cs" />
+    <Compile Include="Board_Elements\IBoardElement.cs" />
     <Compile Include="Board_Elements\Metal.cs" />
     <Compile Include="Board_Elements\Net.cs" />
     <Compile Include="Board_Elements\ProhibitionZone.cs" />

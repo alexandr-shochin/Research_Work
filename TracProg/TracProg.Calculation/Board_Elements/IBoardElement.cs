@@ -11,36 +11,24 @@ namespace TracProg.Calculation
     /// <summary>
     /// Элемент печатной платы
     /// </summary>
-    public interface IElement : IComparer<IElement>, IComparable<IElement>
+    public interface IBoardElement
     {
         #region Public methods
 
-        /// <summary>
-        /// Добавить дочерний элемент
-        /// </summary>
-        /// <param name="pin">Добавляемый элемент</param>
-        /// <returns>Возвращает ErrorCode</returns>
-        ErrorCode Add(IElement el);
-
-        /// <summary>
-        /// Удалаяет, указанный дочерний элемент
-        /// </summary>
-        /// <param name="pin">Дочерний элемент который требуется удалить</param>
-        /// <returns>ErrorCode</returns>
-        ErrorCode Remove(IElement el);
-
-        /// <summary>
-        /// Определяет, содержит ли элемент указанный дочерний элемент
-        /// </summary>
-        /// <param name="pin">Дочерний элемент который требуется найти в элементе</param>
-        /// <returns>ErrorCode</returns>
-        ErrorCode Contains(IElement el);
+        ErrorCode Add(IBoardElement el);
+        ErrorCode Remove(IBoardElement el);
+        ErrorCode Contains(IBoardElement el);
 
         void Draw(Graphics graphics);
 
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Уникальный идентификатор элемента
+        /// </summary>
+        string ID { get; }
 
         /// <summary>
         /// Возвращает координату по оси Y прямоугольной области, являющуюся суммой значений свойств Y и Height.
@@ -89,7 +77,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает цвет прямоугольной области
         /// </summary>
-        Color _Color { get; set; }
+        Color Color { get; }
 
         #endregion
     }

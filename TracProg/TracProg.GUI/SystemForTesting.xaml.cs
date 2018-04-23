@@ -257,8 +257,6 @@ namespace TracProg.GUI
                                 path = _testSettings.FileOutPath + "\\test_old_" + i + ".bmp";
                                 old_bmp.Save(path);
 
-                                int countNonRealizedNetsBefore = allNonRealizedTracks.Count;
-
                                 RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
                                 retraceAlgScheme.IterFinishEvent += (numIter) =>
                                     {
@@ -277,9 +275,9 @@ namespace TracProg.GUI
                                 new_bmp = null;
                                 new_g = null;
 
-                                float percentageTracingAfter = 100.0f - (float)((100.0 * (config.Grid.CountPins - countRealizedPinsAfter)) / config.Grid.CountPins);
-                                float percentageTracingBefore = 100.0f - (float)((100.0 * (config.Grid.CountPins - countNonRealizedNetsBefore)) / config.Grid.CountPins);
-                                AddRow(time, config.Nets.Count, config.Grid.CountPins - countNonRealizedNetsBefore, config.Grid.CountPins - countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
+                                float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
+                                float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
+                                AddRow(time, config.Nets.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
                                 old_g = null;
                             }
 
@@ -299,8 +297,8 @@ namespace TracProg.GUI
                                 average = average / _lists.Count;
                                 perAvAfter = perAvAfter / _lists.Count;
                                 perAvBefore = perAvBefore / _lists.Count;
-                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных трасс до процедуры перетрассировки: " + perAvBefore.ToString());
-                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных трасс после процедуры перетрассировки: " + perAvAfter.ToString());
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов до процедуры перетрассировки: " + perAvBefore.ToString());
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов после процедуры перетрассировки: " + perAvAfter.ToString());
                                 WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент улучшения трассировки: " + (perAvAfter - perAvBefore).ToString());
                                 Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms | " + "Средняя разница в процентах трассировки: " + (perAvAfter - perAvBefore).ToString(); });
                             }
@@ -310,8 +308,6 @@ namespace TracProg.GUI
                     }
                     else
                     {
-                        // FOR DEBUG
-
                         config.ReadFromFile(_filePathImport);
                         li = new WaveTraceAlgScheme(config.Grid);
                         Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
@@ -371,9 +367,9 @@ namespace TracProg.GUI
                         new_bmp = null;
                         new_g = null;
 
-                        float percentageTracingAfter = 100.0f - (float)((100.0 * (config.Grid.CountPins - countRealizedPinsAfter)) / config.Grid.CountPins);
-                        float percentageTracingBefore = 100.0f - (float)((100.0 * (config.Grid.CountPins - countRealizedPinsBefore)) / config.Grid.CountPins);
-                        AddRow(time, config.Grid.CountPins, config.Grid.CountPins - countRealizedPinsBefore, config.Grid.CountPins - countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
+                        float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
+                        float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
+                        AddRow(time, config.Pins.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
                         old_g = null;
                     }
                 });

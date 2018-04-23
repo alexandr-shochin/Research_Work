@@ -7,19 +7,23 @@ using System.Threading.Tasks;
 namespace TracProg.Calculation
 {
     [Serializable]
-    public class Net : IEquatable<Net>
+    public class Net
     {
         private int[] _netElements;
 
         /// <summary>
         /// Конструктор.
         /// </summary>
-        /// <param name="countElements">Количество NetElement'ов</param>
         /// <param name="netElements">Массив NetElement'ов</param>
         public Net(int[] netElements)
         {
             _netElements = new int[netElements.Length];
             Array.Copy(netElements, 0, _netElements, 0, netElements.Length);
+        }
+
+        public bool Contains(int net)
+        {
+            return Array.IndexOf(this._netElements, net) != -1 ? true : false;
         }
 
         /// <summary>
@@ -56,22 +60,6 @@ namespace TracProg.Calculation
                     return _netElements.Length;
                 }
             }
-        }
-
-        public bool Equals(Net other)
-        {
-            bool[] isEqual = new bool[other.Count];
-            for (int i = 0; i < other.Count; i++)
-            {
-                isEqual[i] = this.Contains(other[i]);
-            }
-
-            return Array.IndexOf(isEqual, false) != -1 ? true : false;
-        }
-
-        public bool Contains(int el)
-        {
-            return Array.IndexOf(this._netElements, el) != -1 ? true : false;
         }
     }
 }

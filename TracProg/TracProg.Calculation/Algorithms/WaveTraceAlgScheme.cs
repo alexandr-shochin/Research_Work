@@ -9,13 +9,13 @@ namespace TracProg.Calculation.Algoriths
 {
     public class WaveTraceAlgScheme
     {
-        private Grid _grid;
+        private TraceGrid _grid;
         private Set _set;
 
         private string _netName;
         private Net _net;
 
-        public WaveTraceAlgScheme(Grid grid)
+        public WaveTraceAlgScheme(TraceGrid grid)
         {
             _grid = grid;
             _set = new Set();
@@ -187,7 +187,7 @@ namespace TracProg.Calculation.Algoriths
             int j = 0;
 
             // металлизируем
-            GridElement el = _grid[currentNumCell];
+            TraceGrid.TraceGridElement el = _grid[currentNumCell];
             el.MetalID = _netName;
             _grid[currentNumCell] = el;
 
@@ -221,7 +221,7 @@ namespace TracProg.Calculation.Algoriths
         {
             if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
             {
-                GridElement el = _grid[numCell];
+                TraceGrid.TraceGridElement el = _grid[numCell];
                 el.MetalID = _netName;
                 _grid[numCell] = el;
 

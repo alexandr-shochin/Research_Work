@@ -9,38 +9,34 @@ using System.Threading.Tasks;
 
 namespace TracProg.Calculation
 {
-    public struct GridElement
+    public class TraceGrid : IBoardElement
     {
-        public IElement ViewElement { get; set; }
-        public string MetalID { get; set; }
-        public float WidthMetal { get; set; }
-
-        public override string ToString()
+        public struct TraceGridElement
         {
-            return !string.IsNullOrEmpty(MetalID) ? MetalID : string.Empty;
-        }
-    }
+            public IBoardElement ViewElement { get; set; }
+            public string MetalID { get; set; }
+            public float WidthMetal { get; set; }
 
-    [Serializable]
-    public class Grid //: IElement
-    {
+            public override string ToString()
+            {
+                return !string.IsNullOrEmpty(MetalID) ? MetalID : string.Empty;
+            }
+        }
+
         private Point[] _nodes;
-        private GridElement[] _grid;
+        private Color _color = Color.Black;
 
-        /// <summary>
-        /// Конструтор
-        /// </summary>
-        /// <param name="width">Ширина прямоугольной области</param>
-        /// <param name="height">Высота прямоугольной области</param>
-        /// <param name="koeff">Шаг для генерации точек узлов сетки</param>
-        public Grid(int width, int height, int koeff)
+        private TraceGridElement[] _grid;
+
+        public TraceGrid(string ID, int width, int height, int koeff)
         {
-            Init(0, 0, width, height, koeff);
+            Init(ID, 0, 0, width, height, koeff);
         }
 
-        public Grid(GridElement[] grid, int x0, int y0, int width, int height, int koeff)
+        public TraceGrid(string ID, TraceGridElement[] grid, int x0, int y0, int width, int height, int koeff)
         {
-            _grid = new GridElement[grid.Length];
+            this.ID = ID;
+            _grid = new TraceGridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);
 
             X = x0;
@@ -80,20 +76,19 @@ namespace TracProg.Calculation
                     index++;
                 }
             }
-            _Color = Color.Black;
         }
 
         #region Public methods
 
-        private void Init(int x, int y, int width, int height, int koeff)
+        private void Init(string ID, int x, int y, int width, int height, int koeff)
         {
+            this.ID = ID;
+
             GenerateCoord(width, height, koeff);
 
             CountColumn = (width / Koeff) * 2 - 1;
             CountRows = (height / Koeff) * 2 - 1;
-            _grid = new GridElement[CountColumn * CountRows];
-
-            _Color = Color.Black;
+            _grid = new TraceGridElement[CountColumn * CountRows];
         }
 
         /// <summary>
@@ -101,7 +96,7 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="el">Добавляемый элемент</param>
         /// <returns>Код ошибки</returns>
-        public ErrorCode Add(IElement el)
+        public ErrorCode Add(IBoardElement el)
         {
             Tuple<int, int> indexes;
             if(GetIndexesRowCol(el.X, el.Y, out indexes))
@@ -109,11 +104,6 @@ namespace TracProg.Calculation
                 try
                 {
                     _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
-
-                    if (el is Pin)
-                    {
-                        CountPins++;
-                    }
 
                     return ErrorCode.NO_ERROR;
                 }
@@ -133,7 +123,7 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="el">Элемент для поиска</param>
         /// <returns></returns>
-        public ErrorCode Contains(IElement el) // TODO
+        public ErrorCode Contains(IBoardElement el) // TODO
         {
             Tuple<int, int> indexes;
             if (GetIndexesRowCol(el.X, el.Y, out indexes))
@@ -161,11 +151,26 @@ namespace TracProg.Calculation
             }
         }
 
+        public ErrorCode Remove(IBoardElement el)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Compare(IBoardElement x, IBoardElement y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int CompareTo(IBoardElement other)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Draw(Graphics graphics)
         {
             for (int i = 0; i < _nodes.Length; ++i)
             {
-                graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
+                graphics.FillRectangle(new SolidBrush(Color), _nodes[i].x, _nodes[i].y, 1, 1);
             }
 
             for (int el = 0; el < _grid.Length; el++)
@@ -188,11 +193,11 @@ namespace TracProg.Calculation
                     int i = pair.Item1;
                     int j = pair.Item2;
 
-                    GridElement center = this[i, j];
+                    TraceGridElement center = this[i, j];
 
                     if (j - 2 >= 0)
                     {
-                        GridElement up = this[i, j - 2];
+                        TraceGridElement up = this[i, j - 2];
                         if (up.ViewElement != null && center.MetalID == up.MetalID)
                         {
                             Point upP = GetCoordCell(i, j - 2);
@@ -204,7 +209,7 @@ namespace TracProg.Calculation
 
                     if (j + 2 < this.CountColumn)
                     {
-                        GridElement down = this[i, j + 2];
+                        TraceGridElement down = this[i, j + 2];
                         if (down.ViewElement != null && center.MetalID == down.MetalID)
                         {
                             Point downP = GetCoordCell(i, j + 2);
@@ -216,7 +221,7 @@ namespace TracProg.Calculation
 
                     if (i - 2 >= 0)
                     {
-                        GridElement left = this[i - 2, j];
+                        TraceGridElement left = this[i - 2, j];
                         if (left.ViewElement != null && center.MetalID == left.MetalID)
                         {
                             Point leftP = GetCoordCell(i - 2, j);
@@ -228,7 +233,7 @@ namespace TracProg.Calculation
 
                     if (i + 2 < this.CountRows)
                     {
-                        GridElement right = this[i + 2, j];
+                        TraceGridElement right = this[i + 2, j];
                         if (right.ViewElement != null && center.MetalID == right.MetalID)
                         {
                             Point rightP = GetCoordCell(i + 2, j);
@@ -268,7 +273,7 @@ namespace TracProg.Calculation
                 if (!IsPin(node))
                 {
                     Point p = GetCoordCell(node);
-                    _grid[node].ViewElement = new Metal(p.x, p.y, 1, 1, Color.FromArgb(183, 65, 14));
+                    _grid[node].ViewElement = new Metal(metalID, p.x, p.y, 1, 1);
                     _grid[node].MetalID = metalID;
                     _grid[node].WidthMetal = widthMetal;
                 }
@@ -286,7 +291,7 @@ namespace TracProg.Calculation
         /// <param name="i">Номер строки</param>
         /// <param name="j">Номер столбца</param>
         /// <returns></returns>
-        public GridElement this[int i, int j]
+        public TraceGridElement this[int i, int j]
         {
             get
             {
@@ -319,7 +324,7 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public GridElement this[int num]
+        public TraceGridElement this[int num]
         {
             get
             {
@@ -690,6 +695,8 @@ namespace TracProg.Calculation
 
         #region Properties
 
+        public string ID { get; private set; }
+
         /// <summary>
         /// Возвращает координату по оси Y прямоугольной области, являющуюся суммой значений свойств Y и Height.
         /// </summary>
@@ -739,7 +746,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет для узлов сетки
         /// </summary>
-        public Color _Color { get; private set; }
+        public Color Color { get { return _color; } }
 
         /// <summary>
         /// Количество ячеек в сетке
@@ -768,8 +775,6 @@ namespace TracProg.Calculation
         /// Количество строк в сетке
         /// </summary>
         public int CountRows { get; private set; }
-
-        public int CountPins { get; private set; }
 
         #endregion
     }
