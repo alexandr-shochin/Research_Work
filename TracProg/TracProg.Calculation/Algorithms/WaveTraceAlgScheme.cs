@@ -4,18 +4,21 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TracProg.Calculation.BoardElements;
 
 namespace TracProg.Calculation.Algoriths
 {
     public class WaveTraceAlgScheme
     {
-        private Grid _grid;
+        private TraceGrid _grid;
         private Set _set;
 
-        public WaveTraceAlgScheme(Grid grid)
+        private string _netName;
+        private Net _net;
+
+        public WaveTraceAlgScheme(TraceGrid grid)
         {
             _grid = grid;
-
             _set = new Set();
         }
 
@@ -24,8 +27,12 @@ namespace TracProg.Calculation.Algoriths
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns>Время, затраченное на работу алгоритма</returns>
-        public bool FindPath(Net net, out List<List<int>> path, out long time)
+        public bool FindPath(string netName, Net net, out List<List<int>> path, out List<int> nonRealized, out long time)
         {
+            _netName = netName;
+            _net = net;
+            nonRealized = new List<int>();
+
             _set.Clear();
 
             time = 0;
@@ -34,35 +41,29 @@ namespace TracProg.Calculation.Algoriths
             Stopwatch sw = new Stopwatch();
             sw.Reset();
             sw.Start();
-            for (int numEl = 1; numEl < net.Count; numEl++)
+            for (int numEl = 0; numEl < _net.Count; numEl++)
             {
-                List<int> subPath = new List<int>();
+                int start = _net[numEl];
+                int finish;
 
-                int start = net[numEl];
-                int finish = net[numEl - 1];
-
-                if (WavePropagation(start, finish) == true)
+                if (WavePropagation(start, out finish) == true)
                 {
-                    RestorationPath(ref subPath);
+                    List<int> subPath;
+                    RestorationPath(out subPath);
                     _set.Clear();
                     path.Add(subPath);
                 }
-                else //если какую-то не смогли реализовать
+                else //если какой-то пин не смогли реализовать
                 {
-                    _set.Clear();
-                    subPath.Add(-1); // индикатор того, что трасса не реализована
-                    for (int i = 0; i < net.Count; ++i)
-                    {
-                        subPath.Add(net[i]);
-                    }
-                    path.Add(subPath);
-                    return false;
+                    nonRealized.Add(start);
                 }
             }
             sw.Stop();
             time = sw.ElapsedMilliseconds;
+
+            _grid.MetallizeTrack(path, 1.0f, netName);
+
             return true;
-            
         }
 
         /// <summary>
@@ -71,13 +72,14 @@ namespace TracProg.Calculation.Algoriths
         /// <param name="start"></param>
         /// <param name="finish"></param>
         /// <returns></returns>
-        private bool WavePropagation(int start, int finish)
+        private bool WavePropagation(int start, out int finish)
         {
             int numLevel = 0;
             _set.Add(start, numLevel);
             numLevel++;
 
             bool isFoundFinish = false;
+            finish = -1;
 
             int i = 0;
             int j = 0;
@@ -94,24 +96,28 @@ namespace TracProg.Calculation.Algoriths
 
                     if (_set[index].NumLevel == numLevel - 1)
                     {
-                        if (j - 2 >= 0 && CheckCell(i, j - 2, numLevel, finish, ref countAdded)) // left
+                        if (j - 2 >= 0 && CheckCell(i, j - 2, numLevel, ref countAdded)) // left
                         {
                             isFoundFinish = true;
+                            finish = _grid.GetNum(i, j - 2);
                             break;
                         }
-                        if (j + 2 < _grid.CountColumn && CheckCell(i, j + 2, numLevel, finish, ref countAdded)) // right
+                        if (j + 2 < _grid.CountColumn && CheckCell(i, j + 2, numLevel, ref countAdded)) // right
                         {
                             isFoundFinish = true;
+                            finish = _grid.GetNum(i, j + 2);
                             break;
                         }
-                        if (i - 2 >= 0 && CheckCell(i - 2, j, numLevel, finish, ref countAdded)) // up
+                        if (i - 2 >= 0 && CheckCell(i - 2, j, numLevel, ref countAdded)) // up
                         {
                             isFoundFinish = true;
+                            finish = _grid.GetNum(i - 2, j);
                             break;
                         }
-                        if (i + 2 < _grid.CountRows && CheckCell(i + 2, j, numLevel, finish, ref countAdded)) // down
+                        if (i + 2 < _grid.CountRows && CheckCell(i + 2, j, numLevel, ref countAdded)) // down
                         {
                             isFoundFinish = true;
+                            finish = _grid.GetNum(i + 2, j);
                             break;
                         }
                     }
@@ -128,38 +134,40 @@ namespace TracProg.Calculation.Algoriths
             return isFoundFinish;
         }
 
-        private bool CheckCell(int i, int j, int numLevel, int finish, ref int countAdded)
+        private bool CheckCell(int i, int j, int numLevel, ref int countAdded)
         {
-            if (!(_grid.IsProhibitionZone(i, j) || _grid.IsForeignMetal(i, j)))
+            if(_grid.IsProhibitionZone(i, j)) //  Если зона запрета
             {
-                if (_grid.IsPin(i, j)) // если это пин
-                {
-                    if (_grid.GetNum(i, j) == finish && _set.Add(_grid.GetNum(i, j), numLevel)) // финишный Pin
-                    {
-                        countAdded++;
-                        return true;
-                    }
-                    else if (_grid.IsOwnMetal(i, j) && _set.Add(_grid.GetNum(i, j), numLevel)) // если и Pin и свой метал
-                    {
-                        countAdded++;
-                        return true;
-                    }
-                }
-                else if (_grid.IsOwnMetal(i, j) && _set.Add(_grid.GetNum(i, j), numLevel)) // если свой метал
+                return false;
+            }
+            else
+            {
+                if (_net.Contains(_grid.GetNum(i, j)) && _set.Add(_grid.GetNum(i, j), numLevel)) // финишный Pin
                 {
                     countAdded++;
                     return true;
                 }
-                else // если не Pin
+                else
                 {
-                    if (_set.Add(_grid.GetNum(i, j), numLevel))
+                    if(_grid.IsFreeMetal(i, j, _netName) && _set.Add(_grid.GetNum(i, j), numLevel)) // Если свободный метал 
                     {
                         countAdded++;
                         return false;
                     }
+                    else
+                    {
+                        if(_grid.IsOwnMetal(i, j, _netName) && _set.Add(_grid.GetNum(i, j), numLevel)) // если свой метал
+                        {
+                            countAdded++;
+                            return true;
+                        }
+                        else // чужой метал
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
-            return false;
         }
 
         /// <summary>
@@ -167,13 +175,9 @@ namespace TracProg.Calculation.Algoriths
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns></returns>
-        private bool RestorationPath(ref List<int> path)
+        private bool RestorationPath(out List<int> path)
         {
-            if (path == null)
-            {
-                path = new List<int>();
-            }
-
+            path = new List<int>();
             int start = _set[0].NumCell;
 
             Set.ElementSet elSet = _set[_set.Count - 1];
@@ -183,7 +187,11 @@ namespace TracProg.Calculation.Algoriths
             int i = 0;
             int j = 0;
 
-            _grid.SetValue(currentNumCell, GridValue.OWN_METAL); // металлизируем
+            // металлизируем
+            TraceGrid.TraceGridElement el = _grid[currentNumCell];
+            el.MetalID = _netName;
+            _grid[currentNumCell] = el;
+
             path.Add(currentNumCell); // добавляем в путь
             while (currentLevel > 0)
             {   
@@ -214,7 +222,10 @@ namespace TracProg.Calculation.Algoriths
         {
             if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
             {
-                _grid.SetValue(numCell, GridValue.OWN_METAL);
+                TraceGrid.TraceGridElement el = _grid[numCell];
+                el.MetalID = _netName;
+                _grid[numCell] = el;
+
                 path.Add(numCell);
                 currentNumCell = numCell;
                 return true;

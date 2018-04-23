@@ -63,16 +63,16 @@
     <Compile Include="Algorithms\RetraceAlgNet.cs" />
     <Compile Include="Algorithms\WaveTraceAlgScheme.cs" />
     <Compile Include="Algorithms\Set.cs" />
-    <Compile Include="Board_Elements\Component.cs" />
-    <Compile Include="Board_Elements\Grid.cs" />
-    <Compile Include="Board_Elements\IElement.cs" />
-    <Compile Include="Board_Elements\Metal.cs" />
-    <Compile Include="Board_Elements\Net.cs" />
-    <Compile Include="Board_Elements\ProhibitionZone.cs" />
+    <Compile Include="BoardElements\BoardElement.cs" />
+    <Compile Include="BoardElements\Component.cs" />
+    <Compile Include="BoardElements\TraceGrid.cs" />
+    <Compile Include="BoardElements\IBoardElement.cs" />
+    <Compile Include="BoardElements\Metal.cs" />
+    <Compile Include="BoardElements\Net.cs" />
+    <Compile Include="BoardElements\ProhibitionZone.cs" />
     <Compile Include="Configuration\Configuration.cs" />
     <Compile Include="Enums.cs" />
-    <Compile Include="Board_Elements\Pin.cs" />
-    <Compile Include="Point.cs" />
+    <Compile Include="BoardElements\Pin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

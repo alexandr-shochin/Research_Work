@@ -7,170 +7,88 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TracProg.Calculation
+namespace TracProg.Calculation.BoardElements
 {
-    public struct GridElement
+    public class TraceGrid
     {
-        public IElement ViewElement { get; set; }
-        public int MetalID { get; set; }
-        public float WidthMetal { get; set; }
-        public byte ByteInfo { get; set; }
-
-        public override string ToString()
+        public struct TraceGridElement
         {
-            return MetalID.ToString();
-        }
-    }
+            public IBoardElement ViewElement { get; set; }
+            public string MetalID { get; set; }
+            public float WidthMetal { get; set; }
 
-    [Serializable]
-    public class Grid : IElement
-    {
-        private Point[] _nodes;
-        //private List<IElement> _elements;
-        private GridElement[] _grid;
-
-        /// <summary>
-        /// Конструтор
-        /// </summary>
-        /// <param name="width">Ширина прямоугольной области</param>
-        /// <param name="height">Высота прямоугольной области</param>
-        /// <param name="koeff">Шаг для генерации точек узлов сетки</param>
-        public Grid(int width, int height, int koeff)
-        {
-            Init(0, 0, width, height, koeff);
+            public override string ToString()
+            {
+                return !string.IsNullOrEmpty(MetalID) ? MetalID : string.Empty;
+            }
         }
 
-        public Grid(GridElement[] grid, int x0, int y0, int width, int height, int koeff)
+        private Color _color = Color.White;
+
+        private TraceGridElement[] _grid;
+
+        public TraceGrid(string ID, int width, int height, int koeff)
         {
-            _grid = new GridElement[grid.Length];
+            this.ID = ID;
+
+            X = 0;
+            Y = 0;
+
+            Width = width + 1;
+            Height = height + 1;
+
+            Koeff = koeff;
+
+            CountColumn = (Width / Koeff) * 2 - 1;
+            CountRows = (Height / Koeff) * 2 - 1;
+            _grid = new TraceGridElement[CountColumn * CountRows];
+
+        }
+
+        public TraceGrid(string ID, TraceGridElement[] grid, int x0, int y0, int width, int height, int koeff)
+        {
+            this.ID = ID;
+            _grid = new TraceGridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);
 
             X = x0;
             Y = y0;
+
             Width = width + 1;
             Height = height + 1;
+
             Koeff = koeff;
 
-            CountColumn = (width / Koeff) * 2 - 1;
-            CountRows = (height / Koeff) * 2 - 1;
-
-            _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
-
-            int[] xs = new int[((width / Koeff) + 2)];
-            int[] ys = new int[((height / Koeff) + 2)];
-
-            int tmpX = X;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                xs[i] = tmpX;
-                tmpX += koeff;
-            }
-
-            int tmpY = Y;
-            for (int i = 0; i < ys.Length; ++i)
-            {
-                ys[i] = tmpY;
-                tmpY += koeff;
-            }
-
-            int index = 0;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                for (int j = 0; j < ys.Length; ++j)
-                {
-                    _nodes[index] = new Point(xs[i], ys[j]);
-                    index++;
-                }
-            }
-            _Color = Color.Black;
+            CountColumn = (Width / Koeff) * 2 - 1;
+            CountRows = (Height / Koeff) * 2 - 1;
         }
 
         #region Public methods
-
-        private void Init(int x, int y, int width, int height, int koeff)
-        {
-            GenerateCoord(width, height, koeff);
-
-            CountColumn = (width / Koeff) * 2 - 1;
-            CountRows = (height / Koeff) * 2 - 1;
-            _grid = new GridElement[CountColumn * CountRows];
-
-            _Color = Color.Black;
-        }
 
         /// <summary>
         /// Добавить элемент в сетку
         /// </summary>
         /// <param name="el">Добавляемый элемент</param>
         /// <returns>Код ошибки</returns>
-        public ErrorCode Add(IElement el)
+        public bool Add(IBoardElement el)
         {
             Tuple<int, int> indexes;
             if(GetIndexesRowCol(el.X, el.Y, out indexes))
             {
                 try
                 {
-                    //_elements.Add(el);
                     _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
-                    if (el is Pin)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.PIN);
-                    }
-                    else if (el is ProhibitionZone)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
-                    }
-                    else if (el is Metal)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
-                    }
-                    return ErrorCode.NO_ERROR;
+
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    return ErrorCode.ADD_ERROR;
+                    return false;
                 }
             }
             else
             {
-                return ErrorCode.ADD_ERROR;
-            }
-        }
-
-        /// <summary>
-        /// Удаляет элемент из сетки
-        /// </summary>
-        /// <param name="el">Удаляемый элемент</param>
-        /// <returns>Код ошибки</returns>
-        public ErrorCode Remove(IElement el) // TODO
-        {
-            Tuple<int, int> indexes;
-            if (GetIndexesRowCol(el.X, el.Y, out indexes))
-            {
-                try
-                {
-                    if (el is Pin)
-                    {
-                        UnsetValue(indexes.Item1, indexes.Item2, GridValue.PIN);
-                    }
-                    else if (el is ProhibitionZone)
-                    {
-                        UnsetValue(indexes.Item1, indexes.Item2, GridValue.PROHIBITION_ZONE);
-                    }
-                    else if (el is Metal)
-                    {
-                        SetValue(indexes.Item1, indexes.Item2, GridValue.FOREIGN_METAL);
-                    }
-                    return ErrorCode.NO_ERROR;
-                }
-                catch (Exception)
-                {
-                    return ErrorCode.REMOVE_ERROR;
-                }
-            }
-            else
-            {
-                return ErrorCode.REMOVE_ERROR;
+                return false;
             }
         }
 
@@ -179,121 +97,161 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="el">Элемент для поиска</param>
         /// <returns></returns>
-        public ErrorCode Contains(IElement el) // TODO
+        public bool Contains(IBoardElement el) // TODO
         {
             Tuple<int, int> indexes;
             if (GetIndexesRowCol(el.X, el.Y, out indexes))
             {
                 try
                 {
-                    if (el is Pin)
+                    if (this[indexes.Item1, indexes.Item2].ViewElement == null)
                     {
-                        if (IsPin(indexes.Item1, indexes.Item2))
-                        {
-                            return ErrorCode.PIN_WAS_FOUND;
-                        }
+                        return true;
                     }
-                    else if (el is ProhibitionZone)
+                    else
                     {
-                        if (IsPin(indexes.Item1, indexes.Item2))
-                        {
-                            return ErrorCode.PROHIBITION_ZONE_WAS_FOUND;
-                        }
+                        return false;
                     }
-                    return ErrorCode.NO_ERROR;
+
                 }
                 catch (Exception)
                 {
-                    return ErrorCode.CONTAINS_ERROR;
+                    return false;
                 }
             }
             else
             {
-                return ErrorCode.CONTAINS_ERROR;
+                return false;
             }
+        }
+
+        public bool Remove(IBoardElement el)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Compare(IBoardElement x, IBoardElement y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int CompareTo(IBoardElement other)
+        {
+            throw new NotImplementedException();
         }
 
         public void Draw(Graphics graphics)
         {
-            Random rand = new Random();
-            Color[] colors = new Color[100000]; /// TODO
-            for (int i = 1; i <= colors.Length - 1; i++)
+            for (int el = 0; el < _grid.Length; el++)
             {
-                colors[i] = Color.FromArgb(rand.Next(1, 255), rand.Next(1, 255), rand.Next(1, 255));
-            }
-
-            for (int i = 0; i < _nodes.Length; ++i)
-            {
-                graphics.FillRectangle(new SolidBrush(_Color), _nodes[i].x, _nodes[i].y, 1, 1);
-            }
-
-            for (int i = 0; i < _grid.Length; ++i)
-            {
-                if (_grid[i].MetalID != 0 && !(_grid[i].ViewElement is Pin))
+                if (!string.IsNullOrEmpty(_grid[el].MetalID))
                 {
-                    Point p = GetCoordCell(i);
-                    _grid[i].ViewElement = new Metal(p.x, p.y, Koeff, Koeff, colors[_grid[i].MetalID]);
-                }
-                if (_grid[i].ViewElement != null)
-                {
-                    _grid[i].ViewElement.Draw(graphics);
+                    Point p = GetCoordCell(el);
+                    graphics.FillRectangle(new SolidBrush(Color.Yellow), (p.X + (p.X + Koeff)) / 2, (p.Y + (p.Y + Koeff)) / 2, 1, 1);
                 }
             }
-        }
 
-        public void MetallizeTrack(List<List<int>> track, float widthMetal, int metalID)
-        {
-            if (track != null && track.Count != 0) // -1 значит трасса не была реализована, начиная со второго индекса передана нереализуемая цепь
+            for (int el = 0; el < _grid.Length; el++)
             {
-                if (track[0][0] != -1)
+                if (_grid[el].ViewElement != null && !string.IsNullOrEmpty(_grid[el].MetalID))
                 {
-                    for (int numSubPath = 0; numSubPath < track.Count; ++numSubPath)
+                    Point centerP = GetCoordCell(el);
+
+                    Tuple<int, int> pair;
+                    GetIndexesRowCol(centerP.X, centerP.Y, out pair);
+                    int i = pair.Item1;
+                    int j = pair.Item2;
+
+                    TraceGridElement center = this[i, j];
+
+                    if (j - 2 >= 0)
                     {
-                        UnsetValue(track[numSubPath][0], GridValue.OWN_METAL);
-                        _grid[track[numSubPath][0]].MetalID = metalID;
-                        _grid[track[numSubPath][0]].WidthMetal = widthMetal;
-
-                        for (int node = 1; node < track[numSubPath].Count; ++node)
+                        TraceGridElement up = this[i, j - 2];
+                        if (up.ViewElement != null && center.MetalID == up.MetalID)
                         {
-                            if (!IsPin(track[numSubPath][node]))
-                            {
-                                SetValue(track[numSubPath][node], GridValue.FOREIGN_METAL);
-                                _grid[track[numSubPath][node]].ViewElement = null;
-                                _grid[track[numSubPath][node]].MetalID = metalID;
-                                _grid[track[numSubPath][node]].WidthMetal = widthMetal;
-                            }
-                            else
-                            {
-                                UnsetValue(track[numSubPath][node], GridValue.OWN_METAL);
-                                _grid[track[numSubPath][node]].MetalID = metalID;
-                                _grid[track[numSubPath][node]].WidthMetal = widthMetal;
-                            }
+                            Point upP = GetCoordCell(i, j - 2);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((upP.X + (upP.X + Koeff)) / 2, (upP.Y + (upP.Y + Koeff)) / 2));
+                        }
+                    }
+
+                    if (j + 2 < this.CountColumn)
+                    {
+                        TraceGridElement down = this[i, j + 2];
+                        if (down.ViewElement != null && center.MetalID == down.MetalID)
+                        {
+                            Point downP = GetCoordCell(i, j + 2);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((downP.X + (downP.X + Koeff)) / 2, (downP.Y + (downP.Y + Koeff)) / 2));
+                        }
+                    }
+
+                    if (i - 2 >= 0)
+                    {
+                        TraceGridElement left = this[i - 2, j];
+                        if (left.ViewElement != null && center.MetalID == left.MetalID)
+                        {
+                            Point leftP = GetCoordCell(i - 2, j);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((leftP.X + (leftP.X + Koeff)) / 2, (leftP.Y + (leftP.Y + Koeff)) / 2));
+                        }
+                    }
+
+                    if (i + 2 < this.CountRows)
+                    {
+                        TraceGridElement right = this[i + 2, j];
+                        if (right.ViewElement != null && center.MetalID == right.MetalID)
+                        {
+                            Point rightP = GetCoordCell(i + 2, j);
+                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
+                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
+                                new Point((rightP.X + (rightP.X + Koeff)) / 2, (rightP.Y + (rightP.Y + Koeff)) / 2));
                         }
                     }
                 }
-                else // трасса не построена
+            }
+
+            for (int el = 0; el < _grid.Length; el++)
+            {
+                if (_grid[el].ViewElement != null)
                 {
-                    for (int node = 1; node < track[0].Count; ++node)
+                    if (_grid[el].ViewElement is Pin || _grid[el].ViewElement is ProhibitionZone)
                     {
-                        Point p = GetCoordCell(track[0][node]);
-                        try
-                        {
-                            _grid[track[0][node]].ViewElement._Color = Color.Red;
-                        }
-                        catch (NullReferenceException) { }
+                        _grid[el].ViewElement.Draw(graphics);
                     }
                 }
             }
+
         }
 
-        public int Compare(IElement x, IElement y)
+        public void MetallizeTrack(List<List<int>> tracks, float widthMetal, string metalID)
         {
-            throw new NotImplementedException();
+            foreach (List<int> track in tracks)
+            {
+                InternalMetallizeTrack(track, widthMetal, metalID);
+            }       
         }
 
-        public int CompareTo(IElement other)
-        {
-            throw new NotImplementedException();
+        private void InternalMetallizeTrack(List<int> track, float widthMetal, string metalID)
+        { 
+            foreach (int node in track)
+            {
+                if (!IsPin(node))
+                {
+                    Point p = GetCoordCell(node);
+                    _grid[node].ViewElement = new Metal(metalID, p.X, p.Y, 1, 1);
+                    _grid[node].MetalID = metalID;
+                    _grid[node].WidthMetal = widthMetal;
+                }
+                else
+                {
+                    _grid[node].MetalID = metalID;
+                    _grid[node].WidthMetal = widthMetal;
+                }
+            }
         }
 
         /// <summary>
@@ -302,7 +260,7 @@ namespace TracProg.Calculation
         /// <param name="i">Номер строки</param>
         /// <param name="j">Номер столбца</param>
         /// <returns></returns>
-        public GridElement this[int i, int j]
+        public TraceGridElement this[int i, int j]
         {
             get
             {
@@ -335,7 +293,7 @@ namespace TracProg.Calculation
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public GridElement this[int num]
+        public TraceGridElement this[int num]
         {
             get
             {
@@ -418,77 +376,23 @@ namespace TracProg.Calculation
         }
 
         /// <summary>
-        /// Установить значение флага одного из параметров
-        /// </summary>
-        /// <param name="num">Номер ячейки</param>
-        /// <param name="value">Параметр</param>
-        public void SetValue(int num, GridValue value)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            SetBit(ref _grid[num], (int)value, true);
-        }
-
-        /// <summary>
-        /// Установить значение флага одного из параметров
-        /// </summary>
-        /// <param name="i">Номер строки</param>
-        /// <param name="j">Номер столбца</param>
-        /// <param name="value">Параметр</param>
-        public void SetValue(int i, int j, GridValue value)
-        {
-            SetValue(GetNum(i, j), value);
-        }
-
-        /// <summary>
-        /// Снять значение флага одного из параметров
-        /// </summary>
-        /// <param name="num">Номер ячейки</param>
-        /// <param name="value">Параметр</param>
-        public void UnsetValue(int num, GridValue value)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            SetBit(ref _grid[num], (int)value, false);
-        }
-
-        /// <summary>
-        /// Снять значение флага одного из параметров
-        /// </summary>
-        /// <param name="i">Номер строки</param>
-        /// <param name="j">Номер столбца</param>
-        /// <param name="value">Параметр</param>
-        public void UnsetValue(int i, int j, GridValue value)
-        {
-            UnsetValue(GetNum(i, j), value);
-        }
-
-        /// <summary>
         /// Проверка, что данная ячейка является металом
         /// </summary>
         /// <param name="num">Номер ячейки</param>
         /// <returns></returns>
-        public bool IsOwnMetal(int num)
+        public bool IsOwnMetal(int num, string metalID)
         {
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-
-
-            return GetBit(_grid[num], (int)GridValue.OWN_METAL);
+            return !string.IsNullOrEmpty(_grid[num].MetalID) && _grid[num].MetalID == metalID;
         }
 
-        public bool IsOwnMetal(int i, int j)
+        public bool IsOwnMetal(int i, int j, string metalID)
         {
-            return IsOwnMetal(GetNum(i, j));
+            return IsOwnMetal(GetNum(i, j), metalID);
         }
 
         /// <summary>
@@ -503,7 +407,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], (int)GridValue.PIN);
+            return _grid[num].ViewElement is Pin;
         }
 
         /// <summary>
@@ -529,7 +433,7 @@ namespace TracProg.Calculation
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return GetBit(_grid[num], (int)GridValue.PROHIBITION_ZONE);
+            return _grid[num].ViewElement is ProhibitionZone;
         }
 
         public bool IsProhibitionZone(int i, int j)
@@ -546,17 +450,7 @@ namespace TracProg.Calculation
             return IsProhibitionZone(GetNum(i, j));
         }
 
-        public bool IsForeignMetal(int num)
-        {
-            if (num < 0 || num >= _grid.Length)
-            {
-                throw new OverflowException("Номер ячейки находился вне границ.");
-            }
-
-            return GetBit(_grid[num], (int)GridValue.FOREIGN_METAL);
-        }
-
-        public bool IsForeignMetal(int i, int j)
+        public bool IsFreeMetal(int i, int j, string metalID)
         {
             if (i < 0 || i >= CountRows)
             {
@@ -567,25 +461,29 @@ namespace TracProg.Calculation
                 throw new OverflowException("Индекс j находился вне границ сетки.");
             }
 
-            bool result = false;
+            bool result = true;
             if (j > 0 && j < CountColumn - 1)
             {
-                if (this[i, j - 1].MetalID == this[i, j + 1].MetalID && this[i, j - 1].MetalID != 0 && this[i, j + 1].MetalID != 0)
+                if (!string.IsNullOrEmpty(this[i, j - 1].MetalID) && !string.IsNullOrEmpty(this[i, j + 1].MetalID))
                 {
-                    result = true;
+                    if (this[i, j - 1].MetalID == this[i, j + 1].MetalID)
+                    {
+                        result = false;
+                    }
                 }
             }
             if (i > 0 && i < CountRows - 1)
             {
-                if (this[i - 1, j].MetalID == this[i + 1, j].MetalID && this[i - 1, j].MetalID != 0 && this[i + 1, j].MetalID != 0)
+                if (!string.IsNullOrEmpty(this[i - 1, j].MetalID) && !string.IsNullOrEmpty(this[i + 1, j].MetalID))
                 {
-                    result = true;
+                    if (this[i - 1, j].MetalID == this[i + 1, j].MetalID)
+                    {
+                        result = false;
+                    }
                 }
             }
 
-            result |= IsForeignMetal(GetNum(i, j));
-
-            return result;
+            return !IsProhibitionZone(i, j) && !IsPin(i, j) && string.IsNullOrEmpty(this[i, j].MetalID) && result;
         }
 
         /// <summary>
@@ -634,7 +532,13 @@ namespace TracProg.Calculation
                 string str = "";
                 for (int j = 0; j < CountColumn; j++)
                 {
-                    str += this[i, j].MetalID.ToString();
+                    string _str = "n0";
+                    if (!string.IsNullOrEmpty(this[i, j].MetalID))
+                    {
+                        _str = this[i, j].MetalID;
+                    }
+
+                    str += _str;
                 }
                 lines.Add(str);
             }
@@ -644,49 +548,6 @@ namespace TracProg.Calculation
         #endregion
 
         #region Private methods
-
-        private void Grid_IsChanged(int numElement)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void GenerateCoord(int width, int height, int koeff)
-        {
-            X = 0;
-            Y = 0;
-            Width = width + 1;
-            Height = height + 1;
-            Koeff = koeff;
-
-            _nodes = new Point[((width / Koeff) + 2) * ((height / Koeff) + 2)];
-
-            int[] xs = new int[((width / Koeff) + 2)];
-            int[] ys = new int[((height / Koeff) + 2)];
-
-            int tmpX = 0;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                xs[i] = tmpX;
-                tmpX += koeff;
-            }
-
-            int tmpY = 0;
-            for (int i = 0; i < ys.Length; ++i)
-            {
-                ys[i] = tmpY;
-                tmpY += koeff;
-            }
-
-            int index = 0;
-            for (int i = 0; i < xs.Length; ++i)
-            {
-                for (int j = 0; j < ys.Length; ++j)
-                {
-                    _nodes[index] = new Point(xs[i], ys[j]);
-                    index++;
-                }
-            }
-        }
 
         /// <summary>
         /// Получить значение строки и столбца по координатам ячейки
@@ -725,47 +586,11 @@ namespace TracProg.Calculation
             }
         }
 
-        /// <summary>
-        /// Установить бит в байте
-        /// </summary>
-        /// <param name="el">Байт в котором нужно установить бит</param>
-        /// <param name="numBit">Номер бита</param>
-        /// <param name="value">значение: true - 1, false - 0</param>
-        private void SetBit(ref GridElement el, int numBit, bool value)
-        {
-            byte mask = (byte)(1 << numBit); // 0000100000....
-
-            if (value)
-            {
-                el.ByteInfo = (byte)(el.ByteInfo | mask);// 1 | x = 1
-            }
-            else
-            {
-                el.ByteInfo = (byte)(el.ByteInfo & ~mask); // 0 & x = 0, x = 111110111111..
-            }
-
-        }
-
-        /// <summary>
-        /// Получить значение бита в байте
-        /// </summary>
-        /// <param name="el">Байт в котором нужно получить занчение бита</param>
-        /// <param name="numBit">Номер бита</param>
-        /// <param name="value">значение: true - 1, false - 0</param>
-        private bool GetBit(GridElement el, int numBit)
-        {
-            byte mask = (byte)(1 << numBit); // 0000100000....
-            el.ByteInfo = (byte)(mask & el.ByteInfo);
-            if (el.ByteInfo > 0)
-            {
-                return true;
-            }
-            return false;
-        }
-
         #endregion
 
         #region Properties
+
+        public string ID { get; private set; }
 
         /// <summary>
         /// Возвращает координату по оси Y прямоугольной области, являющуюся суммой значений свойств Y и Height.
@@ -816,7 +641,7 @@ namespace TracProg.Calculation
         /// <summary>
         /// Возвращает или задаёт цвет для узлов сетки
         /// </summary>
-        public Color _Color { get; set; }
+        public Color Color { get { return _color; } }
 
         /// <summary>
         /// Количество ячеек в сетке

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,53 +13,81 @@ namespace TracProg.Calculation.Algoriths
         private Configuration _config;
         private int _countIter;
 
-        private Dictionary<int, Net> _nonRealized = new Dictionary<int, Net>();
+        private Dictionary<string, Tuple<List<int>, List<int>>> _nets;
 
         public event Action<int> IterFinishEvent;
 
-        public RetraceAlgScheme(Configuration config, int countIter, Dictionary<int, Net> nonRealized)
+        private int _countRealizedPinsBefore = 0;
+        private int _countRealizedPinsAfter = 0;
+
+        public RetraceAlgScheme(Configuration config, int countIter, int countRealizedPinsBefore, Dictionary<string, Tuple<List<int>, List<int>>> nets)
         {
             _config = config;
             _countIter = countIter;
-            _nonRealized = nonRealized;
+            _nets = nets;
+            _countRealizedPinsBefore = countRealizedPinsBefore;
+            _countRealizedPinsAfter = countRealizedPinsBefore;
         }
 
-        public long Calculate()
+        public long Calculate(out int countRealizedPinsAfter)
         {
-            Dictionary<int, Net> _goodRetracing = new Dictionary<int, Net>();
+            countRealizedPinsAfter = 0;
 
-            long time = 0;
             Stopwatch sw = new Stopwatch();
+            sw.Reset();
+            sw.Start();
+
+            List<int> allRealizedPins = new List<int>();
             for (int curIter = 0; curIter < _countIter; curIter++)
             {
-                sw.Reset();
-                sw.Start();
-                foreach (var net in _nonRealized)
+                foreach (var subNet in _nets)
                 {
-                    RetraceAlgNet alg = new RetraceAlgNet(_config.Grid, _config.Net.Length, net.Key);
-                    if (alg.FindPath(net.Value[0], net.Value[1]))
+                    string metalID = subNet.Key;
+                    List<int> allPins = subNet.Value.Item1;
+                    List<int> nonRealizedPins = subNet.Value.Item2;
+
+                    List<int> _goodRetracing = new List<int>();
+                    foreach (var nonRealizedPin in nonRealizedPins)
                     {
-                        _config.Grid[net.Value[0]].ViewElement._Color = System.Drawing.Color.FromArgb(0, 100, 0);
-                        _config.Grid[net.Value[1]].ViewElement._Color = System.Drawing.Color.FromArgb(0, 100, 0);
+                        if (!_goodRetracing.Contains(nonRealizedPin))
+                        {
+                            RetraceAlgNet alg = new RetraceAlgNet(_config.Grid, metalID, allPins);
+                            int finish;
+                            bool isFinishPin;
+                            if (alg.FindPath(_config.Nets, nonRealizedPin, out finish, out isFinishPin))
+                            {
+                                _goodRetracing.Add(nonRealizedPin);
 
-                        _goodRetracing.Add(net.Key, net.Value);
+                                _countRealizedPinsAfter++;
+                                if (isFinishPin)
+                                {
+                                    _goodRetracing.Add(finish);
+                                    _countRealizedPinsAfter++;
+                                }
+                            }
+                        }
                     }
-                }
-                sw.Stop();
-                time += sw.ElapsedMilliseconds;
 
-                foreach (var item in _goodRetracing)
+                    foreach (var pin in _goodRetracing)
+                    {
+                        subNet.Value.Item2.RemoveAll(x => x == pin);
+                    }
+                    allRealizedPins.AddRange(_goodRetracing);                    
+
+                    _goodRetracing.Clear();
+                }
+
+                if (IterFinishEvent != null)
                 {
-                    if (_nonRealized.ContainsKey(item.Key))
-                    {
-                        _nonRealized.Remove(item.Key);
-                    }
+                    IterFinishEvent.Invoke(curIter + 1);
                 }
-
-                if (IterFinishEvent != null) IterFinishEvent.Invoke(curIter + 1);
             }
 
-            return time;
+            sw.Stop();
+
+            countRealizedPinsAfter = _countRealizedPinsAfter;
+
+            return sw.ElapsedMilliseconds;
         }
     }
 }

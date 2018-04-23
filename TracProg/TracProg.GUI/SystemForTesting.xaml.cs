@@ -178,10 +178,10 @@ namespace TracProg.GUI
             if (_dataGrid.SelectedItem != null)
             {
                 RowTest row = _dataGrid.SelectedItem as RowTest;
-                if(row != null)
+                if (row != null)
                 {
                     string path = _testSettings.FileOutPath + "\\test_" + row.ID + ".bmp";
-                    if(File.Exists(path))
+                    if (File.Exists(path))
                         Process.Start(path);
                 }
             }
@@ -194,167 +194,187 @@ namespace TracProg.GUI
             Graphics old_g;
             Graphics new_g;
             WaveTraceAlgScheme li;
-
-            if (!_isSingleMode)
-            {
-                _thread = new Thread(delegate()
+            _thread = new Thread(delegate()
                 {
-                    if (_testSettings != null && _testSettings.IsConfigurationCompleted == true)
+                    int countIter = 10;
+                    Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
+                    Dispatcher.Invoke(delegate() { _progressBar.Maximum = countIter; });
+                    Dispatcher.Invoke(delegate() { _progressBar.Value = 0; });
+
+                    if (!_isSingleMode)
                     {
-                        LockInterface();
-                        _lists.Clear();
-                        _id = 0;
 
-                        int koeff = 4;
-
-                        int countIter = 10;
-                        Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
-                        Dispatcher.Invoke(delegate() { _progressBar.Maximum = countIter; });
-                        Dispatcher.Invoke(delegate () { _progressBar.Value = 0; });
-
-                        AddTitleToExel(_testSettings.FileOutPath);
-                        for (int i = 0; i < _testSettings.CountRuns; ++i)
+                        if (_testSettings != null && _testSettings.IsConfigurationCompleted == true)
                         {
-                            config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountNets, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff, 25);
-                            li = new WaveTraceAlgScheme(config.Grid);
+                            LockInterface();
+                            _lists.Clear();
+                            _id = 0;
 
-                            
-                            Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
-                            for (int numNet = 0; numNet < config.Net.Length; numNet++)
+                            int koeff = 4;
+
+                            AddTitleToExel(_testSettings.FileOutPath);
+                            for (int i = 0; i < _testSettings.CountRuns; ++i)
                             {
-                                long localTime;
-                                List<List<int>> track;
-                                if (!li.FindPath(config.Net[numNet], out track, out localTime))
+                                config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountNets, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet, koeff, 25);
+                                li = new WaveTraceAlgScheme(config.Grid);
+
+                                Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                                old_g = Graphics.FromImage(bmp);
+                                old_g.Clear(System.Drawing.Color.Black);
+                                config.Grid.Draw(old_g);
+                                string path = "test_clear.bmp";
+                                bmp.Save(path);
+
+                                int countRealizedPinsBefore = 0;
+                                Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
+                                foreach (var net in config.Nets)
                                 {
-                                    nonRealized.Add(numNet + 1, config.Net[numNet]);
-                                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
+                                    int localCountRealizedPinsBefore = net.Value.Count;
+
+                                    long localTime;
+                                    List<List<int>> track;
+                                    List<int> nonRealized;
+                                    bool flag = li.FindPath(net.Key, net.Value, out track, out nonRealized, out localTime);
+                                    if (flag && nonRealized.Count != 0)
+                                    {
+                                        localCountRealizedPinsBefore -= nonRealized.Count;
+
+                                        List<int> allPins = new List<int>();
+                                        for (int n = 0; n < net.Value.Count; ++n)
+                                        {
+                                            allPins.Add(net.Value[n]);
+                                        }
+
+                                        allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealized);
+                                    }
+
+                                    countRealizedPinsBefore += localCountRealizedPinsBefore;
                                 }
-                                else
-                                {
-                                    config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
-                                    //time += localTime;
-                                }
+                                Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                                old_g = Graphics.FromImage(old_bmp);
+                                old_g.Clear(System.Drawing.Color.Black);
+                                config.Grid.Draw(old_g);
+                                path = _testSettings.FileOutPath + "\\test_old_" + i + ".bmp";
+                                old_bmp.Save(path);
+
+                                RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
+                                retraceAlgScheme.IterFinishEvent += (numIter) =>
+                                    {
+                                        Dispatcher.Invoke(delegate() { _progressBar.Value = numIter; });
+                                    };
+                                int countRealizedPinsAfter;
+                                long time = retraceAlgScheme.Calculate(out countRealizedPinsAfter);
+
+                                Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                                new_g = Graphics.FromImage(new_bmp);
+                                new_g.Clear(System.Drawing.Color.Black);
+
+                                config.Grid.Draw(new_g);
+                                path = _testSettings.FileOutPath + "\\test_new_" + i + ".bmp";
+                                new_bmp.Save(path);
+                                new_bmp = null;
+                                new_g = null;
+
+                                float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
+                                float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
+                                AddRow(time, config.Pins.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
+                                old_g = null;
                             }
-                            Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                            old_g = Graphics.FromImage(old_bmp);
-                            old_g.Clear(System.Drawing.Color.Black);
-                            config.Grid.Draw(old_g);
-                            string path = _testSettings.FileOutPath + "\\test_old_" + i + ".bmp";
-                            old_bmp.Save(path);
 
-                            int countNonRealizedNetsBefore = nonRealized.Count;
+                            DataRowsToExel(_testSettings.FileOutPath);
 
-                            RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, nonRealized);
-                            retraceAlgScheme.IterFinishEvent += (numIter) =>
-                                {
-                                    Dispatcher.Invoke(delegate() { _progressBar.Value = numIter; });
-                                };
-                            long time = retraceAlgScheme.Calculate();
-
-                            Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                            new_g = Graphics.FromImage(new_bmp);
-                            new_g.Clear(System.Drawing.Color.Black);
-
-                            config.Grid.Draw(new_g);
-                            path = _testSettings.FileOutPath + "\\test_new_" + i + ".bmp";
-                            new_bmp.Save(path);
-                            new_bmp = null;
-                            new_g = null;
-
-                            float percentageTracingAfter = (float)((100.0 * (config.Net.Length - nonRealized.Count)) / config.Net.Length);
-                            float percentageTracingBefore = (float)((100.0 * (config.Net.Length - countNonRealizedNetsBefore)) / config.Net.Length);
-                            AddRow(time, config.Net.Length, countNonRealizedNetsBefore, nonRealized.Count, percentageTracingBefore, percentageTracingAfter);
-                            old_g = null;
-                        }
-
-                        DataRowsToExel(_testSettings.FileOutPath);
-
-                        if (_lists.Count > 0)
-                        {
-                            long average = 0;
-                            float perAvAfter = 0.0f;
-                            float perAvBefore = 0.0f;
-                            for (int i = 0; i < _lists.Count; ++i)
+                            if (_lists.Count > 0)
                             {
-                                average += _lists[i].Time;
-                                perAvAfter += _lists[i].PercentageTracingAfter;
-                                perAvBefore += _lists[i].PercentageTracingBefore;
+                                long average = 0;
+                                float perAvAfter = 0.0f;
+                                float perAvBefore = 0.0f;
+                                for (int i = 0; i < _lists.Count; ++i)
+                                {
+                                    average += _lists[i].Time;
+                                    perAvAfter += _lists[i].PercentageTracingAfter;
+                                    perAvBefore += _lists[i].PercentageTracingBefore;
+                                }
+                                average = average / _lists.Count;
+                                perAvAfter = perAvAfter / _lists.Count;
+                                perAvBefore = perAvBefore / _lists.Count;
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов до процедуры перетрассировки: " + perAvBefore.ToString());
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов после процедуры перетрассировки: " + perAvAfter.ToString());
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент улучшения трассировки: " + (perAvAfter - perAvBefore).ToString());
+                                Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms | " + "Средняя разница в процентах трассировки: " + (perAvAfter - perAvBefore).ToString(); });
                             }
-                            average = average / _lists.Count;
-                            perAvAfter = perAvAfter / _lists.Count;
-                            perAvBefore = perAvBefore / _lists.Count;
-                            WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных трасс до процедуры перетрассировки: " + perAvBefore.ToString());
-                            WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных трасс после процедуры перетрассировки: " + perAvAfter.ToString());
-                            WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент улучшения трассировки: " + (perAvAfter - perAvBefore).ToString());
-                            Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms | " + "Средняя разница в процентах трассировки: " + (perAvAfter - perAvBefore).ToString(); });
+
+                            UnlockInterface();
                         }
-
-                        UnlockInterface();
-                    }
-                });
-                _thread.IsBackground = true;
-                _thread.Start();
-            }
-            else
-            {
-                // FOR DEBUG
-
-                config.ReadFromFile(_filePathImport);
-                li = new WaveTraceAlgScheme(config.Grid);
-                Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                old_g = Graphics.FromImage(bmp);
-
-                long time = 0;
-                Dictionary<int, Net> nonRealized = new Dictionary<int, Net>();
-                for (int numNet = 0; numNet < config.Net.Length; numNet++)
-                {
-                    long localTime;
-                    List<List<int>> track;
-                    if (!li.FindPath(config.Net[numNet], out track, out localTime))
-                    {
-                        nonRealized.Add(numNet + 1, config.Net[numNet]);
                     }
                     else
                     {
-                        config.Grid.MetallizeTrack(track, 1.0f, numNet + 1);
-                        time += localTime;
-                    }
-                }
-                Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                old_g = Graphics.FromImage(old_bmp);
-                old_g.Clear(System.Drawing.Color.Black);
-                config.Grid.Draw(old_g);
-                string path = "test_old.bmp";
-                old_bmp.Save(path);
+                        config.ReadFromFile(_filePathImport);
+                        li = new WaveTraceAlgScheme(config.Grid);
+                        Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                        old_g = Graphics.FromImage(bmp);
+                        old_g.Clear(System.Drawing.Color.Black);
+                        config.Grid.Draw(old_g);
+                        string path = "test_clear.bmp";
+                        bmp.Save(path);
 
-                int countNonRealizedNetsBefore = nonRealized.Count;
-                Bitmap new_bmp;
-                Dictionary<int, Net> goodRetracing = new Dictionary<int, Net>();
-
-                //foreach (var net in nonRealized)
-                {
-                    //for (int pin = 0; pin < net.Value.Count - 1; pin++)
-                    {
-                        RetraceAlgNet alg = new RetraceAlgNet(config.Grid, config.Net.Length, nonRealized.ElementAt(0).Key);
-                        if (alg.FindPath(nonRealized.ElementAt(0).Value[0], nonRealized.ElementAt(0).Value[1]))
+                        int countRealizedPinsBefore = 0;
+                        Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
+                        foreach (var net in config.Nets)
                         {
-                            goodRetracing.Add(nonRealized.ElementAt(0).Key, nonRealized.ElementAt(0).Value);
+                            int localCountRealizedPinsBefore = net.Value.Count;
+
+                            long localTime;
+                            List<List<int>> track;
+                            List<int> nonRealized;
+                            bool flag = li.FindPath(net.Key, net.Value, out track, out nonRealized, out localTime);
+                            if (nonRealized.Count != 0)
+                            {
+                                localCountRealizedPinsBefore -= nonRealized.Count;
+
+                                List<int> allPins = new List<int>();
+                                for (int n = 0; n < net.Value.Count; ++n)
+                                {
+                                    allPins.Add(net.Value[n]);
+                                }
+
+                                allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealized);
+                            }
+
+                            countRealizedPinsBefore += localCountRealizedPinsBefore;
                         }
+                        Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                        old_g = Graphics.FromImage(old_bmp);
+                        old_g.Clear(System.Drawing.Color.Black);
+                        config.Grid.Draw(old_g);
+                        path = "test_old.bmp";
+                        old_bmp.Save(path);
+
+                        RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
+                        retraceAlgScheme.IterFinishEvent += (numIter) =>
+                        {
+                            Dispatcher.Invoke(delegate() { _progressBar.Value = numIter; });
+                        };
+                        int countRealizedPinsAfter;
+                        long time = retraceAlgScheme.Calculate(out countRealizedPinsAfter);
+
+                        Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                        new_g = Graphics.FromImage(new_bmp);
+                        new_g.Clear(System.Drawing.Color.Black);
+
+                        config.Grid.Draw(new_g);
+                        path = "test_new.bmp";
+                        new_bmp.Save(path);
+                        new_bmp = null;
+                        new_g = null;
+
+                        float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
+                        float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
+                        AddRow(time, config.Pins.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
+                        old_g = null;
                     }
-                }
-                new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                new_g = Graphics.FromImage(new_bmp);
-                new_g.Clear(System.Drawing.Color.Black);
-
-                config.Grid.Draw(new_g);
-                path = "test_new.bmp";
-                new_bmp.Save(path);
-                new_bmp = null;
-                new_g = null;
-
-                AddRow(time, config.Net.Length, countNonRealizedNetsBefore, nonRealized.Count, 0.0f, 0.0f);
-                old_g = null;
-            }
+                });
+            _thread.IsBackground = true;
+            _thread.Start();
         }
 
         private void _dataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)

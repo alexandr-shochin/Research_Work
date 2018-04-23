@@ -4,30 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TracProg.Calculation
+namespace TracProg.Calculation.BoardElements
 {
-    [Serializable]
     public class Net
     {
         private int[] _netElements;
 
-        /// <summary>
-        /// Конструктор.
-        /// </summary>
-        /// <param name="countElements">Количество NetElement'ов</param>
-        /// <param name="netElements">Массив NetElement'ов</param>
         public Net(int[] netElements)
         {
             _netElements = new int[netElements.Length];
             Array.Copy(netElements, 0, _netElements, 0, netElements.Length);
         }
 
-        /// <summary>
-        /// Доступ к отдельным элементам Net
-        /// </summary>
-        /// <param name="index">Индекс (начиная 0)</param>
-        /// <returns>Экземпляр NetElement</returns>
-        /// <exception cref="OverflowException">Индекс находился вне границ массива.</exception>
+        public bool Contains(int net)
+        {
+            return Array.IndexOf(this._netElements, net) != -1 ? true : false;
+        }
+
         public int this[int index]
         {
             get
@@ -40,7 +33,7 @@ namespace TracProg.Calculation
 
         public override string ToString()
         {
-            return "Count = " + _netElements.Length;
+            return string.Join(", ", _netElements);
         }
 
         public int Count
