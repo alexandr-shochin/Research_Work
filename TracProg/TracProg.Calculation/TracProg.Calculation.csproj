@@ -65,6 +65,7 @@
     <Compile Include="Algorithms\Set.cs" />
     <Compile Include="BoardElements\BoardElement.cs" />
     <Compile Include="BoardElements\Component.cs" />
+    <Compile Include="BoardElements\ReTracedArea.cs" />
     <Compile Include="BoardElements\TraceGrid.cs" />
     <Compile Include="BoardElements\IBoardElement.cs" />
     <Compile Include="BoardElements\Metal.cs" />

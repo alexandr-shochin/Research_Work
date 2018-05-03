@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-
 using TracProg.Calculation.BoardElements;
 
-namespace TracProg.Calculation.Algoriths
+namespace TracProg.Calculation.Algorithms
 {
     public class RetraceAlgNet
     {
-        private Set _set;
-        private Set _virtualSet;
+        private readonly Set _set;
+        private readonly Set _virtualSet;
 
         private int _leftBorderLimitingRectangle;
         private int _upBorderLimitingRectangle;
@@ -27,40 +20,37 @@ namespace TracProg.Calculation.Algoriths
         private TraceGrid _oldGrid;
         private TraceGrid _newGrid;
 
-        private string _nonRealizedMetalID;
+        private readonly string _nonRealizedMetalId;
 
-        private Point p0;
+        private Point _p0;
 
-        private Dictionary<string, Net> _nets;
+        private readonly List<int> _allPins;
 
-        private List<int> _allPins;
-
-        public RetraceAlgNet(TraceGrid oldGrid, string nonRealizedMetalID, List<int> allPins)
+        public RetraceAlgNet(TraceGrid oldGrid, string nonRealizedMetalId, List<int> allPins)
         {
             _oldGrid = oldGrid;
             _set = new Set();
             _virtualSet = new Set();
 
-            _nonRealizedMetalID = nonRealizedMetalID;
+            _nonRealizedMetalId = nonRealizedMetalId;
             _allPins = allPins;
         }
 
-        public bool FindPath(Dictionary<string, Net> nets, int start, out int finish, out bool isFinishPin)
+        public bool FindPath(int start, out int finish, out bool isFinishPin)
         {
-            _nets = nets;
-
             finish = -1;
             isFinishPin = false;
-            if (!WavePropagation(ref _oldGrid, start) == true && VirtualWavePropagation(ref _oldGrid, start, out finish, out isFinishPin) == true) // нашли трассу через междоузлие
+            if (!WavePropagation(ref _oldGrid, start) && VirtualWavePropagation(ref _oldGrid, start, out finish, out isFinishPin)) // нашли трассу через междоузлие
             {
                 List<int> pathWithInternodes = new List<int>();
                 RestorationPath(ref _oldGrid, ref pathWithInternodes);
 
                 // получаем координаты ограничивающего прямоугольника
-                GetCoordLimitingRectangle(ref _oldGrid, ref pathWithInternodes, 20, 20, 20, 20);
+                GetCoordLimitingRectangleByTrack(ref _oldGrid, ref pathWithInternodes, 20, 20, 20, 20,
+                    out _leftBorderLimitingRectangle, out _upBorderLimitingRectangle, out _rightBorderLimitingRectangle, out _downBorderLimitingRectangle);
 
                 // копируем нужные элементы сетки и создаём новую
-                TraceGrid.TraceGridElement[] gridElements = new TraceGrid.TraceGridElement[((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 1) * ((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 1)];
+                TraceGrid.TraceGridElement[] gridElements = new TraceGrid.TraceGridElement[(_rightBorderLimitingRectangle - _leftBorderLimitingRectangle + 1) * (_downBorderLimitingRectangle - _upBorderLimitingRectangle + 1)];
                 Dictionary<string, List<Tuple<int, int>>> futurePins = new Dictionary<string, List<Tuple<int, int>>>(); //<MetalID, список с Pin или граничным узлом>
                 Dictionary<string, List<Tuple<int, int>>> tracks = new Dictionary<string, List<Tuple<int, int>>>(); // реализованные трассы в прямоугольнике в том числе с междоузлие
 
@@ -74,42 +64,44 @@ namespace TracProg.Calculation.Algoriths
                     }
                 }
 
-                p0 = _oldGrid.GetCoordCell(_upBorderLimitingRectangle, _leftBorderLimitingRectangle); // координата смещения
+                _p0 = _oldGrid.GetCoordCell(_upBorderLimitingRectangle, _leftBorderLimitingRectangle); // координата смещения
 
-                _newGrid = new TraceGrid("Bounding_box_" + _nonRealizedMetalID, gridElements, p0.X, p0.Y,
+                _newGrid = new TraceGrid("Bounding_box_" + _nonRealizedMetalId, gridElements, _p0.X, _p0.Y,
                     (((_rightBorderLimitingRectangle - _leftBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     (((_downBorderLimitingRectangle - _upBorderLimitingRectangle) + 2) / 2) * _oldGrid.Koeff,
                     _oldGrid.Koeff);
 
+                if (_nonRealizedMetalId == "bit_cnt[1]")
+                {
+
+                }
+
                 // ищем граничные узлы
                 int oldI = _upBorderLimitingRectangle;
-                int oldJ = _leftBorderLimitingRectangle;
                 for (int newI = 0; newI < _newGrid.CountRows; newI++)
                 {
-                    oldJ = _leftBorderLimitingRectangle;
+                    int oldJ = _leftBorderLimitingRectangle;
                     for (int newJ = 0; newJ < _newGrid.CountColumn; newJ++)
                     {
-                        if (!string.IsNullOrEmpty(_newGrid[newI, newJ].MetalID))
+                        if (!string.IsNullOrEmpty(_newGrid[newI, newJ].MetalId))
                         {
                             // ищем реализованные трассы в нашем прямоугольнике
                             List<Tuple<int, int>> trackList;
-                            if (!tracks.TryGetValue(_newGrid[newI, newJ].MetalID, out trackList))
+                            if (!tracks.TryGetValue(_newGrid[newI, newJ].MetalId, out trackList))
                             {
-                                tracks[_newGrid[newI, newJ].MetalID] = new List<Tuple<int, int>>();
-                                tracks[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ)); 
+                                tracks[_newGrid[newI, newJ].MetalId] = new List<Tuple<int, int>> {Tuple.Create(newI, newJ)};
                             }
                             else
                             {
-                                trackList.Add(Tuple.Create(newI, newJ)); 
+                                trackList.Add(Tuple.Create(newI, newJ));
                             }
 
-                            if (IsBoardGridElement(ref _oldGrid, ref _newGrid, newI, newJ, oldI, oldJ))
+                            if (IsBoardGridElement(newI, newJ, oldI, oldJ))
                             {
                                 List<Tuple<int, int>> list;
-                                if (!futurePins.TryGetValue(_newGrid[newI, newJ].MetalID, out list))
+                                if (!futurePins.TryGetValue(_newGrid[newI, newJ].MetalId, out list))
                                 {
-                                    futurePins[_newGrid[newI, newJ].MetalID] = new List<Tuple<int, int>>();
-                                    futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                    futurePins[_newGrid[newI, newJ].MetalId] = new List<Tuple<int, int>> {Tuple.Create(newI, newJ)};
                                 }
                                 else
                                 {
@@ -119,10 +111,9 @@ namespace TracProg.Calculation.Algoriths
                             else if (_newGrid.IsPin(newI, newJ))
                             {
                                 List<Tuple<int, int>> list;
-                                if(!futurePins.TryGetValue(_newGrid[newI, newJ].MetalID, out list))
+                                if (!futurePins.TryGetValue(_newGrid[newI, newJ].MetalId, out list))
                                 {
-                                    futurePins[_newGrid[newI, newJ].MetalID] = new List<Tuple<int, int>>();
-                                    futurePins[_newGrid[newI, newJ].MetalID].Add(Tuple.Create(newI, newJ));
+                                    futurePins[_newGrid[newI, newJ].MetalId] = new List<Tuple<int, int>> {Tuple.Create(newI, newJ)};
                                 }
                                 else
                                 {
@@ -136,43 +127,40 @@ namespace TracProg.Calculation.Algoriths
 
                     oldI++;
                 }
+
                 // добаявлем start и finish
                 int k, l;
-
                 _oldGrid.GetIndexes(start, out k, out l);
-                List<Tuple<int, int>> _listStart;
-                if (!futurePins.TryGetValue(_nonRealizedMetalID, out _listStart))
+                List<Tuple<int, int>> listStart;
+                if (!futurePins.TryGetValue(_nonRealizedMetalId, out listStart))
                 {
-                    futurePins[_nonRealizedMetalID] = new List<Tuple<int,int>>();
-                    futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    futurePins[_nonRealizedMetalId] = new List<Tuple<int, int>> {Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle)};
                 }
                 else
                 {
-                    _listStart.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    listStart.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 }
 
                 _oldGrid.GetIndexes(finish, out k, out l);
-                List<Tuple<int, int>> _listFinish;
-                if (!futurePins.TryGetValue(_nonRealizedMetalID, out _listFinish))
+                List<Tuple<int, int>> listFinish;
+                if (!futurePins.TryGetValue(_nonRealizedMetalId, out listFinish))
                 {
-                    futurePins[_nonRealizedMetalID] = new List<Tuple<int, int>>();
-                    futurePins[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    futurePins[_nonRealizedMetalId] = new List<Tuple<int, int>> {Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle)};
                 }
                 else
                 {
-                    _listFinish.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                    listFinish.Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
                 }
 
                 // добавляем узлы из трассы с междоузлием    
-                for (int i = 0; i < pathWithInternodes.Count; i++)
+                foreach (int internode in pathWithInternodes)
                 {
-                    _oldGrid.GetIndexes(pathWithInternodes[i], out k, out l);
+                    _oldGrid.GetIndexes(internode, out k, out l);
 
                     List<Tuple<int, int>> trackList;
-                    if(!tracks.TryGetValue(_nonRealizedMetalID, out trackList))
+                    if (!tracks.TryGetValue(_nonRealizedMetalId, out trackList))
                     {
-                        tracks[_nonRealizedMetalID] = new List<Tuple<int, int>>();
-                        tracks[_nonRealizedMetalID].Add(Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle));
+                        tracks[_nonRealizedMetalId] = new List<Tuple<int, int>> {Tuple.Create(k - _upBorderLimitingRectangle, l - _leftBorderLimitingRectangle)};
                     }
                     else
                     {
@@ -184,20 +172,19 @@ namespace TracProg.Calculation.Algoriths
                 _pinnedNodes = new List<Tuple<int, int, IBoardElement>>();
                 foreach (var track in futurePins)
                 {
-                    for (int i = 0; i < track.Value.Count; i++)
+                    foreach (var node in track.Value)
                     {
-                        IBoardElement elem = _newGrid[track.Value[i].Item1, track.Value[i].Item2].ViewElement;
-                        if (!_newGrid.IsPin(track.Value[i].Item1, track.Value[i].Item2))
+                        if (!_newGrid.IsPin(node.Item1, node.Item2))
                         {
-                            Point p = _oldGrid.GetCoordCell(track.Value[i].Item1, track.Value[i].Item2);
+                            Point p = _oldGrid.GetCoordCell(node.Item1, node.Item2);
 
-                            TraceGrid.TraceGridElement el = _newGrid[track.Value[i].Item1, track.Value[i].Item2];
+                            TraceGrid.TraceGridElement el = _newGrid[node.Item1, node.Item2];
                             IBoardElement prevEl = el.ViewElement;
 
-                            el.ViewElement = new Pin(prevEl.ID, p.X + p0.X, p.Y + p0.Y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
-                            _newGrid[track.Value[i].Item1, track.Value[i].Item2] = el;
+                            el.ViewElement = new Pin(prevEl.ID, p.X + _p0.X, p.Y + _p0.Y, 1 * _newGrid.Koeff, 1 * _newGrid.Koeff);
+                            _newGrid[node.Item1, node.Item2] = el;
 
-                            _pinnedNodes.Add(Tuple.Create(track.Value[i].Item1, track.Value[i].Item2, prevEl));
+                            _pinnedNodes.Add(Tuple.Create(node.Item1, node.Item2, prevEl));
                         }
                     }
                 }
@@ -205,23 +192,22 @@ namespace TracProg.Calculation.Algoriths
                 //формируем матрицу коэфициентов-штрафов
                 int[,] penaltyMatrix = new int[_newGrid.CountRows, _newGrid.CountColumn];
                 int startKoeff = Math.Max(_newGrid.CountColumn, _newGrid.CountRows);
-                FormPenaltyMatrix(ref _oldGrid, startKoeff, ref penaltyMatrix, ref tracks);
+                FormPenaltyMatrix(startKoeff, ref penaltyMatrix, ref tracks);
 
-                // сосчитать сумарный штраф для каждой трассы реализованной и нет (как считать, если в пути указаны узлы, как реальные так и виртуальные? дополнять до полной(реальная + виртуальная) трассы уже реализованные)
                 Dictionary<string, int> penalty = new Dictionary<string, int>();
-                CalculatePenalty(_oldGrid, tracks, penaltyMatrix, ref penalty);
+                CalculatePenalty(tracks, penaltyMatrix, ref penalty);
 
                 // перетрассировать 
-                if (Retracing(ref _newGrid, tracks, futurePins, penalty))
+                if (Retracing(tracks, futurePins, penalty))
                 {
-                    DrawStagesForNewGridDebug("retracing_" + _nonRealizedMetalID + "_" + start + "_" + finish + "_");
+                    DrawStagesForNewGridDebug("retracing_" + _nonRealizedMetalId + "_" + start + "_" + finish + "_");
 
                     // превратить те узлы что стали пинами обртано в просто узлы
-                    for (int i = 0; i < _pinnedNodes.Count; i++)
+                    foreach (var pinnedNode in _pinnedNodes)
                     {
-                        TraceGrid.TraceGridElement el = _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2];
-                        el.ViewElement = _pinnedNodes[i].Item3;
-                        _newGrid[_pinnedNodes[i].Item1, _pinnedNodes[i].Item2] = el;
+                        TraceGrid.TraceGridElement el = _newGrid[pinnedNode.Item1, pinnedNode.Item2];
+                        el.ViewElement = pinnedNode.Item3;
+                        _newGrid[pinnedNode.Item1, pinnedNode.Item2] = el;
                     }
 
                     // копируем матрицу обратно
@@ -237,73 +223,59 @@ namespace TracProg.Calculation.Algoriths
 
                     return true;
                 }
-                else
-                {
-                    //DrawStagesForNewGridDebug("non_retracing_" + _nonRealizedMetalID + "_" + start + "_" + finish + "_");
+            }
 
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
-        private void CalculatePenalty(TraceGrid grid, Dictionary<string, List<Tuple<int, int>>> tracks, int[,] penaltyMatrix, ref Dictionary<string, int> penalty)
+        private void CalculatePenalty(Dictionary<string, List<Tuple<int, int>>> tracks, int[,] penaltyMatrix, ref Dictionary<string, int> penalty)
         {
             foreach (var track in tracks)
             {
-                if (track.Key != _nonRealizedMetalID)
+                if (track.Key != _nonRealizedMetalId)
                 {
                     int sum = 0;
-                    for (int item = 0; item < track.Value.Count; ++item)
+                    foreach (var node in track.Value)
                     {
-                        int i = track.Value[item].Item1;
-                        int j = track.Value[item].Item2;
-                        sum += penaltyMatrix[i, j];
+                        sum += penaltyMatrix[node.Item1, node.Item2];
                     }
                     penalty.Add(track.Key, sum);
                 }
             }
         }
 
-        private bool Retracing(ref TraceGrid grid, Dictionary<string, List<Tuple<int, int>>> tracks, Dictionary<string, List<Tuple<int, int>>> futurePins, Dictionary<string, int> penalty)
+        private bool Retracing(Dictionary<string, List<Tuple<int, int>>> tracks, Dictionary<string, List<Tuple<int, int>>> futurePins, Dictionary<string, int> penalty)
         {
-            WaveTraceAlgScheme li = new WaveTraceAlgScheme(grid);
-            long time;
-
-            Bitmap bmp = new Bitmap(grid.Width, grid.Height);
-            Graphics g = Graphics.FromImage(bmp);
-            g.TranslateTransform(-p0.X, -p0.Y);
+            WaveTraceAlgScheme li = new WaveTraceAlgScheme(_newGrid);
 
             while (penalty.Count != 0)
             {
                 // 0. ищем максимальный штраф
-                string MetalID = null;
+                string metalId = null;
                 int max = 0;
                 foreach (var track in penalty)
                 {
                     if (max < track.Value)
                     {
                         max = track.Value;
-                        MetalID = track.Key;
+                        metalId = track.Key;
                     }
                 }
-                if (!string.IsNullOrEmpty(MetalID))
+                if (!string.IsNullOrEmpty(metalId))
                 {
-                    penalty.Remove(MetalID);
+                    penalty.Remove(metalId);
 
                     // 1. снимаем трассу с максимальным штрафом
                     for (int i = 0; i < _newGrid.Count; i++)
                     {
-                        if (grid[i].MetalID == MetalID)
+                        if (_newGrid[i].MetalId == metalId)
                         {
                             TraceGrid.TraceGridElement el = _newGrid[i];
-                            el.MetalID = null;
+                            el.MetalId = null;
                             if (_newGrid[i].ViewElement is Metal)
                             {
                                 el.ViewElement = null;
+                                el.IsReTracedArea = null;
                             }
                             _newGrid[i] = el;
                         }
@@ -312,36 +284,70 @@ namespace TracProg.Calculation.Algoriths
                     // 2. перетрассирум трассу которую не смогли
                     List<int> _netList = new List<int>();
                     List<List<int>> _trackList;
-                    foreach (var pin in futurePins[_nonRealizedMetalID])
+                    foreach (var pin in futurePins[_nonRealizedMetalId])
                     {
-                        _netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                        _netList.Add(_newGrid.GetNum(pin.Item1, pin.Item2));
                     }
+
                     List<int> nonRealized;
-                    li.FindPath(_nonRealizedMetalID, new Net(_netList.ToArray()), out _trackList, out nonRealized, out time);
+                    long time;
+                    li.FindPath(_nonRealizedMetalId, new Net(_netList.ToArray()), out _trackList, out nonRealized, out time);
                     if (nonRealized.Count == 0)
                     {
                         if (_trackList.Count != 0)
                         {
-                            grid.MetallizeTrack(_trackList, 1.0f, _nonRealizedMetalID);
-                        }
+                            _newGrid.MetallizeTrack(_trackList, _nonRealizedMetalId);
 
-                        //DrawStagesForNewGridDebug("AfterNonRealTest_1.bmp");
+                            foreach (List<int> track in _trackList)
+                            {
+                                List<int> _track = track;
+                                int left, up, right, down;
+                                GetCoordLimitingRectangleByTrack(ref _newGrid, ref _track, 0, 0, 0, 0, out left, out up, out right, out down);
+
+                                for (int i = up; i <= down; ++i)
+                                {
+                                    for (int j = left; j <= right; ++j)
+                                    {
+                                        Point p = _newGrid.GetCoordCell(i, j);
+                                        TraceGrid.TraceGridElement el = _newGrid[i, j];
+                                        el.IsReTracedArea = new ReTracedArea("ReTracedArea", p.X, p.Y, 1 * _oldGrid.Koeff, 1 * _oldGrid.Koeff);
+                                        _newGrid[i, j] = el;
+                                    }
+                                }
+                            }
+                        }
 
                         // 3. перетрассируем трассу с максимальным штрафом
                         List<int> netList = new List<int>();
                         List<List<int>> trackList;
-                        foreach (var pin in futurePins[MetalID])
+                        foreach (var pin in futurePins[metalId])
                         {
-                            netList.Add(grid.GetNum(pin.Item1, pin.Item2));
+                            netList.Add(_newGrid.GetNum(pin.Item1, pin.Item2));
                         }
-                        li.FindPath(MetalID, new Net(netList.ToArray()), out trackList, out nonRealized, out time);
+                        li.FindPath(metalId, new Net(netList.ToArray()), out trackList, out nonRealized, out time);
                         if (nonRealized.Count == 0)
                         {
                             if (trackList.Count != 0)
                             {
-                                grid.MetallizeTrack(trackList, 1.0f, MetalID);
+                                _newGrid.MetallizeTrack(trackList, metalId);
 
-                                //DrawStagesForNewGridDebug("AfterNonRealTest_2.bmp");
+                                foreach (List<int> track in trackList)
+                                {
+                                    List<int> _track = track;
+                                    int left, up, right, down;
+                                    GetCoordLimitingRectangleByTrack(ref _newGrid, ref _track, 0, 0, 0, 0, out left, out up, out right, out down);
+
+                                    for (int i = up; i <= down; ++i)
+                                    {
+                                        for (int j = left; j <= right; ++j)
+                                        {
+                                            Point p = _newGrid.GetCoordCell(i, j);
+                                            TraceGrid.TraceGridElement el = _newGrid[i, j];
+                                            el.IsReTracedArea = new ReTracedArea("ReTracedArea", p.X, p.Y, 1 * _oldGrid.Koeff, 1 * _oldGrid.Koeff);
+                                            _newGrid[i, j] = el;
+                                        }
+                                    }
+                                }
 
                                 return true;
                             }
@@ -352,13 +358,14 @@ namespace TracProg.Calculation.Algoriths
                                 {
                                     foreach (var item in track)
                                     {
-                                        if (grid[item].MetalID == _nonRealizedMetalID)
+                                        if (_newGrid[item].MetalId == _nonRealizedMetalId)
                                         {
                                             TraceGrid.TraceGridElement el = _newGrid[item];
-                                            el.MetalID = null;
+                                            el.MetalId = null;
                                             if (_newGrid[item].ViewElement is Metal)
                                             {
                                                 el.ViewElement = null;
+                                                el.IsReTracedArea = null;
                                             }
 
                                             _newGrid[item] = el;
@@ -369,12 +376,12 @@ namespace TracProg.Calculation.Algoriths
                                 // восстановить снятую трассу max_penalty
                                 List<List<int>> list_track = new List<List<int>>();
                                 List<int> list = new List<int>();
-                                foreach (var item in tracks[MetalID])
+                                foreach (var item in tracks[metalId])
                                 {
-                                    list.Add(grid.GetNum(item.Item1, item.Item2));
+                                    list.Add(_newGrid.GetNum(item.Item1, item.Item2));
                                 }
                                 list_track.Add(list);
-                                grid.MetallizeTrack(list_track, 1.0f, MetalID);
+                                _newGrid.MetallizeTrack(list_track, metalId);
                             }
                         }
                         else
@@ -384,13 +391,14 @@ namespace TracProg.Calculation.Algoriths
                             {
                                 foreach (var item in track)
                                 {
-                                    if (grid[item].MetalID == _nonRealizedMetalID)
+                                    if (_newGrid[item].MetalId == _nonRealizedMetalId)
                                     {
                                         TraceGrid.TraceGridElement el = _newGrid[item];
-                                        el.MetalID = null;
+                                        el.MetalId = null;
                                         if (_newGrid[item].ViewElement is Metal)
                                         {
                                             el.ViewElement = null;
+                                            el.IsReTracedArea = null;
                                         }
 
                                         _newGrid[item] = el;
@@ -401,12 +409,12 @@ namespace TracProg.Calculation.Algoriths
                             // восстановить снятую трассу max_penalty
                             List<List<int>> list_track = new List<List<int>>();
                             List<int> list = new List<int>();
-                            foreach (var item in tracks[MetalID])
+                            foreach (var item in tracks[metalId])
                             {
-                                list.Add(grid.GetNum(item.Item1, item.Item2));
+                                list.Add(_newGrid.GetNum(item.Item1, item.Item2));
                             }
                             list_track.Add(list);
-                            grid.MetallizeTrack(list_track, 1.0f, MetalID);
+                            _newGrid.MetallizeTrack(list_track, metalId);
                         }
                     }
                     else
@@ -414,12 +422,12 @@ namespace TracProg.Calculation.Algoriths
                         // восстанавливаем снятую трассу
                         List<List<int>> list_track = new List<List<int>>();
                         List<int> list = new List<int>();
-                        foreach (var item in tracks[MetalID])
+                        foreach (var item in tracks[metalId])
                         {
-                            list.Add(grid.GetNum(item.Item1, item.Item2));
+                            list.Add(_newGrid.GetNum(item.Item1, item.Item2));
                         }
                         list_track.Add(list);
-                        grid.MetallizeTrack(list_track, 1.0f, MetalID);
+                        _newGrid.MetallizeTrack(list_track, metalId);
                     }
                 }
                 else
@@ -430,32 +438,29 @@ namespace TracProg.Calculation.Algoriths
             return false;
         }
 
-        private void FormPenaltyMatrix(ref TraceGrid grid, int startKoeff, ref int[,] fineMmatrix, ref Dictionary<string, List<Tuple<int, int>>> tracks)
+        private void FormPenaltyMatrix(int startKoeff, ref int[,] fineMmatrix, ref Dictionary<string, List<Tuple<int, int>>> tracks)
         {
             _set.Clear();
             
-            for (int item = 0; item < tracks[_nonRealizedMetalID].Count; item++)
+            for (int item = 0; item < tracks[_nonRealizedMetalId].Count; item++)
             {
-                fineMmatrix[tracks[_nonRealizedMetalID][item].Item1,
-                            tracks[_nonRealizedMetalID][item].Item2] = startKoeff;
-                _set.Add(_newGrid.GetNum(tracks[_nonRealizedMetalID][item].Item1, tracks[_nonRealizedMetalID][item].Item2), startKoeff);
+                fineMmatrix[tracks[_nonRealizedMetalId][item].Item1,
+                            tracks[_nonRealizedMetalId][item].Item2] = startKoeff;
+                _set.Add(_newGrid.GetNum(tracks[_nonRealizedMetalId][item].Item1, tracks[_nonRealizedMetalId][item].Item2), startKoeff);
             }
 
             startKoeff--;
 
-            int i = 0;
-            int j = 0;
-
-            int prevCountAdded;
             int countAdded = _set.Count;
             for (int index = 0; index < _set.Count;)
             {
-                prevCountAdded = countAdded;
+                var prevCountAdded = countAdded;
                 countAdded = 0;
                 for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
                 {
                     if (index + elEdded < _set.Count)
                     {
+                        int i, j;
                         _newGrid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
 
                         if (_set[index].NumLevel == startKoeff + 1)
@@ -504,34 +509,34 @@ namespace TracProg.Calculation.Algoriths
             }
         }
 
-        private bool IsBoardGridElement(ref TraceGrid grid, ref TraceGrid newGrid, int newI, int newJ, int oldI, int oldJ)
+        private bool IsBoardGridElement(int newI, int newJ, int oldI, int oldJ)
         {
             try
             {
                 if (newJ - 1 == -1) // left
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldI, oldJ - 2].MetalID)
+                    if (_newGrid[newI, newJ].MetalId == _oldGrid[oldI, oldJ - 2].MetalId)
                     {
                         return true;
                     }
                 }
-                if (newJ + 1 == newGrid.CountColumn) // right
+                if (newJ + 1 == _newGrid.CountColumn) // right
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldI, oldJ + 2].MetalID)
+                    if (_newGrid[newI, newJ].MetalId == _oldGrid[oldI, oldJ + 2].MetalId)
                     {
                         return true;
                     }
                 }
                 if (newI - 1 == -1) // up
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldI - 2, oldJ].MetalID)
+                    if (_newGrid[newI, newJ].MetalId == _oldGrid[oldI - 2, oldJ].MetalId)
                     {
                         return true;
                     }
                 }
-                if (newI + 1 == newGrid.CountRows) // down
+                if (newI + 1 == _newGrid.CountRows) // down
                 {
-                    if (newGrid[newI, newJ].MetalID == grid[oldI + 2, oldJ].MetalID)
+                    if (_newGrid[newI, newJ].MetalId == _oldGrid[oldI + 2, oldJ].MetalId)
                     {
                         return true;
                     }
@@ -544,57 +549,59 @@ namespace TracProg.Calculation.Algoriths
             }  
         }
 
-        private void GetCoordLimitingRectangle(ref TraceGrid grid, ref List<int> path, int additLeftParam, int additUpParam, int additRightParam, int additDownParam)
+        private void GetCoordLimitingRectangleByTrack(ref TraceGrid grid, ref List<int> path, int additLeftParam, int additUpParam, int additRightParam, int additDownParam, 
+            out int leftBorderLimitingRectangle, out int upBorderLimitingRectangle, out int rightBorderLimitingRectangle, out int downBorderLimitingRectangle)
         {
-            _leftBorderLimitingRectangle = int.MaxValue;
-            _upBorderLimitingRectangle = int.MaxValue;
-            for (int node = 0; node < path.Count; node++) 
+            rightBorderLimitingRectangle = 0;
+            downBorderLimitingRectangle = 0;
+            leftBorderLimitingRectangle = int.MaxValue;
+            upBorderLimitingRectangle = int.MaxValue;
+
+            foreach (int node in path)
             {
                 int i, j;
-                grid.GetIndexes(path[node], out i, out j);
+                grid.GetIndexes(node, out i, out j);
 
-                if (j < _leftBorderLimitingRectangle) // left
-                {
-                    _leftBorderLimitingRectangle = j;
-                }
+                if (j < leftBorderLimitingRectangle) // left
+                    leftBorderLimitingRectangle = j;
 
-                if (_rightBorderLimitingRectangle < j) // right
-                {
-                    _rightBorderLimitingRectangle = j;
-                }
+                if (rightBorderLimitingRectangle < j) // right
+                    rightBorderLimitingRectangle = j;
 
-                if (i < _upBorderLimitingRectangle) // up
-                {
-                    _upBorderLimitingRectangle = i;
-                }
+                if (i < upBorderLimitingRectangle) // up
+                    upBorderLimitingRectangle = i;
 
-                if (_downBorderLimitingRectangle < i) // down
-                {
-                    _downBorderLimitingRectangle = i;
-                }
+                if (downBorderLimitingRectangle < i) // down
+                    downBorderLimitingRectangle = i;
             }
 
-            if (_leftBorderLimitingRectangle % 2 == 1) _leftBorderLimitingRectangle++;
-            if (_upBorderLimitingRectangle % 2 == 1) _upBorderLimitingRectangle++;
-            if (_rightBorderLimitingRectangle % 2 == 1) _rightBorderLimitingRectangle++;
-            if (_downBorderLimitingRectangle % 2 == 1) _downBorderLimitingRectangle++;
+            if (leftBorderLimitingRectangle % 2 == 1)
+                leftBorderLimitingRectangle++;
 
+            if (upBorderLimitingRectangle % 2 == 1)
+                upBorderLimitingRectangle++;
 
-            _leftBorderLimitingRectangle -= (2 * additLeftParam);
-            if (_leftBorderLimitingRectangle < 0) 
-                _leftBorderLimitingRectangle = 0;
+            if (rightBorderLimitingRectangle % 2 == 1)
+                rightBorderLimitingRectangle++;
 
-            _upBorderLimitingRectangle -= (2 * additUpParam);
-            if (_upBorderLimitingRectangle < 0) 
-                _upBorderLimitingRectangle = 0;
+            if (downBorderLimitingRectangle % 2 == 1)
+                downBorderLimitingRectangle++;
 
-            _rightBorderLimitingRectangle += (2 * additRightParam);
-            if (_rightBorderLimitingRectangle > grid.CountColumn) 
-                _rightBorderLimitingRectangle = (grid.CountColumn % 2 == 0) ? grid.CountColumn : grid.CountColumn - 1;
+            leftBorderLimitingRectangle -= (2 * additLeftParam);
+            if (leftBorderLimitingRectangle < 0) 
+                leftBorderLimitingRectangle = 0;
 
-            _downBorderLimitingRectangle += (2 * additDownParam);
-            if (_downBorderLimitingRectangle > grid.CountRows) 
-                _downBorderLimitingRectangle = (grid.CountRows % 2 == 0) ? grid.CountRows : grid.CountRows - 1;
+            upBorderLimitingRectangle -= (2 * additUpParam);
+            if (upBorderLimitingRectangle < 0) 
+                upBorderLimitingRectangle = 0;
+
+            rightBorderLimitingRectangle += (2 * additRightParam);
+            if (rightBorderLimitingRectangle > grid.CountColumn) 
+                rightBorderLimitingRectangle = (grid.CountColumn % 2 == 0) ? grid.CountColumn : grid.CountColumn - 1;
+
+            downBorderLimitingRectangle += (2 * additDownParam);
+            if (downBorderLimitingRectangle > grid.CountRows) 
+                downBorderLimitingRectangle = (grid.CountRows % 2 == 0) ? grid.CountRows : grid.CountRows - 1;
         }
 
         private bool WavePropagation(ref TraceGrid grid, int start)
@@ -605,17 +612,14 @@ namespace TracProg.Calculation.Algoriths
 
             bool isFoundFinish = false;
 
-            int i = 0;
-            int j = 0;
-
-            int prevCountAdded;
             int countAdded = 1;
             for (int index = 0; index < _set.Count && !isFoundFinish; )
             {
-                prevCountAdded = countAdded;
+                var prevCountAdded = countAdded;
                 countAdded = 0;
                 for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
                 {
+                    int i, j;
                     grid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
 
                     if (_set[index].NumLevel == numLevel - 1)
@@ -670,14 +674,14 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else
                 {
-                    if (grid.IsFreeMetal(i, j, _nonRealizedMetalID) && _set.Add(grid.GetNum(i, j), numLevel)) // Если свободный метал 
+                    if (grid.IsFreeMetal(i, j) && _set.Add(grid.GetNum(i, j), numLevel)) // Если свободный метал 
                     {
                         countAdded++;
                         return false;
                     }
                     else
                     {
-                        if (grid.IsOwnMetal(i, j, _nonRealizedMetalID) && _set.Add(grid.GetNum(i, j), numLevel)) // если свой метал
+                        if (grid.IsOwnMetal(i, j, _nonRealizedMetalId) && _set.Add(grid.GetNum(i, j), numLevel)) // если свой метал
                         {
                             countAdded++;
                             return true;
@@ -702,17 +706,14 @@ namespace TracProg.Calculation.Algoriths
             finish = -1;
             isFinishPin = false;
 
-            int i = 0;
-            int j = 0;
-
-            int prevCountAdded;
             int countAdded = 1;
             for (int index = 0; index < _set.Count && !isFoundFinish; )
             {
-                prevCountAdded = countAdded;
+                var prevCountAdded = countAdded;
                 countAdded = 0;
                 for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
                 {
+                    int i, j;
                     grid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
 
                     if (_set[index].NumLevel == numLevel - 1)
@@ -772,13 +773,13 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else
                 {
-                    if (grid.IsFreeMetal(i, j, _nonRealizedMetalID) && _set.Add(grid.GetNum(i, j), numLevel)) // Если свободный метал 
+                    if (grid.IsFreeMetal(i, j) && _set.Add(grid.GetNum(i, j), numLevel)) // Если свободный метал 
                     {
                         if (j - 1 >= 0 && j + 1 < grid.CountColumn && i - 1 >= 0 && i + 1 < grid.CountRows)
                         {
                             // условие что найдено междоузлие
-                            if (((grid[i, j - 1].MetalID != grid[i, j + 1].MetalID) && !string.IsNullOrEmpty(grid[i, j - 1].MetalID) && !string.IsNullOrEmpty(grid[i, j + 1].MetalID)) ||
-                                (grid[i - 1, j].MetalID != grid[i + 1, j].MetalID && !string.IsNullOrEmpty(grid[i - 1, j].MetalID) && !string.IsNullOrEmpty(grid[i + 1, j].MetalID)))
+                            if (((grid[i, j - 1].MetalId != grid[i, j + 1].MetalId) && !string.IsNullOrEmpty(grid[i, j - 1].MetalId) && !string.IsNullOrEmpty(grid[i, j + 1].MetalId)) ||
+                                (grid[i - 1, j].MetalId != grid[i + 1, j].MetalId && !string.IsNullOrEmpty(grid[i - 1, j].MetalId) && !string.IsNullOrEmpty(grid[i + 1, j].MetalId)))
                             {
                                 _virtualSet.Add(grid.GetNum(i, j), numLevel);
                             }
@@ -789,7 +790,7 @@ namespace TracProg.Calculation.Algoriths
                     }
                     else
                     {
-                        if (grid.IsOwnMetal(i, j, _nonRealizedMetalID) && _set.Add(grid.GetNum(i, j), numLevel)) // если свой метал
+                        if (grid.IsOwnMetal(i, j, _nonRealizedMetalId) && _set.Add(grid.GetNum(i, j), numLevel)) // если свой метал
                         {
                             countAdded++;
                             isFinishPin = false;
@@ -804,49 +805,43 @@ namespace TracProg.Calculation.Algoriths
             }
         }
 
-        private bool RestorationPath(ref TraceGrid grid, ref List<int> path)
+        private void RestorationPath(ref TraceGrid grid, ref List<int> path)
         {
             if (path == null)
             {
                 path = new List<int>();
             }
 
-            int start = _set[0].NumCell;
-
             Set.ElementSet elSet = _set[_set.Count - 1];
             int currentNumCell = elSet.NumCell;
             int currentLevel = elSet.NumLevel;
-
-            int i = 0;
-            int j = 0;
 
             path.Add(currentNumCell); // добавляем в путь
             while (currentLevel > 0)
             {
                 currentLevel--;
 
+                int i, j;
                 grid.GetIndexes(currentNumCell, out i, out j);
-                if (i - 1 >= 0 && SetMetalCell(ref grid, grid.GetNum(i - 1, j), currentLevel, ref currentNumCell, ref path)) // left
+                if (i - 1 >= 0 && SetMetalCell(grid.GetNum(i - 1, j), currentLevel, ref currentNumCell, ref path)) // left
                 {
                     continue;
                 }
-                if (i + 1 < grid.CountRows && SetMetalCell(ref grid, grid.GetNum(i + 1, j), currentLevel, ref currentNumCell, ref path)) // right
+                if (i + 1 < grid.CountRows && SetMetalCell(grid.GetNum(i + 1, j), currentLevel, ref currentNumCell, ref path)) // right
                 {
                     continue;
                 }
-                if (j - 1 >= 0 && SetMetalCell(ref grid, grid.GetNum(i, j - 1), currentLevel, ref currentNumCell, ref path)) // up
+                if (j - 1 >= 0 && SetMetalCell(grid.GetNum(i, j - 1), currentLevel, ref currentNumCell, ref path)) // up
                 {
                     continue;
                 }
-                if (j + 1 < grid.CountColumn && SetMetalCell(ref grid, grid.GetNum(i, j + 1), currentLevel, ref currentNumCell, ref path)) // down
+                if (j + 1 < grid.CountColumn && SetMetalCell(grid.GetNum(i, j + 1), currentLevel, ref currentNumCell, ref path)) // down
                 {
                     continue;
                 }
             }
-
-            return true;
         }
-        private bool SetMetalCell(ref TraceGrid grid, int numCell, int currentLevel, ref int currentNumCell, ref List<int> path)
+        private bool SetMetalCell(int numCell, int currentLevel, ref int currentNumCell, ref List<int> path)
         {
             if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
             {
@@ -861,8 +856,8 @@ namespace TracProg.Calculation.Algoriths
         {
             Bitmap bmp = new Bitmap(_newGrid.Width, _newGrid.Height);
             Graphics g = Graphics.FromImage(bmp);
-            g.TranslateTransform(-p0.X, -p0.Y);
-            g.Clear(System.Drawing.Color.Black);
+            g.TranslateTransform(-_p0.X, -_p0.Y);
+            g.Clear(Color.Black);
             _newGrid.Draw(g);
             bmp.Save(stageName + "_Stage.bmp");
         }
@@ -871,7 +866,7 @@ namespace TracProg.Calculation.Algoriths
         {
             Bitmap bmp = new Bitmap(_oldGrid.Width, _oldGrid.Height);
             Graphics g = Graphics.FromImage(bmp);
-            g.Clear(System.Drawing.Color.Black);
+            g.Clear(Color.Black);
             _oldGrid.Draw(g);
             bmp.Save(stageName + "_Stage.bmp");
         }

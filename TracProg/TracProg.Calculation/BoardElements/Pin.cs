@@ -16,7 +16,7 @@ namespace TracProg.Calculation.BoardElements
 
         public override void Draw(Graphics graphics)
         {
-            graphics.FillRectangle(new SolidBrush(Color.FromArgb(211, 211, 211)), X + 1, Y + 1, Width - 1, Height - 1);
+            graphics.FillRectangle(new SolidBrush(Color.DarkGray), X + 1, Y + 1, Width - 1, Height - 1);
             graphics.FillRectangle(new SolidBrush(Color), 
                 (X + 0.5f) + (((Width - 1) - ((Width - 1) / 2.0f))) / 2.0f, 
                 (Y + 0.5f) + (((Height - 1) - ((Height - 1) / 2.0f))) / 2.0f, 

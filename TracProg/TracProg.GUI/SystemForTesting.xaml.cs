@@ -17,7 +17,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TracProg.Calculation;
-using TracProg.Calculation.Algoriths;
+using TracProg.Calculation.Algorithms;
+using DataGrid = System.Windows.Controls.DataGrid;
 
 namespace TracProg.GUI
 {
@@ -39,18 +40,18 @@ namespace TracProg.GUI
             /// <summary>
             /// Номер эксперимента
             /// </summary>
-            public int ID { get; private set; }
+            public int ID { get; }
 
-            public int AllNets { get; private set; }
-            public int CountNonRealizedNetsBefore { get; private set; }
-            public int CountNonRealizedNetsAfter { get; private set; }
-            public float PercentageTracingBefore { get; private set; }
-            public float PercentageTracingAfter { get; private set; }
+            public int AllNets { get; }
+            public int CountNonRealizedNetsBefore { get; }
+            public int CountNonRealizedNetsAfter { get; }
+            public float PercentageTracingBefore { get; }
+            public float PercentageTracingAfter { get; }
 
             /// <summary>
             /// Время выполнения
             /// </summary>
-            public long Time { get; private set; }
+            public long Time { get; }
 
             internal static object GetRussianNameField(string name)
             {
@@ -94,7 +95,7 @@ namespace TracProg.GUI
 
         private int _id;
 
-        private List<RowTest> _lists;
+        private readonly List<RowTest> _lists;
 
         private string _filePathImport;
 
@@ -149,7 +150,7 @@ namespace TracProg.GUI
         {
             Dispatcher.Invoke(delegate()
             {
-                _progressBar.Visibility = System.Windows.Visibility.Collapsed;
+                _progressBar.Visibility = Visibility.Collapsed;
 
                 _testStartButton.IsEnabled = true;
                 _testStopButton.IsEnabled = false;
@@ -160,14 +161,17 @@ namespace TracProg.GUI
         private void _testStopButton_Click(object sender, RoutedEventArgs e)
         {
             Dispatcher.Invoke(delegate() { _statusBar.Text = string.Empty; });
-            Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Collapsed; });
+            Dispatcher.Invoke(delegate() { _progressBar.Visibility = Visibility.Collapsed; });
             if (_thread != null && _thread.ThreadState == System.Threading.ThreadState.Background)
             {
                 try
                 {
                     _thread.Abort();
                 }
-                catch (Exception ex) { }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
 
             UnlockInterface();
@@ -191,20 +195,20 @@ namespace TracProg.GUI
         {
             Configuration config = new Configuration();
 
-            Graphics old_g;
-            Graphics new_g;
+            Graphics oldG;
+            Graphics newG;
             WaveTraceAlgScheme li;
             _thread = new Thread(delegate()
                 {
-                    int countIter = 10;
-                    Dispatcher.Invoke(delegate() { _progressBar.Visibility = System.Windows.Visibility.Visible; });
+                    int countIter = 5;
+                    Dispatcher.Invoke(delegate() { _progressBar.Visibility = Visibility.Visible; });
                     Dispatcher.Invoke(delegate() { _progressBar.Maximum = countIter; });
                     Dispatcher.Invoke(delegate() { _progressBar.Value = 0; });
 
                     if (!_isSingleMode)
                     {
 
-                        if (_testSettings != null && _testSettings.IsConfigurationCompleted == true)
+                        if (_testSettings != null && _testSettings.IsConfigurationCompleted)
                         {
                             LockInterface();
                             _lists.Clear();
@@ -219,9 +223,9 @@ namespace TracProg.GUI
                                 li = new WaveTraceAlgScheme(config.Grid);
 
                                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                                old_g = Graphics.FromImage(bmp);
-                                old_g.Clear(System.Drawing.Color.Black);
-                                config.Grid.Draw(old_g);
+                                oldG = Graphics.FromImage(bmp);
+                                oldG.Clear(System.Drawing.Color.Black);
+                                config.Grid.Draw(oldG);
                                 string path = "test_clear.bmp";
                                 bmp.Save(path);
 
@@ -250,12 +254,12 @@ namespace TracProg.GUI
 
                                     countRealizedPinsBefore += localCountRealizedPinsBefore;
                                 }
-                                Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                                old_g = Graphics.FromImage(old_bmp);
-                                old_g.Clear(System.Drawing.Color.Black);
-                                config.Grid.Draw(old_g);
+                                Bitmap oldBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                                oldG = Graphics.FromImage(oldBmp);
+                                oldG.Clear(System.Drawing.Color.Black);
+                                config.Grid.Draw(oldG);
                                 path = _testSettings.FileOutPath + "\\test_old_" + i + ".bmp";
-                                old_bmp.Save(path);
+                                oldBmp.Save(path);
 
                                 RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
                                 retraceAlgScheme.IterFinishEvent += (numIter) =>
@@ -265,20 +269,20 @@ namespace TracProg.GUI
                                 int countRealizedPinsAfter;
                                 long time = retraceAlgScheme.Calculate(out countRealizedPinsAfter);
 
-                                Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                                new_g = Graphics.FromImage(new_bmp);
-                                new_g.Clear(System.Drawing.Color.Black);
+                                Bitmap newBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                                newG = Graphics.FromImage(newBmp);
+                                newG.Clear(System.Drawing.Color.Black);
 
-                                config.Grid.Draw(new_g);
+                                config.Grid.Draw(newG);
                                 path = _testSettings.FileOutPath + "\\test_new_" + i + ".bmp";
-                                new_bmp.Save(path);
-                                new_bmp = null;
-                                new_g = null;
+                                newBmp.Save(path);
+                                newBmp = null;
+                                newG = null;
 
                                 float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
                                 float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
                                 AddRow(time, config.Pins.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
-                                old_g = null;
+                                oldG = null;
                             }
 
                             DataRowsToExel(_testSettings.FileOutPath);
@@ -297,10 +301,10 @@ namespace TracProg.GUI
                                 average = average / _lists.Count;
                                 perAvAfter = perAvAfter / _lists.Count;
                                 perAvBefore = perAvBefore / _lists.Count;
-                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов до процедуры перетрассировки: " + perAvBefore.ToString());
-                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов после процедуры перетрассировки: " + perAvAfter.ToString());
-                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент улучшения трассировки: " + (perAvAfter - perAvBefore).ToString());
-                                Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average.ToString() + " ms | " + "Средняя разница в процентах трассировки: " + (perAvAfter - perAvBefore).ToString(); });
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов до процедуры перетрассировки: " + perAvBefore);
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент реализованных пинов после процедуры перетрассировки: " + perAvAfter);
+                                WriteAllTextToExel(_testSettings.FileOutPath, "Средний процент улучшения трассировки: " + (perAvAfter - perAvBefore));
+                                Dispatcher.Invoke(delegate() { _statusBar.Text = "Среднее время: " + average + " ms | " + "Средняя разница в процентах трассировки: " + (perAvAfter - perAvBefore); });
                             }
 
                             UnlockInterface();
@@ -311,9 +315,9 @@ namespace TracProg.GUI
                         config.ReadFromFile(_filePathImport);
                         li = new WaveTraceAlgScheme(config.Grid);
                         Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                        old_g = Graphics.FromImage(bmp);
-                        old_g.Clear(System.Drawing.Color.Black);
-                        config.Grid.Draw(old_g);
+                        oldG = Graphics.FromImage(bmp);
+                        oldG.Clear(System.Drawing.Color.Black);
+                        config.Grid.Draw(oldG);
                         string path = "test_clear.bmp";
                         bmp.Save(path);
 
@@ -342,12 +346,12 @@ namespace TracProg.GUI
 
                             countRealizedPinsBefore += localCountRealizedPinsBefore;
                         }
-                        Bitmap old_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                        old_g = Graphics.FromImage(old_bmp);
-                        old_g.Clear(System.Drawing.Color.Black);
-                        config.Grid.Draw(old_g);
+                        Bitmap oldBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                        oldG = Graphics.FromImage(oldBmp);
+                        oldG.Clear(System.Drawing.Color.Black);
+                        config.Grid.Draw(oldG);
                         path = "test_old.bmp";
-                        old_bmp.Save(path);
+                        oldBmp.Save(path);
 
                         RetraceAlgScheme retraceAlgScheme = new RetraceAlgScheme(config, countIter, countRealizedPinsBefore, allNonRealizedTracks);
                         retraceAlgScheme.IterFinishEvent += (numIter) =>
@@ -357,20 +361,19 @@ namespace TracProg.GUI
                         int countRealizedPinsAfter;
                         long time = retraceAlgScheme.Calculate(out countRealizedPinsAfter);
 
-                        Bitmap new_bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
-                        new_g = Graphics.FromImage(new_bmp);
-                        new_g.Clear(System.Drawing.Color.Black);
+                        Bitmap newBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
+                        newG = Graphics.FromImage(newBmp);
+                        newG.Clear(System.Drawing.Color.Black);
 
-                        config.Grid.Draw(new_g);
+                        config.Grid.Draw(newG);
                         path = "test_new.bmp";
-                        new_bmp.Save(path);
-                        new_bmp = null;
-                        new_g = null;
+                        newBmp.Save(path);
+                        newG = null;
 
                         float percentageTracingAfter = (float)((100.0 * countRealizedPinsAfter) / config.Pins.Count);
                         float percentageTracingBefore = (float)((100.0 * countRealizedPinsBefore) / config.Pins.Count);
                         AddRow(time, config.Pins.Count, countRealizedPinsBefore, countRealizedPinsAfter, percentageTracingBefore, percentageTracingAfter);
-                        old_g = null;
+                        oldG = null;
                     }
                 });
             _thread.IsBackground = true;
@@ -435,7 +438,7 @@ namespace TracProg.GUI
             _testSettings.ShowDialog();
         }
 
-        private System.Windows.Controls.DataGrid SetGrigProperties(System.Windows.Controls.DataGrid data)
+        private void SetGrigProperties(DataGrid data)
         {
             data.AutoGenerateColumns = true;
             data.CanUserAddRows = false;
@@ -446,7 +449,7 @@ namespace TracProg.GUI
             data.CanUserSortColumns = true;
             data.IsReadOnly = true;
             data.AlternatingRowBackground = System.Windows.Media.Brushes.LightGray;
-            return data;
+            return;
         }
     }
 }
