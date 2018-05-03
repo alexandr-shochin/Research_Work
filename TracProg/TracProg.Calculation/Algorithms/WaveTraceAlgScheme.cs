@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TracProg.Calculation.BoardElements;
 
-namespace TracProg.Calculation.Algoriths
+namespace TracProg.Calculation.Algorithms
 {
     public class WaveTraceAlgScheme
     {
-        private TraceGrid _grid;
-        private Set _set;
+        private readonly TraceGrid _grid;
+        private readonly Set _set;
 
         private string _netName;
         private Net _net;
@@ -25,8 +21,12 @@ namespace TracProg.Calculation.Algoriths
         /// <summary>
         /// Найти трассу
         /// </summary>
+        /// <param name="net"></param>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
-        /// <returns>Время, затраченное на работу алгоритма</returns>
+        /// <param name="netName"></param>
+        /// <param name="nonRealized"></param>
+        /// <param name="time">Время, затраченное на работу алгоритма</param>
+        /// <returns></returns>
         public bool FindPath(string netName, Net net, out List<List<int>> path, out List<int> nonRealized, out long time)
         {
             _netName = netName;
@@ -46,7 +46,7 @@ namespace TracProg.Calculation.Algoriths
                 int start = _net[numEl];
                 int finish;
 
-                if (WavePropagation(start, out finish) == true)
+                if (WavePropagation(start, out finish))
                 {
                     List<int> subPath;
                     RestorationPath(out subPath);
@@ -61,7 +61,7 @@ namespace TracProg.Calculation.Algoriths
             sw.Stop();
             time = sw.ElapsedMilliseconds;
 
-            _grid.MetallizeTrack(path, 1.0f, netName);
+            _grid.MetallizeTrack(path, netName);
 
             return true;
         }
@@ -81,9 +81,6 @@ namespace TracProg.Calculation.Algoriths
             bool isFoundFinish = false;
             finish = -1;
 
-            int i = 0;
-            int j = 0;
-
             int prevCountAdded;
             int countAdded = 1;
             for (int index = 0; index < _set.Count && !isFoundFinish;)
@@ -92,6 +89,7 @@ namespace TracProg.Calculation.Algoriths
                 countAdded = 0;
                 for (int elEdded = 0; elEdded < prevCountAdded; ++elEdded)
                 {
+                    int i, j;
                     _grid.GetIndexes(_set[index + elEdded].NumCell, out i, out j);
 
                     if (_set[index].NumLevel == numLevel - 1)
@@ -149,7 +147,7 @@ namespace TracProg.Calculation.Algoriths
                 }
                 else
                 {
-                    if(_grid.IsFreeMetal(i, j, _netName) && _set.Add(_grid.GetNum(i, j), numLevel)) // Если свободный метал 
+                    if(_grid.IsFreeMetal(i, j) && _set.Add(_grid.GetNum(i, j), numLevel)) // Если свободный метал 
                     {
                         countAdded++;
                         return false;
@@ -175,21 +173,17 @@ namespace TracProg.Calculation.Algoriths
         /// </summary>
         /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <returns></returns>
-        private bool RestorationPath(out List<int> path)
+        private void RestorationPath(out List<int> path)
         {
             path = new List<int>();
-            int start = _set[0].NumCell;
 
             Set.ElementSet elSet = _set[_set.Count - 1];
             int currentNumCell = elSet.NumCell;
             int currentLevel = elSet.NumLevel;
 
-            int i = 0;
-            int j = 0;
-
             // металлизируем
             TraceGrid.TraceGridElement el = _grid[currentNumCell];
-            el.MetalID = _netName;
+            el.MetalId = _netName;
             _grid[currentNumCell] = el;
 
             path.Add(currentNumCell); // добавляем в путь
@@ -197,6 +191,7 @@ namespace TracProg.Calculation.Algoriths
             {   
                 currentLevel--;
 
+                int i, j;
                 _grid.GetIndexes(currentNumCell, out i, out j);
                 if (j - 2 >= 0 && SetMetalCell(_grid.GetNum(i, j - 2), currentLevel, ref currentNumCell, ref path)) // left
                 {
@@ -215,15 +210,13 @@ namespace TracProg.Calculation.Algoriths
                     continue;
                 }
             }
-
-            return true;
         }
         private bool SetMetalCell(int numCell, int currentLevel, ref int currentNumCell, ref List<int> path)
         {
             if (_set.ContainsNumCell(numCell) && _set.GetNumLevel(numCell) == currentLevel)
             {
                 TraceGrid.TraceGridElement el = _grid[numCell];
-                el.MetalID = _netName;
+                el.MetalId = _netName;
                 _grid[numCell] = el;
 
                 path.Add(numCell);

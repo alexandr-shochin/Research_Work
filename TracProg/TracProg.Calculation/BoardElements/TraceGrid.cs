@@ -2,10 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace TracProg.Calculation.BoardElements
 {
@@ -14,22 +10,23 @@ namespace TracProg.Calculation.BoardElements
         public struct TraceGridElement
         {
             public IBoardElement ViewElement { get; set; }
-            public string MetalID { get; set; }
-            public float WidthMetal { get; set; }
+            public IBoardElement IsReTracedArea { get; set; }
+            public string MetalId { get; set; }
 
             public override string ToString()
             {
-                return !string.IsNullOrEmpty(MetalID) ? MetalID : string.Empty;
+                return !string.IsNullOrEmpty(MetalId) ? MetalId : string.Empty;
             }
         }
 
-        private Color _color = Color.White;
+        private readonly TraceGridElement[] _grid;
 
-        private TraceGridElement[] _grid;
+        private readonly float _brushWidth = 3.0f;
+        private readonly Color _brushColor = Color.FromArgb(183, 65, 14);
 
-        public TraceGrid(string ID, int width, int height, int koeff)
+        public TraceGrid(string id, int width, int height, int koeff)
         {
-            this.ID = ID;
+            Id = id;
 
             X = 0;
             Y = 0;
@@ -45,9 +42,9 @@ namespace TracProg.Calculation.BoardElements
 
         }
 
-        public TraceGrid(string ID, TraceGridElement[] grid, int x0, int y0, int width, int height, int koeff)
+        public TraceGrid(string id, TraceGridElement[] grid, int x0, int y0, int width, int height, int koeff)
         {
-            this.ID = ID;
+            Id = id;
             _grid = new TraceGridElement[grid.Length];
             Array.Copy(grid, 0,_grid, 0, grid.Length);
 
@@ -70,25 +67,19 @@ namespace TracProg.Calculation.BoardElements
         /// </summary>
         /// <param name="el">Добавляемый элемент</param>
         /// <returns>Код ошибки</returns>
-        public bool Add(IBoardElement el)
+        public void Add(IBoardElement el)
         {
-            Tuple<int, int> indexes;
-            if(GetIndexesRowCol(el.X, el.Y, out indexes))
+            int i, j;
+            if(GetIndexesRowCol(el.X, el.Y, out i, out j))
             {
                 try
                 {
-                    _grid[GetNum(indexes.Item1, indexes.Item2)].ViewElement = el;
-
-                    return true;
+                    _grid[GetNum(i, j)].ViewElement = el;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    return false;
+                    // ignored
                 }
-            }
-            else
-            {
-                return false;
             }
         }
 
@@ -97,14 +88,14 @@ namespace TracProg.Calculation.BoardElements
         /// </summary>
         /// <param name="el">Элемент для поиска</param>
         /// <returns></returns>
-        public bool Contains(IBoardElement el) // TODO
+        public bool Contains(IBoardElement el)
         {
-            Tuple<int, int> indexes;
-            if (GetIndexesRowCol(el.X, el.Y, out indexes))
+            int i, j;
+            if (GetIndexesRowCol(el.X, el.Y, out i, out j))
             {
                 try
                 {
-                    if (this[indexes.Item1, indexes.Item2].ViewElement == null)
+                    if (this[i, j].ViewElement == null)
                     {
                         return true;
                     }
@@ -125,92 +116,71 @@ namespace TracProg.Calculation.BoardElements
             }
         }
 
-        public bool Remove(IBoardElement el)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Compare(IBoardElement x, IBoardElement y)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int CompareTo(IBoardElement other)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Draw(Graphics graphics)
         {
             for (int el = 0; el < _grid.Length; el++)
             {
-                if (!string.IsNullOrEmpty(_grid[el].MetalID))
+                if (_grid[el].IsReTracedArea != null)
                 {
-                    Point p = GetCoordCell(el);
-                    graphics.FillRectangle(new SolidBrush(Color.Yellow), (p.X + (p.X + Koeff)) / 2, (p.Y + (p.Y + Koeff)) / 2, 1, 1);
+                    if (_grid[el].IsReTracedArea is ReTracedArea)
+                    {
+                        _grid[el].IsReTracedArea.Draw(graphics);
+                    }
                 }
             }
 
             for (int el = 0; el < _grid.Length; el++)
             {
-                if (_grid[el].ViewElement != null && !string.IsNullOrEmpty(_grid[el].MetalID))
+                if (_grid[el].ViewElement != null && !string.IsNullOrEmpty(_grid[el].MetalId))
                 {
-                    Point centerP = GetCoordCell(el);
+                    Point centerPoint = GetCoordCell(el);
 
-                    Tuple<int, int> pair;
-                    GetIndexesRowCol(centerP.X, centerP.Y, out pair);
-                    int i = pair.Item1;
-                    int j = pair.Item2;
+                    int i, j;
+                    GetIndexesRowCol(centerPoint.X, centerPoint.Y, out i, out j);
 
-                    TraceGridElement center = this[i, j];
+                    TraceGridElement centerElement = this[i, j];
 
                     if (j - 2 >= 0)
                     {
-                        TraceGridElement up = this[i, j - 2];
-                        if (up.ViewElement != null && center.MetalID == up.MetalID)
+                        TraceGridElement upElement = this[i, j - 2];
+                        if (upElement.ViewElement != null && centerElement.MetalId == upElement.MetalId)
                         {
-                            Point upP = GetCoordCell(i, j - 2);
-                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
-                                new Point((upP.X + (upP.X + Koeff)) / 2, (upP.Y + (upP.Y + Koeff)) / 2));
+                            Point upPoint = GetCoordCell(i, j - 2);
+                            DrawLine(ref graphics, centerPoint, upPoint);
                         }
                     }
 
-                    if (j + 2 < this.CountColumn)
+                    if (j + 2 < CountColumn)
                     {
-                        TraceGridElement down = this[i, j + 2];
-                        if (down.ViewElement != null && center.MetalID == down.MetalID)
+                        TraceGridElement downElement = this[i, j + 2];
+                        if (downElement.ViewElement != null && centerElement.MetalId == downElement.MetalId)
                         {
-                            Point downP = GetCoordCell(i, j + 2);
-                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
-                                new Point((downP.X + (downP.X + Koeff)) / 2, (downP.Y + (downP.Y + Koeff)) / 2));
+                            Point downPoint = GetCoordCell(i, j + 2);
+                            DrawLine(ref graphics, centerPoint, downPoint);
                         }
                     }
 
                     if (i - 2 >= 0)
                     {
-                        TraceGridElement left = this[i - 2, j];
-                        if (left.ViewElement != null && center.MetalID == left.MetalID)
+                        TraceGridElement leftElement = this[i - 2, j];
+                        if (leftElement.ViewElement != null && centerElement.MetalId == leftElement.MetalId)
                         {
-                            Point leftP = GetCoordCell(i - 2, j);
-                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
-                                new Point((leftP.X + (leftP.X + Koeff)) / 2, (leftP.Y + (leftP.Y + Koeff)) / 2));
+                            Point leftPoint = GetCoordCell(i - 2, j);
+                            DrawLine(ref graphics, centerPoint, leftPoint);
                         }
                     }
 
-                    if (i + 2 < this.CountRows)
+                    if (i + 2 < CountRows)
                     {
-                        TraceGridElement right = this[i + 2, j];
-                        if (right.ViewElement != null && center.MetalID == right.MetalID)
+                        TraceGridElement rightElement = this[i + 2, j];
+                        if (rightElement.ViewElement != null && centerElement.MetalId == rightElement.MetalId)
                         {
-                            Point rightP = GetCoordCell(i + 2, j);
-                            graphics.DrawLine(new Pen(new SolidBrush(Color.FromArgb(183, 65, 14))),
-                                new Point((centerP.X + (centerP.X + Koeff)) / 2, (centerP.Y + (centerP.Y + Koeff)) / 2),
-                                new Point((rightP.X + (rightP.X + Koeff)) / 2, (rightP.Y + (rightP.Y + Koeff)) / 2));
+                            Point rightPoint = GetCoordCell(i + 2, j);
+                            DrawLine(ref graphics, centerPoint, rightPoint);
                         }
                     }
+
+                    
                 }
             }
 
@@ -224,32 +194,35 @@ namespace TracProg.Calculation.BoardElements
                     }
                 }
             }
-
+        }
+        private void DrawLine(ref Graphics graphics, Point pointFrom, Point pointTo)
+        {
+            graphics.DrawLine(new Pen(new SolidBrush(_brushColor), _brushWidth),
+                new Point((pointFrom.X + pointFrom.X + Koeff) / 2, (pointFrom.Y + pointFrom.Y + Koeff) / 2),
+                new Point((pointTo.X + pointTo.X + Koeff) / 2, (pointTo.Y + pointTo.Y + Koeff) / 2));
         }
 
-        public void MetallizeTrack(List<List<int>> tracks, float widthMetal, string metalID)
+        public void MetallizeTrack(List<List<int>> tracks, string metalId)
         {
             foreach (List<int> track in tracks)
             {
-                InternalMetallizeTrack(track, widthMetal, metalID);
+                InternalMetallizeTrack(track, metalId);
             }       
         }
 
-        private void InternalMetallizeTrack(List<int> track, float widthMetal, string metalID)
+        private void InternalMetallizeTrack(List<int> track, string metalId)
         { 
             foreach (int node in track)
             {
                 if (!IsPin(node))
                 {
                     Point p = GetCoordCell(node);
-                    _grid[node].ViewElement = new Metal(metalID, p.X, p.Y, 1, 1);
-                    _grid[node].MetalID = metalID;
-                    _grid[node].WidthMetal = widthMetal;
+                    _grid[node].ViewElement = new Metal(metalId, p.X, p.Y, 1, 1);
+                    _grid[node].MetalId = metalId;
                 }
                 else
                 {
-                    _grid[node].MetalID = metalID;
-                    _grid[node].WidthMetal = widthMetal;
+                    _grid[node].MetalId = metalId;
                 }
             }
         }
@@ -317,6 +290,8 @@ namespace TracProg.Calculation.BoardElements
         /// Получить номера строки и столбца элемента в сетке по номеру ячейки
         /// </summary>
         /// <param name="num">Номер ячейки</param>
+        /// <param name="i"></param>
+        /// <param name="j"></param>
         /// <returns></returns>
         public void GetIndexes(int num, out int i, out int j)
         {
@@ -379,20 +354,21 @@ namespace TracProg.Calculation.BoardElements
         /// Проверка, что данная ячейка является металом
         /// </summary>
         /// <param name="num">Номер ячейки</param>
+        /// <param name="metalId"></param>
         /// <returns></returns>
-        public bool IsOwnMetal(int num, string metalID)
+        public bool IsOwnMetal(int num, string metalId)
         {
             if (num < 0 || num >= _grid.Length)
             {
                 throw new OverflowException("Номер ячейки находился вне границ.");
             }
 
-            return !string.IsNullOrEmpty(_grid[num].MetalID) && _grid[num].MetalID == metalID;
+            return !string.IsNullOrEmpty(_grid[num].MetalId) && _grid[num].MetalId == metalId;
         }
 
-        public bool IsOwnMetal(int i, int j, string metalID)
+        public bool IsOwnMetal(int i, int j, string metalId)
         {
-            return IsOwnMetal(GetNum(i, j), metalID);
+            return IsOwnMetal(GetNum(i, j), metalId);
         }
 
         /// <summary>
@@ -450,7 +426,7 @@ namespace TracProg.Calculation.BoardElements
             return IsProhibitionZone(GetNum(i, j));
         }
 
-        public bool IsFreeMetal(int i, int j, string metalID)
+        public bool IsFreeMetal(int i, int j)
         {
             if (i < 0 || i >= CountRows)
             {
@@ -464,9 +440,9 @@ namespace TracProg.Calculation.BoardElements
             bool result = true;
             if (j > 0 && j < CountColumn - 1)
             {
-                if (!string.IsNullOrEmpty(this[i, j - 1].MetalID) && !string.IsNullOrEmpty(this[i, j + 1].MetalID))
+                if (!string.IsNullOrEmpty(this[i, j - 1].MetalId) && !string.IsNullOrEmpty(this[i, j + 1].MetalId))
                 {
-                    if (this[i, j - 1].MetalID == this[i, j + 1].MetalID)
+                    if (this[i, j - 1].MetalId == this[i, j + 1].MetalId)
                     {
                         result = false;
                     }
@@ -474,16 +450,16 @@ namespace TracProg.Calculation.BoardElements
             }
             if (i > 0 && i < CountRows - 1)
             {
-                if (!string.IsNullOrEmpty(this[i - 1, j].MetalID) && !string.IsNullOrEmpty(this[i + 1, j].MetalID))
+                if (!string.IsNullOrEmpty(this[i - 1, j].MetalId) && !string.IsNullOrEmpty(this[i + 1, j].MetalId))
                 {
-                    if (this[i - 1, j].MetalID == this[i + 1, j].MetalID)
+                    if (this[i - 1, j].MetalId == this[i + 1, j].MetalId)
                     {
                         result = false;
                     }
                 }
             }
 
-            return !IsProhibitionZone(i, j) && !IsPin(i, j) && string.IsNullOrEmpty(this[i, j].MetalID) && result;
+            return !IsProhibitionZone(i, j) && !IsPin(i, j) && string.IsNullOrEmpty(this[i, j].MetalId) && result;
         }
 
         /// <summary>
@@ -532,13 +508,13 @@ namespace TracProg.Calculation.BoardElements
                 string str = "";
                 for (int j = 0; j < CountColumn; j++)
                 {
-                    string _str = "n0";
-                    if (!string.IsNullOrEmpty(this[i, j].MetalID))
+                    string tmp = "n0";
+                    if (!string.IsNullOrEmpty(this[i, j].MetalId))
                     {
-                        _str = this[i, j].MetalID;
+                        tmp = this[i, j].MetalId;
                     }
 
-                    str += _str;
+                    str += tmp;
                 }
                 lines.Add(str);
             }
@@ -554,33 +530,44 @@ namespace TracProg.Calculation.BoardElements
         /// </summary>
         /// <param name="x">Координата ячейки по оси X</param>
         /// <param name="y">Координата ячейки по оси Y</param>
+        /// <param name="i">Номер строки</param>
+        /// <param name="j">Номер столбца</param>
         /// <returns>Значение строки и столбца</returns>
-        private bool GetIndexesRowCol(int x, int y, out Tuple<int, int> indexes) // TODO обработать ошибки
+        private bool GetIndexesRowCol(int x, int y, out int i, out int j)
         {
-            indexes = null;
+            if (x < 0 || x >= Right)
+            {
+                throw new OverflowException("Координата x находилась вне границ.");
+            }
+            if (y < 0 || y >= Bottom)
+            {
+                throw new OverflowException("Координата y находилась вне границ.");
+            }
+
+            i = -1;
+            j = -1;
 
             try
             {
-                int i = 0;
-                int tmpX = X;
-                while (tmpX != x)
-                {
-                    tmpX += Koeff;
-                    i+=2;
-                }
-
-                int j = 0;
+                i = 0;
                 int tmpY = Y;
                 while (tmpY != y)
                 {
                     tmpY += Koeff;
+                    i += 2;
+                }
+
+                j = 0;
+                int tmpX = X;
+                while (tmpX != x)
+                {
+                    tmpX += Koeff;
                     j+=2;
                 }
 
-                indexes = Tuple.Create(j, i);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
@@ -590,7 +577,7 @@ namespace TracProg.Calculation.BoardElements
 
         #region Properties
 
-        public string ID { get; private set; }
+        public string Id { get; }
 
         /// <summary>
         /// Возвращает координату по оси Y прямоугольной области, являющуюся суммой значений свойств Y и Height.
@@ -600,7 +587,7 @@ namespace TracProg.Calculation.BoardElements
         /// <summary>
         /// Возвращает высоту прямоугольной области
         /// </summary>
-        public int Height { get; private set; }
+        public int Height { get; }
 
         /// <summary>
         /// Данное свойство возвращает значение true, если значения всех свойств Width, Height, X и Y равны нулю. В противном случае возвращается значение false.
@@ -625,23 +612,18 @@ namespace TracProg.Calculation.BoardElements
         /// <summary>
         /// Ширина прямоугольной области
         /// </summary>
-        public int Width { get; private set; }
+        public int Width { get; }
 
         /// <summary>
         /// Возвращает координату по оси X левого верхнего угла прямоугольной области
         /// </summary>
-        public int X { get; private set; }
+        public int X { get; }
         /// <summary>
         /// Возвращает координату по оси Y левого верхнего угла прямоугольной области
         /// </summary>
-        public int Y { get; private set; }
+        public int Y { get;  }
 
-        public int Koeff { get; private set; }
-
-        /// <summary>
-        /// Возвращает или задаёт цвет для узлов сетки
-        /// </summary>
-        public Color Color { get { return _color; } }
+        public int Koeff { get;  }
 
         /// <summary>
         /// Количество ячеек в сетке
@@ -664,12 +646,12 @@ namespace TracProg.Calculation.BoardElements
         /// <summary>
         /// Количество столбцов в сетке
         /// </summary>
-        public int CountColumn { get; private set; }
+        public int CountColumn { get; }
 
         /// <summary>
         /// Количество строк в сетке
         /// </summary>
-        public int CountRows { get; private set; }
+        public int CountRows { get; }
 
         #endregion
     }
