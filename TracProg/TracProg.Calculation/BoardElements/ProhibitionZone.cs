@@ -19,6 +19,6 @@ namespace TracProg.Calculation.BoardElements
             graphics.FillRectangle(new SolidBrush(Color), X + 1, Y + 1, Width - 1, Height - 1);
         }
 
-        public override Color Color { get { return Color.Green; } }
+        public override Color Color { get { return Color.Black; } }
     }
 }

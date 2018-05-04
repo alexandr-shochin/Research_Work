@@ -19,10 +19,11 @@ namespace TracProg.Calculation.BoardElements
             }
         }
 
-        private readonly TraceGridElement[] _grid;
+        private readonly List<Point> _nodes = new List<Point>();
+        private readonly float _brushWidth = 5.0f;
+        private readonly Color _brushColor = Color.FromArgb(70, 130, 180);
 
-        private readonly float _brushWidth = 3.0f;
-        private readonly Color _brushColor = Color.FromArgb(183, 65, 14);
+        private readonly TraceGridElement[] _grid;
 
         public TraceGrid(string id, int width, int height, int koeff)
         {
@@ -31,8 +32,8 @@ namespace TracProg.Calculation.BoardElements
             X = 0;
             Y = 0;
 
-            Width = width + 1;
-            Height = height + 1;
+            Width = width + 2;
+            Height = height + 2;
 
             Koeff = koeff;
 
@@ -40,6 +41,7 @@ namespace TracProg.Calculation.BoardElements
             CountRows = (Height / Koeff) * 2 - 1;
             _grid = new TraceGridElement[CountColumn * CountRows];
 
+            GenerateCoord();
         }
 
         public TraceGrid(string id, TraceGridElement[] grid, int x0, int y0, int width, int height, int koeff)
@@ -51,13 +53,15 @@ namespace TracProg.Calculation.BoardElements
             X = x0;
             Y = y0;
 
-            Width = width + 1;
-            Height = height + 1;
+            Width = width + 2;
+            Height = height + 2;
 
             Koeff = koeff;
 
             CountColumn = (Width / Koeff) * 2 - 1;
             CountRows = (Height / Koeff) * 2 - 1;
+
+            GenerateCoord();
         }
 
         #region Public methods
@@ -118,16 +122,21 @@ namespace TracProg.Calculation.BoardElements
 
         public void Draw(Graphics graphics)
         {
-            for (int el = 0; el < _grid.Length; el++)
-            {
-                if (_grid[el].IsReTracedArea != null)
-                {
-                    if (_grid[el].IsReTracedArea is ReTracedArea)
-                    {
-                        _grid[el].IsReTracedArea.Draw(graphics);
-                    }
-                }
-            }
+            //foreach (Point point in _nodes)
+            //{
+            //    graphics.FillRectangle(new SolidBrush(Color), point.X, point.Y, 1, 1);
+            //}
+
+            //for (int el = 0; el < _grid.Length; el++)
+            //{
+            //    if (_grid[el].IsReTracedArea != null)
+            //    {
+            //        if (_grid[el].IsReTracedArea is ReTracedArea)
+            //        {
+            //            _grid[el].IsReTracedArea.Draw(graphics);
+            //        }
+            //    }
+            //}
 
             for (int el = 0; el < _grid.Length; el++)
             {
@@ -179,8 +188,6 @@ namespace TracProg.Calculation.BoardElements
                             DrawLine(ref graphics, centerPoint, rightPoint);
                         }
                     }
-
-                    
                 }
             }
 
@@ -188,7 +195,7 @@ namespace TracProg.Calculation.BoardElements
             {
                 if (_grid[el].ViewElement != null)
                 {
-                    if (_grid[el].ViewElement is Pin || _grid[el].ViewElement is ProhibitionZone)
+                    if (_grid[el].ViewElement is Pin || _grid[el].ViewElement is ProhibitionZone || _grid[el].ViewElement is Metal)
                     {
                         _grid[el].ViewElement.Draw(graphics);
                     }
@@ -202,28 +209,58 @@ namespace TracProg.Calculation.BoardElements
                 new Point((pointTo.X + pointTo.X + Koeff) / 2, (pointTo.Y + pointTo.Y + Koeff) / 2));
         }
 
-        public void MetallizeTrack(List<List<int>> tracks, string metalId)
+        public void MetallizeTracks(List<List<int>> tracks, string metalId)
         {
             foreach (List<int> track in tracks)
             {
                 InternalMetallizeTrack(track, metalId);
-            }       
+            }
+        }
+
+        public void UnmetalizeTracks(List<List<int>> tracks)
+        {
+            foreach (List<int> track in tracks)
+            {
+                InternalUnmetallizeTrack(track);
+            }
         }
 
         private void InternalMetallizeTrack(List<int> track, string metalId)
         { 
             foreach (int node in track)
             {
+                Point p = GetCoordCell(node);
                 if (!IsPin(node))
                 {
-                    Point p = GetCoordCell(node);
-                    _grid[node].ViewElement = new Metal(metalId, p.X, p.Y, 1, 1);
+                    _grid[node].ViewElement = new Metal(metalId, p.X, p.Y, 1 * Koeff, 1 * Koeff);
                     _grid[node].MetalId = metalId;
                 }
                 else
                 {
                     _grid[node].MetalId = metalId;
+                    (_grid[node].ViewElement as Pin).IsRealized = true;
                 }
+            }
+        }
+
+        private void InternalUnmetallizeTrack(List<int> track)
+        {
+            foreach (int node in track)
+            {
+                TraceGridElement el = _grid[node];
+                el.MetalId = null;
+                if (_grid[node].ViewElement is Metal)
+                {
+                    el.ViewElement = null;
+                    el.IsReTracedArea = null;
+                }
+
+                if (_grid[node].ViewElement is Pin)
+                {
+                    (el.ViewElement as Pin).IsRealized = false;
+                }
+
+                _grid[node] = el;
             }
         }
 
@@ -525,6 +562,36 @@ namespace TracProg.Calculation.BoardElements
 
         #region Private methods
 
+        private void GenerateCoord()
+        {
+            _nodes.Clear();
+
+            int[] xs = new int[(Width / Koeff) + 2];
+            int[] ys = new int[(Height / Koeff) + 2];
+
+            int tmpX = 0;
+            for (int i = 0; i < xs.Length; ++i)
+            {
+                xs[i] = tmpX;
+                tmpX += Koeff;
+            }
+
+            int tmpY = 0;
+            for (int i = 0; i < ys.Length; ++i)
+            {
+                ys[i] = tmpY;
+                tmpY += Koeff;
+            }
+
+            foreach (int x in xs)
+            {
+                foreach (int y in ys)
+                {
+                    _nodes.Add(new Point(x, y));
+                }
+            }
+        }
+
         /// <summary>
         /// Получить значение строки и столбца по координатам ячейки
         /// </summary>
@@ -603,6 +670,9 @@ namespace TracProg.Calculation.BoardElements
         /// Возвращает координату по оси X прямоугольной области, являющуюся суммой значений свойств X и Width.
         /// </summary>
         public int Right { get { return X + Width; } }
+
+        public Color Color { get { return Color.Black; }
+        }
 
         /// <summary>
         /// Возвращает координату по оси Y верхнего края прямоугольной области

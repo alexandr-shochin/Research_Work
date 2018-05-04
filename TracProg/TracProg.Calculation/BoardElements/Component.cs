@@ -19,9 +19,9 @@ namespace TracProg.Calculation.BoardElements
             if (el.X >= X && el.X <= Right && el.Y <= Y && el.Y >= Bottom) // если не выходит за границы компоненты 
             {
                 IBoardElement child;
-                if (!_childs.TryGetValue(el.ID, out child))
+                if (!Childs.TryGetValue(el.ID, out child))
                 {
-                    _childs[el.ID] = el;
+                    Childs[el.ID] = el;
                     return true;
                 }
             }
@@ -34,7 +34,7 @@ namespace TracProg.Calculation.BoardElements
             graphics.FillRectangle(new SolidBrush(Color), X, Y, Width, Height); // сначала отрисовываем сам компонент
 
             // отрисовываем pin'ы
-            foreach (var pin in _childs)
+            foreach (var pin in Childs)
             {
                 pin.Value.Draw(graphics);
             }

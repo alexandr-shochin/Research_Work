@@ -22,25 +22,19 @@ namespace TracProg.Calculation.Algorithms
         /// Найти трассу
         /// </summary>
         /// <param name="net"></param>
-        /// <param name="path">Итоговый список с номерами ячеек, которые вошли в качесте пути для данной трассы</param>
         /// <param name="netName"></param>
-        /// <param name="nonRealized"></param>
-        /// <param name="time">Время, затраченное на работу алгоритма</param>
+        /// <param name="realizedTracks"></param>
+        /// <param name="nonRealizedPins"></param>
         /// <returns></returns>
-        public bool FindPath(string netName, Net net, out List<List<int>> path, out List<int> nonRealized, out long time)
+        public void FindPath(string netName, Net net, out List<List<int>> realizedTracks, out List<int> nonRealizedPins)
         {
             _netName = netName;
             _net = net;
-            nonRealized = new List<int>();
+            nonRealizedPins = new List<int>();
 
             _set.Clear();
 
-            time = 0;
-            path = new List<List<int>>();
-
-            Stopwatch sw = new Stopwatch();
-            sw.Reset();
-            sw.Start();
+            realizedTracks = new List<List<int>>();
             for (int numEl = 0; numEl < _net.Count; numEl++)
             {
                 int start = _net[numEl];
@@ -51,19 +45,15 @@ namespace TracProg.Calculation.Algorithms
                     List<int> subPath;
                     RestorationPath(out subPath);
                     _set.Clear();
-                    path.Add(subPath);
+                    realizedTracks.Add(subPath);
                 }
                 else //если какой-то пин не смогли реализовать
                 {
-                    nonRealized.Add(start);
+                    nonRealizedPins.Add(start);
                 }
             }
-            sw.Stop();
-            time = sw.ElapsedMilliseconds;
 
-            _grid.MetallizeTrack(path, netName);
-
-            return true;
+            _grid.MetallizeTracks(realizedTracks, netName);
         }
 
         /// <summary>
