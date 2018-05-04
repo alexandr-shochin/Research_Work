@@ -11,9 +11,7 @@ namespace TracProg.Calculation.BoardElements
     {
         private Rectangle _rect = new Rectangle();
 
-        protected Dictionary<string, IBoardElement> _childs = new Dictionary<string, IBoardElement>();
-
-        protected BoardElement() { }
+        protected readonly Dictionary<string, IBoardElement> Childs = new Dictionary<string, IBoardElement>();
 
         protected BoardElement(string ID, int x, int y, int width, int height)
         {
@@ -24,9 +22,9 @@ namespace TracProg.Calculation.BoardElements
         public virtual bool Add(IBoardElement el)
         {
             IBoardElement child;
-            if (!_childs.TryGetValue(el.ID, out child))
+            if (!Childs.TryGetValue(el.ID, out child))
             {
-                _childs[el.ID] = el;
+                Childs[el.ID] = el;
                 return true;
             }
 
@@ -34,18 +32,18 @@ namespace TracProg.Calculation.BoardElements
         }
         public virtual bool Remove(IBoardElement el)
         {
-            return _childs.Remove(el.ID);
+            return Childs.Remove(el.ID);
         }
         public virtual bool Contains(IBoardElement el)
         {
-            return _childs.ContainsKey(el.ID);
+            return Childs.ContainsKey(el.ID);
         }
 
         public virtual void Draw(Graphics graphics) { }
 
         public override string ToString()
         {
-            return "(" + X + "," + Y + ") W:" + Width + " H:" + Height + " Childs: " + _childs.Count; ;
+            return "(" + X + "," + Y + ") W:" + Width + " H:" + Height + " Childs: " + Childs.Count; ;
         }
 
         public string ID { get; private set; }

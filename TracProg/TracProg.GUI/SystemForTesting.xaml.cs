@@ -224,7 +224,7 @@ namespace TracProg.GUI
 
                                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 oldG = Graphics.FromImage(bmp);
-                                oldG.Clear(System.Drawing.Color.Black);
+                                oldG.Clear(System.Drawing.Color.White);
                                 config.Grid.Draw(oldG);
                                 string path = "test_clear.bmp";
                                 bmp.Save(path);
@@ -235,13 +235,12 @@ namespace TracProg.GUI
                                 {
                                     int localCountRealizedPinsBefore = net.Value.Count;
 
-                                    long localTime;
-                                    List<List<int>> track;
-                                    List<int> nonRealized;
-                                    bool flag = li.FindPath(net.Key, net.Value, out track, out nonRealized, out localTime);
-                                    if (flag && nonRealized.Count != 0)
+                                    List<List<int>> realizedTracks;
+                                    List<int> nonRealizedPins;
+                                    li.FindPath(net.Key, net.Value, out realizedTracks, out nonRealizedPins);
+                                    if (nonRealizedPins.Count != 0)
                                     {
-                                        localCountRealizedPinsBefore -= nonRealized.Count;
+                                        localCountRealizedPinsBefore -= nonRealizedPins.Count;
 
                                         List<int> allPins = new List<int>();
                                         for (int n = 0; n < net.Value.Count; ++n)
@@ -249,14 +248,14 @@ namespace TracProg.GUI
                                             allPins.Add(net.Value[n]);
                                         }
 
-                                        allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealized);
+                                        allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealizedPins);
                                     }
 
                                     countRealizedPinsBefore += localCountRealizedPinsBefore;
                                 }
                                 Bitmap oldBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 oldG = Graphics.FromImage(oldBmp);
-                                oldG.Clear(System.Drawing.Color.Black);
+                                oldG.Clear(System.Drawing.Color.White);
                                 config.Grid.Draw(oldG);
                                 path = _testSettings.FileOutPath + "\\test_old_" + i + ".bmp";
                                 oldBmp.Save(path);
@@ -271,7 +270,7 @@ namespace TracProg.GUI
 
                                 Bitmap newBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 newG = Graphics.FromImage(newBmp);
-                                newG.Clear(System.Drawing.Color.Black);
+                                newG.Clear(System.Drawing.Color.White);
 
                                 config.Grid.Draw(newG);
                                 path = _testSettings.FileOutPath + "\\test_new_" + i + ".bmp";
@@ -316,7 +315,7 @@ namespace TracProg.GUI
                         li = new WaveTraceAlgScheme(config.Grid);
                         Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                         oldG = Graphics.FromImage(bmp);
-                        oldG.Clear(System.Drawing.Color.Black);
+                        oldG.Clear(System.Drawing.Color.White);
                         config.Grid.Draw(oldG);
                         string path = "test_clear.bmp";
                         bmp.Save(path);
@@ -327,13 +326,12 @@ namespace TracProg.GUI
                         {
                             int localCountRealizedPinsBefore = net.Value.Count;
 
-                            long localTime;
-                            List<List<int>> track;
-                            List<int> nonRealized;
-                            bool flag = li.FindPath(net.Key, net.Value, out track, out nonRealized, out localTime);
-                            if (nonRealized.Count != 0)
+                            List<List<int>> realizedTracks;
+                            List<int> nonRealizedPins;
+                            li.FindPath(net.Key, net.Value, out realizedTracks, out nonRealizedPins);
+                            if (nonRealizedPins.Count != 0)
                             {
-                                localCountRealizedPinsBefore -= nonRealized.Count;
+                                localCountRealizedPinsBefore -= nonRealizedPins.Count;
 
                                 List<int> allPins = new List<int>();
                                 for (int n = 0; n < net.Value.Count; ++n)
@@ -341,14 +339,14 @@ namespace TracProg.GUI
                                     allPins.Add(net.Value[n]);
                                 }
 
-                                allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealized);
+                                allNonRealizedTracks[net.Key] = Tuple.Create(allPins, nonRealizedPins);
                             }
 
                             countRealizedPinsBefore += localCountRealizedPinsBefore;
                         }
                         Bitmap oldBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                         oldG = Graphics.FromImage(oldBmp);
-                        oldG.Clear(System.Drawing.Color.Black);
+                        oldG.Clear(System.Drawing.Color.White);
                         config.Grid.Draw(oldG);
                         path = "test_old.bmp";
                         oldBmp.Save(path);
@@ -363,7 +361,7 @@ namespace TracProg.GUI
 
                         Bitmap newBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                         newG = Graphics.FromImage(newBmp);
-                        newG.Clear(System.Drawing.Color.Black);
+                        newG.Clear(System.Drawing.Color.White);
 
                         config.Grid.Draw(newG);
                         path = "test_new.bmp";
