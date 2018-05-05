@@ -25,6 +25,8 @@ namespace TracProg.Calculation.BoardElements
 
         private readonly TraceGridElement[] _grid;
 
+        private List<List<int>> _tracks = new List<List<int>>();
+
         public TraceGrid(string id, int width, int height, int koeff)
         {
             Id = id;
@@ -122,21 +124,21 @@ namespace TracProg.Calculation.BoardElements
 
         public void Draw(Graphics graphics)
         {
-            //foreach (Point point in _nodes)
-            //{
-            //    graphics.FillRectangle(new SolidBrush(Color), point.X, point.Y, 1, 1);
-            //}
+            foreach (Point point in _nodes)
+            {
+                graphics.FillRectangle(new SolidBrush(Color), point.X, point.Y, 1, 1);
+            }
 
-            //for (int el = 0; el < _grid.Length; el++)
-            //{
-            //    if (_grid[el].IsReTracedArea != null)
-            //    {
-            //        if (_grid[el].IsReTracedArea is ReTracedArea)
-            //        {
-            //            _grid[el].IsReTracedArea.Draw(graphics);
-            //        }
-            //    }
-            //}
+            for (int el = 0; el < _grid.Length; el++)
+            {
+                if (_grid[el].IsReTracedArea != null)
+                {
+                    if (_grid[el].IsReTracedArea is ReTracedArea)
+                    {
+                        _grid[el].IsReTracedArea.Draw(graphics);
+                    }
+                }
+            }
 
             for (int el = 0; el < _grid.Length; el++)
             {
@@ -248,15 +250,18 @@ namespace TracProg.Calculation.BoardElements
             foreach (int node in track)
             {
                 TraceGridElement el = _grid[node];
-                el.MetalId = null;
+                
                 if (_grid[node].ViewElement is Metal)
                 {
+                    el.MetalId = null;
                     el.ViewElement = null;
                     el.IsReTracedArea = null;
                 }
 
                 if (_grid[node].ViewElement is Pin)
                 {
+                    el.MetalId = null;
+                    el.IsReTracedArea = null;
                     (el.ViewElement as Pin).IsRealized = false;
                 }
 
@@ -644,7 +649,7 @@ namespace TracProg.Calculation.BoardElements
 
         #region Properties
 
-        public string Id { get; }
+        public string Id { get; private set; }
 
         /// <summary>
         /// Возвращает координату по оси Y прямоугольной области, являющуюся суммой значений свойств Y и Height.
@@ -654,7 +659,7 @@ namespace TracProg.Calculation.BoardElements
         /// <summary>
         /// Возвращает высоту прямоугольной области
         /// </summary>
-        public int Height { get; }
+        public int Height { get; private set; }
 
         /// <summary>
         /// Данное свойство возвращает значение true, если значения всех свойств Width, Height, X и Y равны нулю. В противном случае возвращается значение false.
@@ -682,18 +687,18 @@ namespace TracProg.Calculation.BoardElements
         /// <summary>
         /// Ширина прямоугольной области
         /// </summary>
-        public int Width { get; }
+        public int Width { get; private set; }
 
         /// <summary>
         /// Возвращает координату по оси X левого верхнего угла прямоугольной области
         /// </summary>
-        public int X { get; }
+        public int X { get; private set; }
         /// <summary>
         /// Возвращает координату по оси Y левого верхнего угла прямоугольной области
         /// </summary>
-        public int Y { get;  }
+        public int Y { get; private set; }
 
-        public int Koeff { get;  }
+        public int Koeff { get; private set; }
 
         /// <summary>
         /// Количество ячеек в сетке
@@ -716,12 +721,12 @@ namespace TracProg.Calculation.BoardElements
         /// <summary>
         /// Количество столбцов в сетке
         /// </summary>
-        public int CountColumn { get; }
+        public int CountColumn { get; private set; }
 
         /// <summary>
         /// Количество строк в сетке
         /// </summary>
-        public int CountRows { get; }
+        public int CountRows { get; private set; }
 
         #endregion
     }

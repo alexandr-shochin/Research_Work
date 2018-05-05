@@ -31,6 +31,8 @@ namespace TracProg.Calculation.BoardElements
 
         public override Color Color { get { return _color; } }
 
+        public IBoardElement NextMetal { get; set; }
+
         public bool IsRealized
         {
             set

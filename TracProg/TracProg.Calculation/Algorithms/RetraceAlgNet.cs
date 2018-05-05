@@ -57,7 +57,7 @@ namespace TracProg.Calculation.Algorithms
                 RestorationPath(ref _oldGrid, ref pathWithInternodes);
 
                 // получаем координаты ограничивающего прямоугольника
-                GetCoordLimitingRectangleByTrack(ref _oldGrid, ref pathWithInternodes, 20, 20, 20, 20,
+                GetCoordLimitingRectangleByTrack(ref _oldGrid, ref pathWithInternodes, 5, 5, 5, 5,
                     out _leftBorderLimitingRectangle, out _upBorderLimitingRectangle, out _rightBorderLimitingRectangle, out _downBorderLimitingRectangle);
 
                 // копируем нужные элементы сетки и создаём новую
@@ -250,7 +250,7 @@ namespace TracProg.Calculation.Algorithms
                 // перетрассировать 
                 if (Retracing(tracks, futurePins, penalty))
                 {
-                    DrawStagesForNewGridDebug("retracing_" + _nonRealizedMetalId + "_" + start + "_" + finish + "_");
+                    //DrawStagesForNewGridDebug("retracing_" + _nonRealizedMetalId + "_" + start + "_" + finish + "_");
 
                     // превратить те узлы что стали пинами обртано в просто узлы
                     foreach (var pinnedNode in _pinnedNodes)
@@ -301,48 +301,58 @@ namespace TracProg.Calculation.Algorithms
             while (penalty.Count != 0)
             {
                 // 0. ищем максимальный штраф
-                string metalId = null;
+                string maxPenaltyMetalId = null;
                 int max = 0;
                 foreach (var track in penalty)
                 {
                     if (max < track.Value)
                     {
                         max = track.Value;
-                        metalId = track.Key;
+                        maxPenaltyMetalId = track.Key;
                     }
                 }
-                if (!string.IsNullOrEmpty(metalId))
+                if (!string.IsNullOrEmpty(maxPenaltyMetalId))
                 {
-                    penalty.Remove(metalId);
+                    penalty.Remove(maxPenaltyMetalId);
 
                     // 1. снимаем трассу с максимальным штрафом
-                    for (int i = 0; i < _newGrid.Count; i++)
+
+                    List<List<int>> maxPenaltyList = new List<List<int>>() { new List<int>() };
+                    foreach (Node node in tracks[maxPenaltyMetalId])
                     {
-                        if (_newGrid[i].MetalId == metalId)
-                        {
-                            TraceGrid.TraceGridElement el = _newGrid[i];
-                            el.MetalId = null;
-                            if (_newGrid[i].ViewElement is Metal)
-                            {
-                                el.ViewElement = null;
-                                el.IsReTracedArea = null;
-                            }
-
-                            if (_newGrid[i].ViewElement is Pin)
-                            {
-                                (el.ViewElement as Pin).IsRealized = false;
-                            }
-
-                            _newGrid[i] = el;
-                        }
+                        maxPenaltyList[0].Add(_newGrid.GetNum(node.I, node.J));
                     }
+                    _newGrid.UnmetalizeTracks(maxPenaltyList);
+
+                    //for (int i = 0; i < _newGrid.Count; i++)
+                    //{
+                    //    if (_newGrid[i].MetalId == maxPenaltyMetalId)
+                    //    {
+                    //        TraceGrid.TraceGridElement el = _newGrid[i];
+                            
+                    //        if (_newGrid[i].ViewElement is Metal)
+                    //        {
+                    //            el.MetalId = null;
+                    //            el.ViewElement = null;
+                    //            el.IsReTracedArea = null;
+                    //        }
+
+                    //        if (_newGrid[i].ViewElement is Pin)
+                    //        {
+                    //            el.MetalId = null;
+                    //            (el.ViewElement as Pin).IsRealized = false;
+                    //        }
+
+                    //        _newGrid[i] = el;
+                    //    }
+                    //}
 
                     // 2. перетрассирум трассу которую не смогли
                     List<int> _netList = new List<int>();
                     List<List<int>> _realizedTracks;
-                    foreach (Node pin in futurePins[_nonRealizedMetalId])
+                    foreach (Node node in futurePins[_nonRealizedMetalId])
                     {
-                        _netList.Add(_newGrid.GetNum(pin.I, pin.J));
+                        _netList.Add(_newGrid.GetNum(node.I, node.J));
                     }
 
                     List<int> nonRealizedPins;
@@ -353,42 +363,42 @@ namespace TracProg.Calculation.Algorithms
                         {
                             _newGrid.MetallizeTracks(_realizedTracks, _nonRealizedMetalId);
 
-                            //foreach (List<int> track in _realizedTracks)
-                            //{
-                            //    foreach (int node in track)
-                            //    {
-                            //        Point p = _newGrid.GetCoordCell(node);
-                            //        TraceGrid.TraceGridElement el = _newGrid[node];
-                            //        el.IsReTracedArea = new ReTracedArea("ReTracedArea", p.X, p.Y, 1 * _oldGrid.Koeff, 1 * _oldGrid.Koeff);
-                            //        _newGrid[node] = el;
-                            //    }
-                            //}
+                            foreach (List<int> track in _realizedTracks)
+                            {
+                                foreach (int node in track)
+                                {
+                                    Point p = _newGrid.GetCoordCell(node);
+                                    TraceGrid.TraceGridElement el = _newGrid[node];
+                                    el.IsReTracedArea = new ReTracedArea("ReTracedArea", p.X, p.Y, 1 * _oldGrid.Koeff, 1 * _oldGrid.Koeff);
+                                    _newGrid[node] = el;
+                                }
+                            }
                         }
 
                         // 3. перетрассируем трассу с максимальным штрафом
                         List<int> netList = new List<int>();
                         List<List<int>> realizedTracks;
-                        foreach (Node pin in futurePins[metalId])
+                        foreach (Node pin in futurePins[maxPenaltyMetalId])
                         {
                             netList.Add(_newGrid.GetNum(pin.I, pin.J));
                         }
-                        li.FindPath(metalId, new Net(netList.ToArray()), out realizedTracks, out nonRealizedPins);
+                        li.FindPath(maxPenaltyMetalId, new Net(netList.ToArray()), out realizedTracks, out nonRealizedPins);
                         if (nonRealizedPins.Count == 0)
                         {
                             if (realizedTracks.Count != 0)
                             {
-                                _newGrid.MetallizeTracks(realizedTracks, metalId);
+                                _newGrid.MetallizeTracks(realizedTracks, maxPenaltyMetalId);
 
-                                //foreach (List<int> track in realizedTracks)
-                                //{
-                                //    foreach (int node in track)
-                                //    {
-                                //        Point p = _newGrid.GetCoordCell(node);
-                                //        TraceGrid.TraceGridElement el = _newGrid[node];
-                                //        el.IsReTracedArea = new ReTracedArea("ReTracedArea", p.X, p.Y, 1 * _oldGrid.Koeff, 1 * _oldGrid.Koeff);
-                                //        _newGrid[node] = el;
-                                //    }
-                                //}
+                                foreach (List<int> track in realizedTracks)
+                                {
+                                    foreach (int node in track)
+                                    {
+                                        Point p = _newGrid.GetCoordCell(node);
+                                        TraceGrid.TraceGridElement el = _newGrid[node];
+                                        el.IsReTracedArea = new ReTracedArea("ReTracedArea", p.X, p.Y, 1 * _oldGrid.Koeff, 1 * _oldGrid.Koeff);
+                                        _newGrid[node] = el;
+                                    }
+                                }
 
                                 return true;
                             }
@@ -399,12 +409,12 @@ namespace TracProg.Calculation.Algorithms
                                 // восстановить снятую трассу max_penalty
                                 List<List<int>> list_track = new List<List<int>>();
                                 List<int> list = new List<int>();
-                                foreach (Node item in tracks[metalId])
+                                foreach (Node node in tracks[maxPenaltyMetalId])
                                 {
-                                    list.Add(_newGrid.GetNum(item.I, item.J));
+                                    list.Add(_newGrid.GetNum(node.I, node.J));
                                 }
                                 list_track.Add(list);
-                                _newGrid.MetallizeTracks(list_track, metalId);
+                                _newGrid.MetallizeTracks(list_track, maxPenaltyMetalId);
                             }
                         }
                         else
@@ -414,12 +424,12 @@ namespace TracProg.Calculation.Algorithms
                             // восстановить снятую трассу max_penalty
                             List<List<int>> list_track = new List<List<int>>();
                             List<int> list = new List<int>();
-                            foreach (Node item in tracks[metalId])
+                            foreach (Node node in tracks[maxPenaltyMetalId])
                             {
-                                list.Add(_newGrid.GetNum(item.I, item.J));
+                                list.Add(_newGrid.GetNum(node.I, node.J));
                             }
                             list_track.Add(list);
-                            _newGrid.MetallizeTracks(list_track, metalId);
+                            _newGrid.MetallizeTracks(list_track, maxPenaltyMetalId);
                         }
                     }
                     else
@@ -427,12 +437,12 @@ namespace TracProg.Calculation.Algorithms
                         // восстанавливаем снятую трассу
                         List<List<int>> list_track = new List<List<int>>();
                         List<int> list = new List<int>();
-                        foreach (Node item in tracks[metalId])
+                        foreach (Node node in tracks[maxPenaltyMetalId])
                         {
-                            list.Add(_newGrid.GetNum(item.I, item.J));
+                            list.Add(_newGrid.GetNum(node.I, node.J));
                         }
                         list_track.Add(list);
-                        _newGrid.MetallizeTracks(list_track, metalId);
+                        _newGrid.MetallizeTracks(list_track, maxPenaltyMetalId);
                     }
                 }
                 else
