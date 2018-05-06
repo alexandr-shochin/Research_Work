@@ -129,14 +129,11 @@ namespace TracProg.Calculation.BoardElements
                 graphics.FillRectangle(new SolidBrush(Color), point.X, point.Y, 1, 1);
             }
 
-            for (int el = 0; el < _grid.Length; el++)
+            foreach (TraceGridElement element in _grid)
             {
-                if (_grid[el].IsReTracedArea != null)
+                if (element.IsReTracedArea is ReTracedArea)
                 {
-                    if (_grid[el].IsReTracedArea is ReTracedArea)
-                    {
-                        _grid[el].IsReTracedArea.Draw(graphics);
-                    }
+                    element.IsReTracedArea.Draw(graphics);
                 }
             }
 
@@ -193,13 +190,13 @@ namespace TracProg.Calculation.BoardElements
                 }
             }
 
-            for (int el = 0; el < _grid.Length; el++)
+            foreach (TraceGridElement element in _grid)
             {
-                if (_grid[el].ViewElement != null)
+                if (element.ViewElement != null)
                 {
-                    if (_grid[el].ViewElement is Pin || _grid[el].ViewElement is ProhibitionZone || _grid[el].ViewElement is Metal)
+                    if (element.ViewElement is Pin || element.ViewElement is ProhibitionZone || element.ViewElement is Metal)
                     {
-                        _grid[el].ViewElement.Draw(graphics);
+                        element.ViewElement.Draw(graphics);
                     }
                 }
             }
@@ -240,7 +237,7 @@ namespace TracProg.Calculation.BoardElements
                 else
                 {
                     _grid[node].MetalId = metalId;
-                    (_grid[node].ViewElement as Pin).IsRealized = true;
+                    (_grid[node].ViewElement as Pin).PinState = PinState.Realized;
                 }
             }
         }
@@ -262,7 +259,7 @@ namespace TracProg.Calculation.BoardElements
                 {
                     el.MetalId = null;
                     el.IsReTracedArea = null;
-                    (el.ViewElement as Pin).IsRealized = false;
+                    (el.ViewElement as Pin).PinState = PinState.NonRealized;
                 }
 
                 _grid[node] = el;

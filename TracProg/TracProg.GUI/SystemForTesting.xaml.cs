@@ -203,7 +203,6 @@ namespace TracProg.GUI
 
             Graphics oldG;
             Graphics newG;
-            WaveTraceAlgScheme li;
             _thread = new Thread(delegate()
                 {
                     Dispatcher.Invoke(delegate() { _progressBar.Visibility = Visibility.Visible; });
@@ -223,7 +222,7 @@ namespace TracProg.GUI
                             for (int i = 0; i < _testSettings.CountRuns; ++i)
                             {
                                 config.GenerateRandomConfig(_testSettings.N, _testSettings.M, _testSettings.CountNets, _testSettings.CountProhibitionZones, _testSettings.CountPinsInNet);
-                                li = new WaveTraceAlgScheme(config.Grid);
+                                
 
                                 Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 oldG = Graphics.FromImage(bmp);
@@ -236,6 +235,8 @@ namespace TracProg.GUI
                                 Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
                                 foreach (var net in config.Nets)
                                 {
+                                    WaveTraceAlgScheme li = new WaveTraceAlgScheme(config.Grid);
+
                                     int localCountRealizedPinsBefore = net.Value.Count;
 
                                     List<List<int>> realizedTracks;
@@ -255,6 +256,11 @@ namespace TracProg.GUI
                                     }
 
                                     countRealizedPinsBefore += localCountRealizedPinsBefore;
+
+                                    oldG.Clear(System.Drawing.Color.White);
+                                    config.Grid.Draw(oldG);
+                                    path = "test_real.bmp";
+                                    bmp.Save(path);
                                 }
                                 Bitmap oldBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 oldG = Graphics.FromImage(oldBmp);
@@ -312,7 +318,6 @@ namespace TracProg.GUI
                     else
                     {
                         config.ReadFromFile(_filePathImport);
-                        li = new WaveTraceAlgScheme(config.Grid);
                         Bitmap bmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                         oldG = Graphics.FromImage(bmp);
                         oldG.Clear(System.Drawing.Color.White);
@@ -324,6 +329,8 @@ namespace TracProg.GUI
                         Dictionary<string, Tuple<List<int>, List<int>>> allNonRealizedTracks = new Dictionary<string, Tuple<List<int>, List<int>>>();
                         foreach (var net in config.Nets)
                         {
+                            WaveTraceAlgScheme li = new WaveTraceAlgScheme(config.Grid);
+
                             int localCountRealizedPinsBefore = net.Value.Count;
 
                             List<List<int>> realizedTracks;

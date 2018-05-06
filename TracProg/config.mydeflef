@@ -1,9 +1,9 @@
-KOEFF 18
+KOEFF 8
 
 GRID 23 23
 
 COMPONENTS 13
-a1 5 0 1 1
+a1 1 0 1 1
 a2 8 1 1 1
 a3 4 2 1 1
 a4 5 6 1 1
@@ -29,6 +29,6 @@ z7 2 5 1 1
 
 NETS 4
 n3 a5 a11 a8
-n4 a7 a13
-n1 a1 a12 a9
-n2 a4 a2
+n1 a9 a4 a2
+n2 a3 a6 a10 a7
+n4 a13 a1 a12

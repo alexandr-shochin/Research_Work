@@ -22,18 +22,12 @@ namespace TracProg.Calculation.Algorithms
             /// <returns>true , если текущий объект равен параметру other, в противном случае — false.</returns>
             public bool Equals(ElementSet other)
             {
-                return other.NumCell == this.NumCell ? true : false;
+                return other != null && other.NumCell == NumCell;
             }
         }
 
-        private Dictionary<int, int> _set;
-        private List<int> _list;
-
-        public Set()
-        {
-            _set = new Dictionary<int, int>();
-            _list = new List<int>();
-        }
+        private readonly Dictionary<int, int> _set = new Dictionary<int, int>();
+        private readonly List<int> _list = new List<int>();
 
         public bool Add(int item, int numLevel)
         {
