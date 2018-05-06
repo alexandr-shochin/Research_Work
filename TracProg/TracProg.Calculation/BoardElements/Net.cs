@@ -8,7 +8,7 @@ namespace TracProg.Calculation.BoardElements
 {
     public class Net
     {
-        private int[] _netElements;
+        private readonly int[] _netElements;
 
         public Net(int[] netElements)
         {
@@ -29,6 +29,13 @@ namespace TracProg.Calculation.BoardElements
                     throw new OverflowException("Индекс находился вне границ массива.");
                 return _netElements[index];
             }
+        }
+
+        public int[] ToArray()
+        {
+            int[] arr = new int[_netElements.Length];
+            Array.Copy(_netElements, arr, Count);
+            return arr;
         }
 
         public override string ToString()
