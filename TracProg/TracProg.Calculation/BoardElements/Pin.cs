@@ -11,7 +11,8 @@ namespace TracProg.Calculation.BoardElements
     {
         NonRealized,
         Realized,
-        InProccessRetrace
+        InProccessRetraceStart,
+        InProccessRetraceFinish
     }
 
     /// <summary>
@@ -52,9 +53,14 @@ namespace TracProg.Calculation.BoardElements
                         _color = Color.Red;
                         break;
                     }
-                    case PinState.InProccessRetrace:
+                    case PinState.InProccessRetraceStart:
                     {
                         _color = Color.DarkOrange;
+                        break;
+                    }
+                    case PinState.InProccessRetraceFinish:
+                    {
+                        _color = Color.DeepPink;
                         break;
                     }
                     case PinState.Realized:

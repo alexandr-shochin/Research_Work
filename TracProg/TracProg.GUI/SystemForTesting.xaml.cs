@@ -256,11 +256,6 @@ namespace TracProg.GUI
                                     }
 
                                     countRealizedPinsBefore += localCountRealizedPinsBefore;
-
-                                    oldG.Clear(System.Drawing.Color.White);
-                                    config.Grid.Draw(oldG);
-                                    path = "test_real.bmp";
-                                    bmp.Save(path);
                                 }
                                 Bitmap oldBmp = new Bitmap(config.Grid.Width, config.Grid.Height);
                                 oldG = Graphics.FromImage(oldBmp);
