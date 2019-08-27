@@ -103,8 +103,8 @@ namespace TracProg.GUI
                 return;
             }
 
-            M = width;
-            N = height;
+            M = height;
+            N = width;
             CountNets = countNets;
             CountProhibitionZones = countProhibitionZones;
             CountPinsInNet = countPinsInNet;

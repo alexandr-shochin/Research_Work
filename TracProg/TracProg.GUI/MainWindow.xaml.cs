@@ -15,7 +15,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TracProg.Calculation;
-using TracProg.Calculation.Algoriths;
 
 namespace TracProg.GUI
 {
