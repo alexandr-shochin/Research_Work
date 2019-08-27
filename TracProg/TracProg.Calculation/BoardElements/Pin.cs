@@ -7,6 +7,14 @@ using System.Threading.Tasks;
 
 namespace TracProg.Calculation.BoardElements
 {
+    public enum PinState
+    {
+        NonRealized,
+        Realized,
+        InProccessRetraceStart,
+        InProccessRetraceFinish
+    }
+
     /// <summary>
     /// Графический элемент пина
     /// </summary>
@@ -16,7 +24,7 @@ namespace TracProg.Calculation.BoardElements
 
         public Pin(string id, int x, int y, int width, int height) : base(id, x, y, width, height)
         {
-            IsRealized = false;
+            PinState = PinState.NonRealized;
         }
 
         public override void Draw(Graphics graphics)
@@ -31,17 +39,35 @@ namespace TracProg.Calculation.BoardElements
 
         public override Color Color { get { return _color; } }
 
-        public bool IsRealized
+        public IBoardElement NextMetal { get; set; }
+
+        public PinState PinState
         {
             set
             {
-                if (value)
+
+                switch (value)
                 {
-                    _color = Color.ForestGreen;
-                }
-                else
-                {
-                    _color = Color.Red;
+                    case PinState.NonRealized:
+                    {
+                        _color = Color.Red;
+                        break;
+                    }
+                    case PinState.InProccessRetraceStart:
+                    {
+                        _color = Color.DarkOrange;
+                        break;
+                    }
+                    case PinState.InProccessRetraceFinish:
+                    {
+                        _color = Color.DeepPink;
+                        break;
+                    }
+                    case PinState.Realized:
+                    {
+                        _color = Color.ForestGreen; 
+                        break;
+                    }
                 }
             }
         }

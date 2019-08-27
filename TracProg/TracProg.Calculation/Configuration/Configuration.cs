@@ -123,10 +123,10 @@ namespace TracProg.Calculation
                                     index++;
                                 }
 
-                                nets.Sort(delegate(Tuple<string, Net> T1, Tuple<string, Net> T2)
+                                nets.Sort(delegate(Tuple<string, Net> t1, Tuple<string, Net> t2)
                                 {
-                                    if (T1.Item2.Count > T2.Item2.Count) return 1;
-                                    if (T1.Item2.Count < T2.Item2.Count) return -1;
+                                    if (t1.Item2.Count > t2.Item2.Count) return 1;
+                                    if (t1.Item2.Count < t2.Item2.Count) return -1;
                                     return 0;
                                 });
 
@@ -164,7 +164,7 @@ namespace TracProg.Calculation
 	        }
         }
 
-        public void GenerateRandomConfig(int n, int m, int countNets, int countProhibitionZone, int countPinsInNet, int koeff = 4, int radius = 25)
+        public void GenerateRandomConfig(int n, int m, int countNets, int countProhibitionZone, int countPinsInNet, int koeff = 8, int radius = 25)
         {
             _grid = new TraceGrid("Random_grid", n * koeff, m * koeff, koeff);
 
@@ -181,39 +181,38 @@ namespace TracProg.Calculation
             int _countNets = 0;
             while(true)
             {
-                Point p_1 = new Point(rand.Next(0, n - 1), rand.Next(0, m - 1));
+                Point p1 = new Point(rand.Next(0, n - 1 - n / 6), rand.Next(0, m - 1 - m / 6));
 
                 currentNumPin++;
-                gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(currentNumPin.ToString() + "_pin", p_1.X * koeff, p_1.Y * koeff, koeff, koeff));
+                gridElements.Add(currentNumPin + "_pin", new Pin(currentNumPin + "_pin", p1.X * koeff, p1.Y * koeff, koeff, koeff));
 
                 List<int> net = new List<int>();
-                if (!points.Contains(p_1))
+                if (!points.Contains(p1))
                 {
-                    points.Add(p_1);
+                    points.Add(p1);
 
                     int l, k;
-                    _grid.GetIndexes(p_1.X * koeff, p_1.Y * koeff, out l, out k);
+                    _grid.GetIndexes(p1.X * koeff, p1.Y * koeff, out l, out k);
                     net.Add(_grid.GetNum(l, k));
 
                     int _countPinsInNet = 1;
                     while (true)
                     {
-                        int x = p_1.X + rand.Next(0, radius);
-                        int y = p_1.Y + rand.Next(0, radius);
-                        Point p_i = new Point(x <= n - 1 ? x : n - 1,
-                                              y <= m - 1 ? y : m - 1);
-
-                        if (!points.Contains(p_i))
+                        int x = p1.X + rand.Next(1, radius);
+                        int y = p1.Y + rand.Next(1, radius);
+                        Point pI = new Point(x <= n - 1 ? x : n - 1, y <= m - 1 ? y : m - 1);
+                        if (!points.Contains(pI))
                         {
-                            points.Add(p_i);
+                            points.Add(pI);
 
                             currentNumPin++;
-                            gridElements.Add(currentNumPin.ToString() + "_pin", new Pin(currentNumPin.ToString() + "_pin", p_i.X * koeff, p_i.Y * koeff, koeff, koeff));
+                            gridElements.Add(currentNumPin + "_pin", new Pin(currentNumPin + "_pin", pI.X * koeff, pI.Y * koeff, koeff, koeff));
 
-                            _grid.GetIndexes(p_i.X * koeff, p_i.Y * koeff, out l, out k);
+                            _grid.GetIndexes(pI.X * koeff, pI.Y * koeff, out l, out k);
                             net.Add(_grid.GetNum(l, k));
                             _countPinsInNet++;
                         }
+
                         if (_countPinsInNet == countPinsInNet) break;
                     }
 
@@ -224,10 +223,10 @@ namespace TracProg.Calculation
                 if (_countNets == countNets) break;
             }
 
-            nets.Sort(delegate(Tuple<string, Net> T1, Tuple<string, Net> T2)
+            nets.Sort(delegate(Tuple<string, Net> t1, Tuple<string, Net> t2)
             {
-                if (T1.Item2.Count > T2.Item2.Count) return 1;
-                if (T1.Item2.Count < T2.Item2.Count) return -1;
+                if (t1.Item2.Count > t2.Item2.Count) return 1;
+                if (t1.Item2.Count < t2.Item2.Count) return -1;
                 return 0;
             });
             foreach (var item in nets)
@@ -244,7 +243,7 @@ namespace TracProg.Calculation
                 {
                     points.Add(pZ);
 
-                    gridElements.Add(i.ToString() + "_prZone", new ProhibitionZone(i.ToString() + "_prZone", pZ.X * koeff, pZ.Y * koeff, koeff, koeff));
+                    gridElements.Add(i + "_prZone", new ProhibitionZone(i + "_prZone", pZ.X * koeff, pZ.Y * koeff, koeff, koeff));
                 }
             }
 

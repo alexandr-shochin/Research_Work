@@ -17,6 +17,8 @@ namespace TracProg.Calculation.BoardElements
         {
             _rect = new Rectangle(x, y, width, height);
             this.ID = ID;
+
+            Koeff = 8;
         }
 
         public virtual bool Add(IBoardElement el)
@@ -65,6 +67,8 @@ namespace TracProg.Calculation.BoardElements
         public int X { get { return _rect.X; } }
 
         public int Y { get { return _rect.Y; } }
+
+        public int Koeff { get; private set; }
 
         public virtual Color Color { get { return Color.White; } }
     }
